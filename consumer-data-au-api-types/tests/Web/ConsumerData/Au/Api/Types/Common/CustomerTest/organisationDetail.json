@@ -1,0 +1,35 @@
+{
+    "customer$type": "organisation",
+    "organisation": {
+        "lastUpdateTime": "2018-11-01T05:32:18Z",
+        "agentFirstName": "fname",
+        "agentLastName": "lname",
+        "agentRole": "Unspecified",
+        "businessName": "bname",
+        "legalName": "lname",
+        "shortName": "sname",
+        "abn": "abn",
+        "acn": "acn",
+        "isACNRegistered": true,
+        "industryCode": "03332",
+        "organisationType": "SOLE_TRADER",
+        "registeredCountry": "AUS",
+        "establishmentDate": "2018-01-01T00:00:00Z",
+        "physicalAddresses": [
+            {
+                "purpose": "REGISTERED",
+                "address$type": "simple",
+                "simple": {
+                    "mailingName": "mname",
+                    "addressLine1": "aline1",
+                    "addressLine2": "aline2",
+                    "addressLine3": "aline3",
+                    "postcode": "4000",
+                    "city": "Brisbane",
+                    "state": "AU-QLD",
+                    "country": "AUS"
+                }
+            }
+        ]
+    }
+}

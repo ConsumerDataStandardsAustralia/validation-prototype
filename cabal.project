@@ -1,0 +1,4 @@
+packages:
+  consumer-data-au-api-types
+
+haddock-css: ../haddock.css

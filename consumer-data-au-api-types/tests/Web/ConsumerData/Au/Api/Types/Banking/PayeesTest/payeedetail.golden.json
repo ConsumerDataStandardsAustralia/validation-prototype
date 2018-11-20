@@ -1,0 +1,22 @@
+{
+    "data": {
+        "payeeId": "payee 35",
+        "nickname": "payee-nick",
+        "description": "A very descriptive description",
+        "type": "DOMESTIC",
+        "payee$type": "domestic",
+        "domestic": {
+            "payeeAccount$type": "payId",
+            "payId":{
+                "name": "my pay id",
+                "identifier": "payid-2",
+                "type": "EMAIL"
+            }
+        }
+    },
+    "links": {
+        "self": "http://example.com/self"
+    },
+    "meta": {
+    }
+}

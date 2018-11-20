@@ -1,0 +1,14 @@
+{
+    "customer$type": "person",
+    "person": {
+        "lastUpdateTime": "2018-11-01T05:32:18Z",
+        "firstName": "string",
+        "lastName": "string",
+        "middleNames": [
+            "string"
+        ],
+        "prefix": "string",
+        "suffix": "string",
+        "occupationCode": "string"
+    }
+}

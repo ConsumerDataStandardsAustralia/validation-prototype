@@ -1,0 +1,19 @@
+{
+    "customer$type": "organisation",
+    "organisation": {
+        "lastUpdateTime": "2018-11-01T05:32:18Z",
+        "agentFirstName": "string",
+        "agentLastName": "string",
+        "agentRole": "Unspecified",
+        "businessName": "string",
+        "legalName": "string",
+        "shortName": "string",
+        "abn": "string",
+        "acn": "string",
+        "isACNRegistered": true,
+        "industryCode": "string",
+        "organisationType": "SOLE_TRADER",
+        "registeredCountry": "AUS",
+        "establishmentDate": "2018-01-01T00:00:00Z"
+    }
+}

@@ -1,0 +1,48 @@
+{
+    "customer$type": "person",
+    "person" : {
+        "lastUpdateTime": "2018-11-01T05:32:18Z",
+        "firstName": "first name",
+        "lastName": "last name",
+        "middleNames": [
+            "middle name 1"
+        ],
+        "prefix": "prefix",
+        "suffix": "suffix",
+        "occupationCode": "3399",
+        "phoneNumbers": [
+            {
+                "isPreferred": true,
+                "purpose": "MOBILE",
+                "countryCode": "61",
+                "areaCode": "04",
+                "number": "88145427",
+                "extension": null,
+                "fullNumber": "+61488145427"
+            }
+        ],
+        "emailAddresses": [
+            {
+                "isPreferred": true,
+                "purpose": "WORK",
+                "address": "user@example.com"
+            }
+        ],
+        "physicalAddresses": [
+            {
+                "purpose": "REGISTERED",
+                "address$type": "simple",
+                "simple": {
+                    "mailingName": "mailing name",
+                    "addressLine1": "addy line 1",
+                    "addressLine2": "addy line 2",
+                    "addressLine3": "addy line 3",
+                    "postcode": "4000",
+                    "city": "Brisbane",
+                    "state": "AU-QLD",
+                    "country": "AUS"
+                }
+            }
+        ]
+    }
+}

@@ -1,0 +1,23 @@
+{
+  "data": {
+    "payees": [
+      {
+        "payeeId": "payee 42",
+        "nickname": "savings",
+        "description": "my savings account",
+        "type": "DOMESTIC"
+      }
+    ]
+  },
+  "links": {
+    "self": "http://example.com/self",
+    "first": "http://example.com/first",
+    "prev": "http://example.com/prev",
+    "next": "http://example.com/next",
+    "last": "http://example.com/last"
+  },
+  "meta": {
+    "totalRecords": 6,
+    "totalPages": 2
+  }
+}

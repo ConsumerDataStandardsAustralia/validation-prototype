@@ -1,0 +1,5 @@
+/dist*
+.ghci
+.ghc.env*
+cabal.project.local*
+TAGS
