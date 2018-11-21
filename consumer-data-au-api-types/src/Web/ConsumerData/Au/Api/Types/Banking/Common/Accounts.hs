@@ -23,6 +23,7 @@ import           Waargonaut.Types.Json      (Json)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount
     (CurrencyAmount, currencyAmountDecoder, currencyAmountEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Products
+import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
 import Web.ConsumerData.Au.Api.Types.Tag
 
 data Account = Account
@@ -46,7 +47,7 @@ accountDecoder = D.withCursor $ \c -> do
   prodCat <- D.fromKey "productCategory" (D.maybeOrNull productCategoryDecoder) o
   prodType <- D.fromKey "productType" D.text o
   balType <- D.fromKey "balance$type" balanceTypeDecoder o
-  balance <- D.fromKey "balance" (balanceDecoder balType) o
+  balance <- D.fromKey (balanceTypeToText balType) (balanceDecoder balType) o
   pure $ Account accId displayName nickname maskedNum prodCat prodType balance
 
 instance JsonDecode OB Account where
@@ -70,13 +71,27 @@ accountFields a =
 instance JsonEncode OB Account where
   mkEncoder = tagOb accountEncoder
 
-newtype AccountId = AccountId { unAccountId :: Int } deriving (Eq, Show)
+newtype Accounts = Accounts { unAccounts :: [Account] } deriving (Eq, Show)
+
+accountsDecoder :: Monad f => Decoder f Accounts
+accountsDecoder = D.atKey "accounts" (Accounts <$> D.list accountDecoder)
+
+accountsEncoder :: Applicative f => Encoder f Accounts
+accountsEncoder = E.mapLikeObj $ E.atKey' "accounts" (E.list accountEncoder) . unAccounts
+
+instance JsonDecode OB Accounts where
+  mkDecoder = tagOb accountsDecoder
+
+instance JsonEncode OB Accounts where
+  mkEncoder = tagOb accountsEncoder
+
+newtype AccountId = AccountId { unAccountId :: AsciiString } deriving (Eq, Show)
 
 accountIdDecoder :: Monad f => Decoder f AccountId
-accountIdDecoder = AccountId <$> D.int
+accountIdDecoder = AccountId <$> asciiStringDecoder
 
 accountIdEncoder :: Applicative f => Encoder f AccountId
-accountIdEncoder = unAccountId >$< E.int
+accountIdEncoder = unAccountId >$< asciiStringEncoder
 
 instance ToHttpApiData AccountId where
   toUrlPiece = toUrlPiece . unAccountId
