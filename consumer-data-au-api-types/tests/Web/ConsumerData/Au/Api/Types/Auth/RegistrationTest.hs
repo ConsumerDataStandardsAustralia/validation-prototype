@@ -71,6 +71,7 @@ regoRoundTrips =
     regoReq' <- fromVal.toJSON $ regoReq
     regoReq === regoReq'
 
+--TODO:
 instance AsError IOException where
 
 genRegReq::
@@ -98,6 +99,9 @@ genStringOrUri = Gen.choice [(uri #) <$> uri', (string #) <$> str]
   where uri'= m2e BadUri =<< parseURI.renderStr <$> genURI
         str = Gen.string (Range.linear 10 10) Gen.unicode
 
+m2e :: forall m e a.
+     (MonadThrow m, Exception e) =>
+     e -> Maybe a -> m a
 m2e e = maybe (throwM e) pure
 
 -- Might actually want a relevant time here

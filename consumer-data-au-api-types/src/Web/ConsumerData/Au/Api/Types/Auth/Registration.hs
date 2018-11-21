@@ -35,8 +35,7 @@ import           Data.ByteString.Base64                    as B64
 import           Data.ByteString.Lazy                      as BSL (fromStrict)
 import           Data.HashMap.Strict                       (HashMap)
 import qualified Data.HashMap.Strict                       as M
-import           Data.Set
-    (Set, isProperSubsetOf)
+import           Data.Set                                  (Set, isSubsetOf)
 import qualified Data.Set                                  as Set
 import qualified Data.Text                                 as T
 import           Data.Text.Encoding                        as TE
@@ -65,7 +64,7 @@ newtype FapiGrantTypes = FapiGrantTypes GrantTypes
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 -- | Smart constructor for producing FAPI permitted grant types
 fapiGrantTypes :: GrantTypes -> Maybe FapiGrantTypes
-fapiGrantTypes (GrantTypes grantTypes) =  if grantTypes `isProperSubsetOf` permittedGrantTypes then Just . FapiGrantTypes . GrantTypes $ grantTypes else Nothing where
+fapiGrantTypes (GrantTypes grantTypes) =  if grantTypes `isSubsetOf` permittedGrantTypes then Just . FapiGrantTypes . GrantTypes $ grantTypes else Nothing where
   permittedGrantTypes = Set.fromList [AuthorizationCode]
 
 data ApplicationType = Web | Native
