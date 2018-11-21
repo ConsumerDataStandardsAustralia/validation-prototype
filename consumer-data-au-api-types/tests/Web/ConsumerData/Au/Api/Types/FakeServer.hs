@@ -201,8 +201,7 @@ server lq = genericServer Api
       , _accountsById = \accountId -> genericServer AccountApi
         { _accountGet                = pure $ mkStandardResponse testAccountDetail lq (links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountGet)
         , _accountTransactionsGet    = pure $ mkPaginatedResponse testAccountTransactions lq (fakePaginator Nothing (const $ links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountTransactionsGet))
-        , _accountTransactionByIdGet = \transactionId -> pure $ mkPaginatedResponse testAccountTransactionDetail lq (fakePaginator Nothing (const $ (links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountTransactionByIdGet) transactionId))
-            --pure $ (pack . show . unAccountId $ accountId) <> (pack . show . unTransactionId $ transactionId)
+        , _accountTransactionByIdGet = \transactionId -> pure $ mkStandardResponse testAccountTransactionDetail lq ((links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountTransactionByIdGet) transactionId)
         , _accountDirectDebitsGet    = pure $ mkPaginatedResponse
         testDirectDebitAuthorisations
         lq

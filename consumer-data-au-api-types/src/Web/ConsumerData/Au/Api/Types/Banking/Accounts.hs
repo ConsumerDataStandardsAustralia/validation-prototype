@@ -94,6 +94,6 @@ type AccountByIdResponse = StandardResponse AccountDetail
 type AccountBulkBalanceResponse = PaginatedResponse AccountBalances
 type AccountBalanceByIdsResponse = PaginatedResponse AccountBalances
 type AccountDirectDebitsResponse = PaginatedResponse DirectDebitAuthorisations
-type AccountTransactionDetailResponse = PaginatedResponse AccountTransactionDetail
+type AccountTransactionDetailResponse = StandardResponse AccountTransactionDetail
 type AccountTransactionsResponse = PaginatedResponse AccountTransactions
 type AccountsTransactionsResponse = PaginatedResponse AccountsTransactions
