@@ -1,0 +1,66 @@
+name:                consumer-data-au-api-bank
+version:             0.1.0.0
+synopsis:            Mock bank for the Australian Consumer Data Rights Specification
+description:         See https://github.com/ConsumerDataStandardsAustralia/standards for more details.
+license:             MIT
+license-file:        LICENSE
+author:              Queensland Functional Programming Lab, Data 61, CSIRO
+maintainer:          contact@qfpl.io
+copyright:           Commonwealth Science and Industrial Research Organisation, 2018
+category:            Web
+build-type:          Simple
+extra-source-files:  ChangeLog.md
+cabal-version:       >=1.10
+
+library
+  exposed-modules:
+                       LambdaBank.Main
+  -- other-modules:
+  -- We probably need to tweak these for more than just GHC 8.4 support.
+  build-depends:
+                       base == 4.11.*
+                     , aeson == 1.3.*
+                     , bytestring == 0.10.*
+                     , consumer-data-au-api-types
+                     , servant == 0.14.*
+                     , servant-server == 0.14.*
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+executable lambda-bank
+  build-depends:
+                       base == 4.11.*
+                     , consumer-data-au-api-bank
+  other-modules:       LambdaBank.Main
+  hs-source-dirs:      src
+  main-is:             Main.hs
+  ghc-options:         -Wall -Werror
+  default-language:    Haskell2010
+
+test-suite tasty
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      src, tests
+  main-is:             Tests.hs
+  ghc-options:         -Wall -Werror
+  -- Please copy paste build-depends from the library here until `cabal2nix` understands common
+  -- stanzas. When that happens we can at least factor out this dupe.
+  build-depends:
+                       base == 4.11.*
+                     , aeson == 1.3.*
+                     , bytestring == 0.10.*
+                     , consumer-data-au-api-types
+                     , servant == 0.14.*
+                     , servant-server == 0.14.*
+
+  -----------------------------------------------------------
+  --                 TEST DEPS START HERE
+  -----------------------------------------------------------
+                     , hedgehog == 0.6.*
+                     , hspec
+                     , tasty == 1.1.*
+                     , tasty-discover == 4.2.*
+                     , tasty-golden == 2.*
+                     , tasty-hedgehog == 0.2.*
+                     , tasty-hunit == 0.10.*
+  other-modules:       
+  default-language:    Haskell2010
