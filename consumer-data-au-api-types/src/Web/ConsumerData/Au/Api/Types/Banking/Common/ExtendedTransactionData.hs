@@ -30,10 +30,10 @@ data ExtendedTransactionData = ExtendedTransactionData
 extendedTransactionDataDecoder :: Monad f => Decoder f ExtendedTransactionData
 extendedTransactionDataDecoder = D.withCursor $ \c -> do
   o <- D.down c
-  payer <- D.try $ D.fromKey "payer" D.text o
-  payee <- D.try $ D.fromKey "payee" D.text o
-  ed <- D.try $ D.fromKey "extendedDescription"
-    (ExtendedTransactionDataExtendedDescription <$> D.text) o
+  payer <- D.fromKey "payer" (D.maybeOrNull D.text) o
+  payee <- D.fromKey "payee" (D.maybeOrNull D.text) o
+  ed <- D.fromKey "extendedDescription"
+    (D.maybeOrNull $ ExtendedTransactionDataExtendedDescription <$> D.text) o
   serv <- D.fromKey "service" extendedTransactionDataServiceDecoder o
   pure $ ExtendedTransactionData payer payee ed serv
 

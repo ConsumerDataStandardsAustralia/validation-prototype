@@ -65,10 +65,10 @@ accountLendingRateDecoder :: Monad f => Decoder f AccountLendingRate
 accountLendingRateDecoder = D.withCursor $ \c -> do
   o <- D.down c
   AccountLendingRate
-    <$> (D.focus accountLendingRateTypeDecoder o)
-    <*> (D.fromKey "rate" rateStringDecoder o)
-    <*> (D.try $ D.fromKey "additionalInfo" D.text o)
-    <*> (D.try $ D.fromKey "additionalInfoUri" uriDecoder o)
+    <$> D.focus accountLendingRateTypeDecoder o
+    <*> D.fromKey "rate" rateStringDecoder o
+    <*> D.fromKey "additionalInfo" (D.maybeOrNull D.text) o
+    <*> D.fromKey "additionalInfoUri" (D.maybeOrNull uriDecoder) o
 
 instance JsonDecode OB AccountLendingRate where
   mkDecoder = tagOb accountLendingRateDecoder

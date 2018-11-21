@@ -47,14 +47,14 @@ data TransactionBasic = TransactionBasic
 transactionBasicDecoder :: (Monad f) => Decoder f TransactionBasic
 transactionBasicDecoder = D.withCursor $ \c -> do
   o <- D.down c
-  transactId <- D.try $ D.fromKey "transactionId" transactionIdDecoder o
+  transactId <- D.fromKey "transactionId" (D.maybeOrNull transactionIdDecoder) o
   isDetailAval <- D.fromKey "isDetailAvailable" D.bool o
   status <- D.fromKey "status" transactionStatusDecoder o
   descr <- D.fromKey "description" D.text o
-  postDateTime <- D.try $ D.fromKey "postDateTime" dateTimeStringDecoder o
-  execDateTime <- D.try $ D.fromKey "executionDateTime" dateTimeStringDecoder o
-  amount <- D.try $ D.fromKey "amount" amountStringDecoder o
-  currency <- D.try $ D.fromKey "currency" currencyStringDecoder o
+  postDateTime <- D.fromKey "postDateTime" (D.maybeOrNull dateTimeStringDecoder) o
+  execDateTime <- D.fromKey "executionDateTime" (D.maybeOrNull dateTimeStringDecoder) o
+  amount <- D.fromKey "amount" (D.maybeOrNull amountStringDecoder) o
+  currency <- D.fromKey "currency" (D.maybeOrNull currencyStringDecoder) o
   reference <- D.fromKey "reference" D.text o
   pure $ TransactionBasic transactId isDetailAval status descr postDateTime execDateTime amount currency reference
 
