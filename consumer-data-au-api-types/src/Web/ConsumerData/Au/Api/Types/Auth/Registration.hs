@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wwarn=orphans     #-}
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -11,17 +10,17 @@
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.Registration where
-import           Control.Applicative                             (liftA2, (<|>))
+import           Control.Applicative                       (liftA2, (<|>))
 import           Control.Lens
     (Prism', at, makePrisms, prism, to, ( # ), (&), (.~), (?~), (^.), (^?),
     _Right)
 import           Control.Monad.Error.Class
     (MonadError, throwError)
-import           Control.Monad.Time                              (MonadTime)
-import qualified Crypto.JOSE.Error                               as JE
-import           Crypto.JOSE.JWA.JWE                             (Enc)
-import qualified Crypto.JOSE.JWA.JWE                             as JWE
-import           Crypto.JOSE.JWK                                 (JWK)
+import           Control.Monad.Time                        (MonadTime)
+import qualified Crypto.JOSE.Error                         as JE
+import           Crypto.JOSE.JWA.JWE                       (Enc)
+import qualified Crypto.JOSE.JWA.JWE                       as JWE
+import           Crypto.JOSE.JWK                           (JWK)
 import           Crypto.JOSE.JWS
     (Alg, JWSHeader, newJWSHeader)
 import           Crypto.JWT
@@ -29,23 +28,22 @@ import           Crypto.JWT
     claimAud, claimIss, decodeCompact, defaultJWTValidationSettings,
     emptyClaimsSet, issuerPredicate, signClaims, unregisteredClaims,
     verifyClaims)
-import           Crypto.Random.Types                             (MonadRandom)
+import           Crypto.Random.Types                       (MonadRandom)
 import           Data.Aeson
     (FromJSON (..), Result (..), ToJSON (..), Value, fromJSON)
-import           Data.ByteString.Base64                          as B64
-import           Data.ByteString.Lazy                            as BSL
-    (fromStrict)
-import           Data.HashMap.Strict                             (HashMap)
-import qualified Data.HashMap.Strict                             as M
+import           Data.ByteString.Base64                    as B64
+import           Data.ByteString.Lazy                      as BSL (fromStrict)
+import           Data.HashMap.Strict                       (HashMap)
+import qualified Data.HashMap.Strict                       as M
 import           Data.Set
     (Set, isProperSubsetOf)
-import qualified Data.Set                                        as Set
-import qualified Data.Text                                       as T
-import           Data.Text.Encoding                              as TE
+import qualified Data.Set                                  as Set
+import qualified Data.Text                                 as T
+import           Data.Text.Encoding                        as TE
     (decodeUtf8, encodeUtf8)
-import           GHC.Generics                                    (Generic)
-import           Text.URI                                        (URI, mkURI)
-import qualified Text.URI                                        as URI
+import           GHC.Generics                              (Generic)
+import           Text.URI                                  (URI, mkURI)
+import qualified Text.URI                                  as URI
 import           Text.URI.Lens
     (authHost, uriAuthority, uriScheme)
 import           Web.ConsumerData.Au.Api.Types.Auth.Common
@@ -552,7 +550,7 @@ jwtToRegoReq audPred issPred jwk jwt = do
       & issuerPredicate .~ issPred
     c2m c = c ^. unregisteredClaims . to aesonClaimsToMetaData
   claims <- verifyClaims validationSettings jwk jwt
-  ssjwt <- decodeCompact =<< BSL.fromStrict . TE.encodeUtf8 <$> claims ^. unregisteredClaims . to (`claimText` "software_statement")
+  ssjwt <- decodeCompact =<< BSL.fromStrict . TE.encodeUtf8 <$> claims ^. unregisteredClaims . to (`getClaim` "software_statement")
   ssclaims <- verifyClaims validationSettings jwk ssjwt
   -- Get the `software_statement` (ie a JWT), extract the headers and the claims
   ss <-  SoftwareStatement <$> getSigningHeaders ssclaims <*> c2m ssclaims
@@ -571,36 +569,43 @@ getSigningHeaders claims = do
   --TODO: get the other claims here as well
   return $ JwsSigningHeaders (Just iss) (Just aud) Nothing Nothing Nothing
     where
-    getRegClaim g name cs =
-      cs ^. g & maybe (throwError $ _MissingClaim # name) pure
+    getRegClaim g name cs = cs ^. g & maybeErrors (_MissingClaim # name)
 
 -- convert a signed jwt to JSON, encode it, then back to a json Value
 jwtToJson :: (AsError e, MonadError e f, ToJSON a) => a -> f Value
-jwtToJson j = toJSON . TE.decodeUtf8 . B64.encode . TE.encodeUtf8 <$> valText (toJSON j)
+jwtToJson j = toJSON . TE.decodeUtf8 . B64.encode . TE.encodeUtf8 <$> fromVal (toJSON j)
 
 instance ToJSON (JWT (a JWSHeader)) where
   toJSON = toJSON
 
---TODO: consolidate these ...
-claimText :: forall e m.
+getClaim :: forall e m a.
   ( AsError e
   , MonadError e m
+  , FromJSON a
   ) =>
- AesonClaims -> T.Text -> m T.Text
-claimText m n = m ^. at n & m2e where
-       m2e = maybe (missingE n) valText
-       missingE = throwError . (_MissingClaim #)
+ AesonClaims -> T.Text -> m a
+getClaim m n = m ^. at n & (>>=fromVal) . maybeErrors (_MissingClaim # n)
 
--- TODO: prism?
-valText :: forall e m.
+getmClaim :: forall e m a.
   ( AsError e
   , MonadError e m
-  ) => Value -> m T.Text
-valText = rToM . fromJSON where
+  , FromJSON a
+  ) =>
+ AesonClaims -> T.Text -> m (Maybe a)
+getmClaim m n = m ^. at n & traverse fromVal
+
+fromVal :: forall e m a.
+  ( AsError e
+  , MonadError e m
+  , FromJSON a
+  ) => Value -> m a
+fromVal = rToM . fromJSON where
  rToM = \case
-         Error s -> parseE s
+         Error s -> throwError . (_ParseError #) $ s
          Success a -> pure a
- parseE = throwError . (_ParseError #)
+
+maybeErrors :: MonadError e m => e -> Maybe a -> m a
+maybeErrors e = maybe (throwError e) pure
 
 aesonClaimsToMetaData :: forall e m.
   ( AsError e
@@ -608,53 +613,41 @@ aesonClaimsToMetaData :: forall e m.
   ) =>
  AesonClaims -> m ClientMetaData
 aesonClaimsToMetaData m = do
-  let
-      get name =
-        let
-          -- Please don't say you love me. You don't even know me.
-          m2m = maybe (throwError $ _MissingClaim # name) pure
-        in
-          m2m =<< getm name
-      getm name =
-        m ^. at name & traverse (rToM . fromJSON)
-      rToM = \case
-         Error s -> throwError $ _ParseError # s
-         Success a -> pure a
-  _clientName         <- getm "client_name"
-  _clientUri         <- getm "client_uri"
-  _contacts         <- getm "contacts"
-  _logoUri         <- getm "logo_uri"
-  _policyUri         <- getm "policy_uri"
-  _tosUri         <- getm "tos_uri"
-  _subjectType         <- getm "subject_type"
-  _sectorIdentifierUri         <- getm "sector_identifier_uri"
-  mjwks         <- getm "jwks"
-  mjwksUri       <- getm "jwks_uri"
+  _clientName         <- getmClaim m "client_name"
+  _clientUri         <- getmClaim m "client_uri"
+  _contacts         <- getmClaim m "contacts"
+  _logoUri         <- getmClaim m "logo_uri"
+  _policyUri         <- getmClaim m "policy_uri"
+  _tosUri         <- getmClaim m "tos_uri"
+  _subjectType         <- getmClaim m "subject_type"
+  _sectorIdentifierUri         <- getmClaim m "sector_identifier_uri"
+  mjwks         <- getmClaim m "jwks"
+  mjwksUri       <- getmClaim m "jwks_uri"
   -- TODO: fail if both supplied
   let _regoReqKeySet = mjwks <|> mjwksUri
-  _requestUris         <- getm "request_uris"
-  _redirectUris         <- get "redirect_uris"
-  ra <- get "request_object_encryption_alg"
-  re <- getm "request_object_encryption_enc"
+  _requestUris         <- getmClaim m "request_uris"
+  _redirectUris         <- fromVal "redirect_uris"
+  ra <- fromVal "request_object_encryption_alg"
+  re <- getmClaim m "request_object_encryption_enc"
   let _regoReqRequestObjectEncryption = Just $ RequestObjectEncryption ra re
-  _userinfoSignedResponseAlg         <- getm "userinfo_signed_response_alg"
-  ia <- get "id_token_encrypted_response_alg"
-  ie <- getm "id_token_encrypted_response_enc"
+  _userinfoSignedResponseAlg         <- getmClaim m "userinfo_signed_response_alg"
+  ia <- fromVal "id_token_encrypted_response_alg"
+  ie <- getmClaim m "id_token_encrypted_response_enc"
   let _regoReqIdTokenEncrypt = Just $ IdTokenEncryption ia ie
-  _responseTypes         <- getm "response_types"
-  _defaultMaxAge         <- getm "default_max_age"
-  _requireAuthTime         <- getm "require_auth_time"
-  _defaultAcrValues         <- getm "default_acr_values"
-  _initiateLoginUri         <- getm "initiate_login_uri"
-  ua          <- get "user_info_encrypted_response_alg"
-  ue         <- getm "user_info_encrypted_response_enc"
+  _responseTypes         <- getmClaim m "response_types"
+  _defaultMaxAge         <- getmClaim m "default_max_age"
+  _requireAuthTime         <- getmClaim m "require_auth_time"
+  _defaultAcrValues         <- getmClaim m "default_acr_values"
+  _initiateLoginUri         <- getmClaim m "initiate_login_uri"
+  ua          <- fromVal "user_info_encrypted_response_alg"
+  ue         <- getmClaim m "user_info_encrypted_response_enc"
   let _regoReqUserInfoEncryption  = Just $ UserInfoEncryption ua ue
-  _idTokenSignedResponseAlg         <- get "id_token_signed_response_alg"
-  _requestObjectSigningAlg         <- get "request_object_signing_alg"
-  _grantTypes         <- get "grant_types"
-  _applicationType         <- get "application_type"
-  _tokenEndpointAuthMethod         <- get "token_endpoint_auth_method"
-  _scope         <- getm "scope"
-  _softwareId         <- getm "software_id"
-  _softwareVersion         <- getm "software_version"
+  _idTokenSignedResponseAlg         <- fromVal "id_token_signed_response_alg"
+  _requestObjectSigningAlg         <- fromVal "request_object_signing_alg"
+  _grantTypes         <- fromVal "grant_types"
+  _applicationType         <- fromVal "application_type"
+  _tokenEndpointAuthMethod         <- fromVal "token_endpoint_auth_method"
+  _scope         <- getmClaim m "scope"
+  _softwareId         <- getmClaim m "software_id"
+  _softwareVersion         <- getmClaim m "software_version"
   pure ClientMetaData {..}

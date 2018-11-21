@@ -30,7 +30,8 @@ import           Test.Tasty                 (TestTree)
 import           Test.Tasty.Hedgehog        (testProperty)
 
 import Web.ConsumerData.Au.Api.Types.Auth.Common
-    (FapiPermittedAlg (..), RedirectUri (RedirectUri), ResponseType (..), Scope (..), mkScopes)
+    (FapiPermittedAlg (..), RedirectUri (RedirectUri), ResponseType (..),
+    Scope (..), mkScopes)
 import Web.ConsumerData.Au.Api.Types.Auth.Registration
 
 test_request ::
