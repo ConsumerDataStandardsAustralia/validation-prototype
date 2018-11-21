@@ -1,13 +1,14 @@
-{ mkDerivation, aeson, base, bytestring, hedgehog, hspec, servant
-, servant-server, stdenv, tasty, tasty-discover, tasty-golden
-, tasty-hedgehog, tasty-hunit
+{ mkDerivation, aeson, base, bytestring, consumer-data-au-api-types
+, hedgehog, hspec, servant, servant-server, stdenv, tasty
+, tasty-discover, tasty-golden, tasty-hedgehog, tasty-hunit
 }:
 mkDerivation {
   pname = "consumer-data-au-api-bank";
   version = "0.1.0.0";
   src = ./.;
   libraryHaskellDepends = [
-    aeson base bytestring servant servant-server
+    aeson base bytestring consumer-data-au-api-types servant
+    servant-server
   ];
   testHaskellDepends = [
     aeson base bytestring hedgehog hspec servant servant-server tasty

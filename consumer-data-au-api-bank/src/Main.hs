@@ -1,3 +1,3 @@
-main :: IO ()
-main =
-  putStrLn "Hello, Bank"
+module Main (main) where
+
+import LambdaBank.Main (main)
