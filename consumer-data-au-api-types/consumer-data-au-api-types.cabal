@@ -7,7 +7,7 @@ synopsis:            Api Types for the Australian Consumer Data Rights Specifica
 description:         See https://github.com/ConsumerDataStandardsAustralia/standards for more details.
 license:             MIT
 license-file:        LICENSE
-author:              Queensland Functional Programming Lab, Data 61, CSIRO
+author:              Queensland Functional Programming Lab, Data61, CSIRO
 maintainer:          contact@qfpl.io
 copyright:           Commonwealth Science and Industrial Research Organisation, 2018
 category:            Web
@@ -25,6 +25,7 @@ library
                      , Web.ConsumerData.Au.Api.Client
                      , Web.ConsumerData.Au.Api.Types
                      , Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
+                     , Web.ConsumerData.Au.Api.Types.Auth.Registration
                      , Web.ConsumerData.Au.Api.Types.Auth.Common
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.AccessToken
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.Common

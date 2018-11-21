@@ -22,6 +22,7 @@ let
             (drv'.testHaskellDepends or []) ;
         })
         pkgs.cabal-install
+        haskellPackages.ghcid
       ];
     buildTools = (drv'.buildTools or []) ++ hie-tools;
   });

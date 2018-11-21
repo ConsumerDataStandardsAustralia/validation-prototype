@@ -35,7 +35,6 @@ mkDerivation {
     temporary-rc text time transformers unordered-containers waargonaut
     wai warp
   ];
-  testToolDepends = [ tasty-discover ];
   description = "Api Types for the Australian Consumer Data Rights Specification";
   license = stdenv.lib.licenses.mit;
 }
