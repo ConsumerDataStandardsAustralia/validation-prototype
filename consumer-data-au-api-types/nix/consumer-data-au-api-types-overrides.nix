@@ -14,7 +14,7 @@ let
 
   composedOverrides =
     pkgs.lib.foldr
-      (x: acc: pkgs.lib.composeExtensions acc (x { inherit pkgs; }))
+      (x: acc: pkgs.lib.composeExtensions acc (x pkgs))
       (_: _: {})
       (builtins.attrValues upstreamOverrides ++ [obOverrides]);
 in
