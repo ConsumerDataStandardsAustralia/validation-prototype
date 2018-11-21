@@ -32,8 +32,8 @@ authorisedEntityDecoder = D.withCursor $ \c -> do
   o <- D.down c
   name <- D.fromKey "name" D.text o
   finInst <- D.fromKey "financialInstitution" D.text o -- WARNING
-  abn <- D.try $ D.fromKey "abn" abnDecoder o
-  acn <- D.try $ D.fromKey "acn" acnDecoder o
+  abn <- D.fromKey "abn" (D.maybeOrNull abnDecoder) o
+  acn <- D.fromKey "acn" (D.maybeOrNull acnDecoder) o
   pure $ AuthorisedEntity name finInst abn acn
 
 instance JsonDecode OB AuthorisedEntity where

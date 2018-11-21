@@ -34,7 +34,7 @@ currencyAmountDecoder :: Monad f => Decoder f CurrencyAmount
 currencyAmountDecoder = D.withCursor $ \c -> do
   o <- D.down c
   amount <- D.fromKey "amount" amountStringDecoder o
-  currency <- D.try $ D.fromKey "currency" D.text o
+  currency <- D.fromKey "currency" (D.maybeOrNull D.text) o
   pure $ CurrencyAmount amount currency
 
 currencyAmountEncoder :: Applicative f => Encoder f CurrencyAmount

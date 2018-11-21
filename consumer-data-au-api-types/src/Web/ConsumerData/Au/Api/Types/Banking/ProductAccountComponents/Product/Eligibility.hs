@@ -62,10 +62,10 @@ productEligibilityDecoder :: Monad f => Decoder f ProductEligibility
 productEligibilityDecoder = D.withCursor $ \c -> do
   o <- D.down c
   ProductEligibility
-    <$> (D.fromKey "description" D.text o)
-    <*> (D.focus productEligibilityTypeDecoder o)
-    <*> (D.try $ D.fromKey "additionalInfo" D.text o)
-    <*> (D.try $ D.fromKey "additionalInfoUri" uriDecoder o)
+    <$> D.fromKey "description" D.text o
+    <*> D.focus productEligibilityTypeDecoder o
+    <*> D.fromKey "additionalInfo" (D.maybeOrNull D.text) o
+    <*> D.fromKey "additionalInfoUri" (D.maybeOrNull uriDecoder) o
 
 instance JsonDecode OB ProductEligibility where
   mkDecoder = tagOb productEligibilityDecoder

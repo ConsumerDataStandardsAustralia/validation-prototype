@@ -57,15 +57,15 @@ productDetailDecoder :: Monad f => Decoder f ProductDetail
 productDetailDecoder = D.withCursor $ \c -> do
   o <- D.down c
   ProductDetail
-    <$> (D.try $ D.focus productDecoder o)
-    <*> (D.try $ D.fromKey "bundles" productBundlesDecoder o)
-    <*> (D.try $ D.fromKey "features" productFeaturesDecoder o)
-    <*> (D.try $ D.fromKey "constraints" productConstraintsDecoder o)
-    <*> (D.try $ D.fromKey "eligibility" productEligibilitiesDecoder o)
-    <*> (D.try $ D.fromKey "fees" productFeesDecoder o)
-    <*> (D.try $ D.fromKey "depositRates" productDepositRatesDecoder o)
-    <*> (D.try $ D.fromKey "lendingRates" productLendingRatesDecoder o)
-    <*> (D.try $ D.fromKey "repaymentType" productRepaymentTypeDecoder o)
+    <$> D.focus (D.maybeOrNull productDecoder) o
+    <*> D.fromKey "bundles" (D.maybeOrNull productBundlesDecoder) o
+    <*> D.fromKey "features" (D.maybeOrNull productFeaturesDecoder) o
+    <*> D.fromKey "constraints" (D.maybeOrNull productConstraintsDecoder) o
+    <*> D.fromKey "eligibility" (D.maybeOrNull productEligibilitiesDecoder) o
+    <*> D.fromKey "fees" (D.maybeOrNull productFeesDecoder) o
+    <*> D.fromKey "depositRates" (D.maybeOrNull productDepositRatesDecoder) o
+    <*> D.fromKey "lendingRates" (D.maybeOrNull productLendingRatesDecoder) o
+    <*> D.fromKey "repaymentType" (D.maybeOrNull productRepaymentTypeDecoder) o
 
 instance JsonDecode OB ProductDetail where
   mkDecoder = tagOb productDetailDecoder
@@ -114,10 +114,10 @@ productBundleDecoder :: Monad f => Decoder f ProductBundle
 productBundleDecoder = D.withCursor $ \c -> do
   o <- D.down c
   ProductBundle
-    <$> (D.fromKey "name" D.text o)
-    <*> (D.fromKey "description" D.text o)
-    <*> (D.try $ D.fromKey "applicationUri" uriDecoder o)
-    <*> (D.fromKey "productIds" (D.list D.text) o)
+    <$> D.fromKey "name" D.text o
+    <*> D.fromKey "description" D.text o
+    <*> D.fromKey "applicationUri" (D.maybeOrNull uriDecoder) o
+    <*> D.fromKey "productIds" (D.list D.text) o
 
 instance JsonDecode OB ProductBundle where
   mkDecoder = tagOb productBundleDecoder

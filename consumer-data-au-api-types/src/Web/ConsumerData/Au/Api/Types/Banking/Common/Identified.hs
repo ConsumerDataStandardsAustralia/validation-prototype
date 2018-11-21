@@ -27,7 +27,7 @@ identifiedDecoder key payloadDecoder = D.withCursor $ \c -> do
   o <- D.down c
   accId <- D.fromKey "accountId" accountIdDecoder o
   disp <- D.fromKey "displayName" D.text o
-  nick <- D.try $ D.fromKey "nickname" D.text o
+  nick <- D.fromKey "nickname" (D.maybeOrNull D.text) o
   p <- D.fromKey key payloadDecoder o
   pure $ Identified accId disp nick p
 

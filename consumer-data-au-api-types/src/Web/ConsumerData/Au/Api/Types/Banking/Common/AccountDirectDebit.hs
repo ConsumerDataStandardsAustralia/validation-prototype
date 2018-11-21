@@ -38,9 +38,9 @@ accountDirectDebitDecoder :: Monad f => Decoder f AccountDirectDebit
 accountDirectDebitDecoder = D.withCursor $ \c -> do
   o <- D.down c
   accId <- D.fromKey "accountId" accountIdDecoder o
-  authEntity <- D.try $ D.fromKey "authorisedEntity" authorisedEntityDecoder o
-  lastDebitDT <- D.try $ D.fromKey "lastDebitDateTime" dateTimeStringDecoder o
-  amount <- D.try $ D.fromKey "lastDebitAmount" amountStringDecoder o
+  authEntity <- D.fromKey "authorisedEntity" (D.maybeOrNull authorisedEntityDecoder) o
+  lastDebitDT <- D.fromKey "lastDebitDateTime" (D.maybeOrNull dateTimeStringDecoder) o
+  amount <- D.fromKey "lastDebitAmount" (D.maybeOrNull amountStringDecoder) o
   pure $ AccountDirectDebit accId authEntity lastDebitDT amount
 
 instance JsonDecode OB AccountDirectDebit where

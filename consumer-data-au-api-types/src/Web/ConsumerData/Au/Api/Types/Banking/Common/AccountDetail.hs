@@ -67,14 +67,14 @@ accountDetailDecoder :: Monad f => Decoder f AccountDetail
 accountDetailDecoder = D.withCursor $ \c -> do
   o <- D.down c
   AccountDetail
-    <$> (D.try $ D.focus accountDecoder o)
-    <*> (D.try $ D.fromKey "bundleName" D.text o)
-    <*> (D.try $ D.focus specificAccountDecoder o)
-    <*> (D.try $ D.fromKey "features" accountFeaturesDecoder o)
-    <*> (D.try $ D.fromKey "fees" accountFeesDecoder o)
-    <*> (D.try $ D.fromKey "depositRates" accountDepositRatesDecoder o)
-    <*> (D.try $ D.fromKey "lendingRates" accountLendingRatesDecoder o)
-    <*> (D.try $ D.focus physicalAddressDecoder o)
+    <$> D.focus (D.maybeOrNull accountDecoder) o
+    <*> D.fromKey "bundleName" (D.maybeOrNull D.text) o
+    <*> D.focus (D.maybeOrNull specificAccountDecoder) o
+    <*> D.fromKey "features" (D.maybeOrNull accountFeaturesDecoder) o
+    <*> D.fromKey "fees" (D.maybeOrNull accountFeesDecoder) o
+    <*> D.fromKey "depositRates" (D.maybeOrNull accountDepositRatesDecoder) o
+    <*> D.fromKey "lendingRates" (D.maybeOrNull accountLendingRatesDecoder) o
+    <*> D.focus (D.maybeOrNull physicalAddressDecoder) o
 
 instance JsonDecode OB AccountDetail where
   mkDecoder = tagOb accountDetailDecoder
@@ -139,11 +139,11 @@ termDepositAccountTypeDecoder :: Monad f => Decoder f TermDepositAccountType
 termDepositAccountTypeDecoder = D.withCursor $ \c -> do
   o <- D.down c
   TermDepositAccountType
-    <$> (D.fromKey "lodgementDate" dateStringDecoder o)
-    <*> (D.fromKey "maturityDate" dateStringDecoder o)
-    <*> (D.try $ D.fromKey "maturityAmount" amountStringDecoder o)
-    <*> (D.try $ D.fromKey "maturityCurrency" currencyStringDecoder o)
-    <*> (D.fromKey "maturityInstructions" maturityInstructionsDecoder o)
+    <$> D.fromKey "lodgementDate" dateStringDecoder o
+    <*> D.fromKey "maturityDate" dateStringDecoder o
+    <*> D.fromKey "maturityAmount" (D.maybeOrNull amountStringDecoder) o
+    <*> D.fromKey "maturityCurrency" (D.maybeOrNull currencyStringDecoder) o
+    <*> D.fromKey "maturityInstructions" maturityInstructionsDecoder o
 
 instance JsonDecode OB TermDepositAccountType where
   mkDecoder = tagOb termDepositAccountTypeDecoder
@@ -211,10 +211,10 @@ creditCardAccountTypeDecoder :: Monad f => Decoder f CreditCardAccountType
 creditCardAccountTypeDecoder = D.withCursor $ \c -> do
   o <- D.down c
   CreditCardAccountType
-    <$> (D.fromKey "minPaymentAmount" amountStringDecoder o)
-    <*> (D.fromKey "paymentDueAmount" amountStringDecoder o)
-    <*> (D.try $ D.fromKey "paymentCurrency" currencyStringDecoder o)
-    <*> (D.fromKey "paymentDueDate" dateStringDecoder o)
+    <$> D.fromKey "minPaymentAmount" amountStringDecoder o
+    <*> D.fromKey "paymentDueAmount" amountStringDecoder o
+    <*> D.fromKey "paymentCurrency" (D.maybeOrNull currencyStringDecoder) o
+    <*> D.fromKey "paymentDueDate" dateStringDecoder o
 
 instance JsonDecode OB CreditCardAccountType where
   mkDecoder = tagOb creditCardAccountTypeDecoder
@@ -255,21 +255,21 @@ loanAccountTypeDecoder :: Monad f => Decoder f LoanAccountType
 loanAccountTypeDecoder = D.withCursor $ \c -> do
   o <- D.down c
   LoanAccountType
-    <$> (D.try $ D.fromKey "originalStartDate" dateStringDecoder o)
-    <*> (D.try $ D.fromKey "originalLoanAmount" amountStringDecoder o)
-    <*> (D.try $ D.fromKey "originalLoanCurrency" currencyStringDecoder o)
-    <*> (D.fromKey "loanEndDate" dateStringDecoder o)
-    <*> (D.fromKey "nextInstalmentDate" dateStringDecoder o)
-    <*> (D.fromKey "minInstalmentAmount" amountStringDecoder o)
-    <*> (D.try $ D.fromKey "minInstalmentCurrency" currencyStringDecoder o)
-    <*> (D.try $ D.fromKey "maxRedrawAmount" amountStringDecoder o)
-    <*> (D.try $ D.fromKey "maxRedrawCurrency" currencyStringDecoder o)
-    <*> (D.try $ D.fromKey "minRedrawAmount" amountStringDecoder o)
-    <*> (D.try $ D.fromKey "minRedrawCurrency" currencyStringDecoder o)
-    <*> (D.try $ D.fromKey "offsetAccountEnabled" D.bool o)
-    <*> (D.try $ D.fromKey "offsetAccountId" (D.list accountIdDecoder) o)
-    <*> (D.try $ D.fromKey "repaymentType" repaymentTypeDecoder o)
-    <*> (D.fromKey "repaymentFrequency" durationStringDecoder o)
+    <$> D.fromKey "originalStartDate" (D.maybeOrNull dateStringDecoder) o
+    <*> D.fromKey "originalLoanAmount" (D.maybeOrNull amountStringDecoder) o
+    <*> D.fromKey "originalLoanCurrency" (D.maybeOrNull currencyStringDecoder) o
+    <*> D.fromKey "loanEndDate" dateStringDecoder o
+    <*> D.fromKey "nextInstalmentDate" dateStringDecoder o
+    <*> D.fromKey "minInstalmentAmount" amountStringDecoder o
+    <*> D.fromKey "minInstalmentCurrency" (D.maybeOrNull currencyStringDecoder) o
+    <*> D.fromKey "maxRedrawAmount" (D.maybeOrNull amountStringDecoder) o
+    <*> D.fromKey "maxRedrawCurrency" (D.maybeOrNull currencyStringDecoder) o
+    <*> D.fromKey "minRedrawAmount" (D.maybeOrNull amountStringDecoder) o
+    <*> D.fromKey "minRedrawCurrency" (D.maybeOrNull currencyStringDecoder) o
+    <*> D.fromKey "offsetAccountEnabled" (D.maybeOrNull D.bool) o
+    <*> D.fromKey "offsetAccountId" (D.maybeOrNull (D.list accountIdDecoder)) o
+    <*> D.fromKey "repaymentType" (D.maybeOrNull repaymentTypeDecoder) o
+    <*> D.fromKey "repaymentFrequency" durationStringDecoder o
   -- pure $ LoanAccountType originalStartDate originalLoanAmount originalLoanCurrency
   --   loanEndDate nextInstalmentDate minInstalmentAmount minInstalmentCurrency
   --   maxRedrawAmount maxRedrawCurrency minRedrawAmount minRedrawCurrency
