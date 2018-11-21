@@ -154,7 +154,7 @@ data IdTokenEncryption = IdTokenEncryption
     idTokenAlg :: FapiPermittedAlg
   , idTokenEnc :: Maybe FapiEnc
   }
-  deriving (Generic, ToJSON, FromJSON)
+  deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 -- | JWE @alg@ (and optional @enc@) algorithms for encrypting the UserInfo response sent to the client (server must comply). @none@ is not permitted, unless the client only uses response types that return no ID token from the authorization endpoint (such as when only using the authorization code flow). This is not currently an option in OB.
 --
@@ -164,6 +164,7 @@ data UserInfoEncryption = UserInfoEncryption
     userInfoAlg :: FapiPermittedAlg
   , userInfoEnc :: Maybe FapiEnc
   }
+  deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 data RequestObjectEncryption = RequestObjectEncryption
   {
@@ -279,7 +280,7 @@ data RegistrationRequest = RegistrationRequest {
   , _regReqClientMetaData    :: ClientMetaData
   , _regReqsoftwareStatement :: RegoReqSoftwareStatement -- ^ A signed JWT containing metadata about the client software. RFC7591 mandates that this is a JWS. UK OB mandates this is supplied, and provides them through the OB directory.
   --TODO: Confirm AUD OB does the same, or allows generation.
-}
+} deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 -- | These fields are required iff the AU OB directory generates software statements for the RP to submit during registration (as per the UK OB model). -- TODO: Confirm.
 data JwsSigningHeaders = JwsSigningHeaders
@@ -289,7 +290,7 @@ data JwsSigningHeaders = JwsSigningHeaders
   , _iat :: Maybe NumericDate -- ^ Issued at.
   , _exp :: Maybe NumericDate -- ^ Expiration time.
   , _jti :: Maybe JTI -- ^ JWT ID.
-  }
+} deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 --TODO: Smart constructor for SSA iff RP creates own SSAs
 -- ssSigningData iss =
@@ -324,15 +325,18 @@ data ClientMetaData = ClientMetaData {
   , _scope                          :: Maybe FapiScopes -- ^ A set of scopes, containing at least @openid@`.
   , _softwareId                     :: Maybe SoftwareId -- ^ Unique identifier string for the client, which should remain the same across all instances of the client software, and all versions of the client software. This must match the software ID in the SSA if supplied.
   , _softwareVersion                :: Maybe SoftwareVersion  -- ^  The version number of the software should a TPP choose to register and / or maintain it.
-}
+
+} deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 -- TODO: Collapse this depending on the AU OB spec.
 data RegoReqSoftwareStatement = SuppliedSs T.Text | GenerateSs SoftwareStatement
+  deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 data SoftwareStatement = SoftwareStatement {
     _ssSigningData :: JwsSigningHeaders
   , _ssClaims      :: ClientMetaData -- ^ All the claims to include in the SSA; RFC7591 allows any/all that are included in the request object, however SSA claims take precedence over plain JSON elements (3.1.1).
 }
+  deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 -- | The folowing Software Certificate Assertion fields are specified by UK OB. See <https://openbanking.atlassian.net/wiki/spaces/DZ/pages/36667724/The+OpenBanking+OpenID+Dynamic+Client+Registration+Specification+-+v1.0.0-rc2 §UK OB Spec> for more information) (NB: the OB naming convention deviates from OIDC-R/RFC7591 in that it includes a `software_` prefix in the field keys.)
   -- , _clientId            :: Maybe ClientId -- ^ The Client ID Registered at OB used to access OB resources.

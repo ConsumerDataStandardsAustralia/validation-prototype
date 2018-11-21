@@ -6,23 +6,29 @@
 
 module Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest where
 
-import           Control.Lens        (( # ))
-import           Control.Monad.Catch (Exception, MonadThrow, throwM)
+import           Control.Exception                        (IOException)
+import           Control.Lens                             (( # ))
+import           Control.Monad.Catch
+    (Exception, MonadThrow, throwM)
 import           Crypto.JWT
     (Audience (Audience), NumericDate (..), StringOrURI, string, uri)
-import           Data.Maybe          (isNothing)
-import qualified Data.Set            as Set
-import           Data.Time.Calendar  (fromGregorian)
+import           Data.Aeson
+    (FromJSON (..), Result (..), ToJSON (..), Value, fromJSON)
+import           Data.Maybe                               (isNothing)
+import qualified Data.Set                                 as Set
+import           Data.Time.Calendar                       (fromGregorian)
 import           Data.Time.Clock
-import           Network.URI         (parseURI)
+import           Hedgehog
+    (MonadGen, Property, assert, property, (===))
+import qualified Hedgehog.Gen                             as Gen
+import           Network.URI                              (parseURI)
 import           Text.URI
     (Authority (Authority), RText, RTextLabel (Scheme), URI (URI), mkHost,
     mkScheme, renderStr)
 import           Text.URI.Gens
     (genAuthority, genPathPieces, genScheme, genURI)
-
-import           Hedgehog     (MonadGen, Property, assert, property)
-import qualified Hedgehog.Gen as Gen
+import           Web.ConsumerData.Au.Api.Types.Auth.Error
+    (AsError, _MissingClaim, _ParseError)
 -- `forAllT` should probs be public: https://github.com/hedgehogqa/haskell-hedgehog/issues/203
 import           Hedgehog.Internal.Property (forAllT)
 import qualified Hedgehog.Range             as Range
@@ -40,7 +46,7 @@ test_request =
   [
   testProperty "The 'redirect_urls' smart constructor only accepts https  && !localhost hosts." redirectUrlsValid
   , testProperty "The 'redirect_urls' smart constructor rejects any non-https or localhost hosts." redirectUrlsInvalid
-  , testProperty "Redirect request round-trips to/from JWT." redirectUrlsInvalid
+  , testProperty "Redirect request round-trips to/from JWT." regoRoundTrips
   ]
 
 redirectUrlsValid ::
@@ -56,6 +62,16 @@ redirectUrlsInvalid =
   property $ do
     mRedirectUrl<- redirectUrls <$> forAllT genInvalidRedirectUris
     assert (isNothing mRedirectUrl)
+
+regoRoundTrips::
+  Property
+regoRoundTrips =
+  property $ do
+    regoReq <- forAllT genRegReq
+    regoReq' <- fromVal.toJSON $ regoReq
+    regoReq === regoReq'
+
+instance AsError IOException where
 
 genRegReq::
   ( MonadGen n
@@ -79,9 +95,10 @@ genStringOrUri::
   )
   => n StringOrURI
 genStringOrUri = Gen.choice [(uri #) <$> uri', (string #) <$> str]
-  where m2e = maybe (throwM BadUri) pure
-        uri'= m2e =<< parseURI.renderStr <$> genURI
+  where uri'= m2e BadUri =<< parseURI.renderStr <$> genURI
         str = Gen.string (Range.linear 10 10) Gen.unicode
+
+m2e e = maybe (throwM e) pure
 
 -- Might actually want a relevant time here
 genNumDate ::
@@ -154,12 +171,10 @@ genAlg :: ( MonadGen n , MonadThrow n ) => n FapiPermittedAlg
 genAlg = Gen.element [PS256,ES256]
 
 genGrantTypes :: ( MonadGen n , MonadThrow n ) => n FapiGrantTypes
-genGrantTypes = m2e $ fapiGrantTypes . GrantTypes . Set.fromList $ [AuthorizationCode]
-  where m2e = maybe (throwM BadGrantType) pure
+genGrantTypes = m2e BadGrantType $ fapiGrantTypes . GrantTypes . Set.fromList $ [AuthorizationCode]
 
 genApplicationType :: ( MonadGen n , MonadThrow n ) => n FapiApplicationType
-genApplicationType = m2e =<< fapiApplicationType <$> Gen.element [Web]
-  where m2e = maybe (throwM BadApplicationType) pure
+genApplicationType = m2e BadApplicationType =<< fapiApplicationType <$> Gen.element [Web]
 
 genAuthMeth :: ( MonadGen n , MonadThrow n ) => n FapiTokenEndpointAuthMethod
 genAuthMeth = fapiTokenEndpointAuthMethod <$> (Gen.element [PrivateKeyJwt,ClientSecretJwt] <*> genAlg) >>= maybe (throwM BadAuthMeth) pure
