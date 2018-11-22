@@ -15,6 +15,7 @@ cabal-version:       >=1.10
 library
   exposed-modules:   Web.ConsumerData.Au.LambdaBank.Main
                    , Web.ConsumerData.Au.LambdaBank.FakeData
+                   , Web.ConsumerData.Au.LambdaBank.Server
   -- other-modules:
   -- We probably need to tweak these for more than just GHC 8.4 support.
   build-depends:

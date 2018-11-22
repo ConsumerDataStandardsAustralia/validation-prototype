@@ -1,3 +1,3 @@
 module Main (main) where
 
-import LambdaBank.Main (main)
+import Web.ConsumerData.Au.LambdaBank.Main (main)
