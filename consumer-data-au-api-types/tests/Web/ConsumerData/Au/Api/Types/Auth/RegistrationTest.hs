@@ -8,18 +8,22 @@ module Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest where
 
 import           Control.Exception                        (IOException)
 import           Control.Lens                             (( # ))
+import           Control.Monad                            ((<=<))
 import           Control.Monad.Catch
     (Exception, MonadThrow, throwM)
+import           Control.Monad.Except                     (ExceptT)
 import           Crypto.JWT
-    (Audience (Audience), NumericDate (..), StringOrURI, string, uri)
+    (Audience (Audience), NumericDate (..), StringOrURI, decodeCompact,
+    encodeCompact, string, uri)
 import           Data.Aeson
     (FromJSON (..), Result (..), ToJSON (..), Value, fromJSON)
+import           Data.ByteString.Lazy                     (ByteString)
 import           Data.Maybe                               (isNothing)
 import qualified Data.Set                                 as Set
 import           Data.Time.Calendar                       (fromGregorian)
 import           Data.Time.Clock
 import           Hedgehog
-    (MonadGen, Property, assert, property, (===))
+    (MonadGen, Property, PropertyT, assert, evalExceptT, property, (===))
 import qualified Hedgehog.Gen                             as Gen
 import           Network.URI                              (parseURI)
 import           Text.URI
@@ -28,17 +32,17 @@ import           Text.URI
 import           Text.URI.Gens
     (genAuthority, genPathPieces, genScheme, genURI)
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
-    (AsError, _MissingClaim, _ParseError)
+    (AsError, Error, _MissingClaim, _ParseError)
 -- `forAllT` should probs be public: https://github.com/hedgehogqa/haskell-hedgehog/issues/203
-import           Hedgehog.Internal.Property (forAllT)
-import qualified Hedgehog.Range             as Range
-import           Test.Tasty                 (TestTree)
-import           Test.Tasty.Hedgehog        (testProperty)
-
-import Web.ConsumerData.Au.Api.Types.Auth.Common
+import           Hedgehog.Internal.Property                      (forAllT)
+import qualified Hedgehog.Range                                  as Range
+import           Test.Tasty                                      (TestTree)
+import           Test.Tasty.Hedgehog                             (testProperty)
+import           Web.ConsumerData.Au.Api.Types.Auth.Common
     (FapiPermittedAlg (..), RedirectUri (RedirectUri), ResponseType (..),
     Scope (..), mkScopes)
-import Web.ConsumerData.Au.Api.Types.Auth.Registration
+import           Web.ConsumerData.Au.Api.Types.Auth.Gens
+import           Web.ConsumerData.Au.Api.Types.Auth.Registration
 
 test_request ::
   [TestTree]
@@ -46,7 +50,8 @@ test_request =
   [
   testProperty "The 'redirect_urls' smart constructor only accepts https  && !localhost hosts." redirectUrlsValid
   , testProperty "The 'redirect_urls' smart constructor rejects any non-https or localhost hosts." redirectUrlsInvalid
-  , testProperty "Redirect request round-trips to/from JWT." regoRoundTrips
+  , testProperty "Redirect request round-trips to/from JSON." regoJsonRoundTrips
+  , testProperty "Redirect request round-trips to/from JWT." regoJwtRoundTrips
   ]
 
 redirectUrlsValid ::
@@ -63,13 +68,26 @@ redirectUrlsInvalid =
     mRedirectUrl<- redirectUrls <$> forAllT genInvalidRedirectUris
     assert (isNothing mRedirectUrl)
 
-regoRoundTrips::
+regoJsonRoundTrips ::
   Property
-regoRoundTrips =
+regoJsonRoundTrips =
   property $ do
     regoReq <- forAllT genRegReq
     regoReq' <- fromVal.toJSON $ regoReq
     regoReq === regoReq'
+
+regoJwtRoundTrips::
+  Property
+regoJwtRoundTrips =
+  property $ do
+    rr <- forAllT genRegReq
+    (jwk,alg) <- forAllT genJWK
+    let
+      ar2jwt :: RegistrationRequest -> ExceptT Error (PropertyT IO) ByteString
+      ar2jwt = fmap encodeCompact . regoReqToJwt jwk alg
+      jwt2ar =  jwtToRegoReq (const True) (const True) jwk <=< decodeCompact
+
+    (=== rr) <=< evalExceptT . (jwt2ar <=< ar2jwt) $ rr
 
 --TODO:
 instance AsError IOException where
