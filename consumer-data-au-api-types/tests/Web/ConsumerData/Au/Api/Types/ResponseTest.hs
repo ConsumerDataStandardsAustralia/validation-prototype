@@ -117,4 +117,4 @@ accountsLink pn = links ^.bankingLinks.bankingAccountsLinks.accountsGet.to ($ pn
 complexLink :: Link
 complexLink = links
   ^.bankingLinks.bankingAccountsLinks.accountsByIdLinks
-  .to ($ AccountId 1337).accountTransactionByIdGet.to ($ TransactionId (AsciiString "13"))
+  .to ($ AccountId (AsciiString "1337")).accountTransactionByIdGet.to ($ TransactionId (AsciiString "13"))

@@ -23,6 +23,7 @@ import qualified Waargonaut.Encode                   as E
 data ExtendedTransactionData = ExtendedTransactionData
   { _extendedTransactionDataPayer :: Maybe Text -- ^ Label of the originating payer. Mandatory for an inbound payment.
   , _extendedTransactionDataPayee :: Maybe Text -- ^ Label of the target PayID. Mandatory for an outbound payment.
+  , _extendedTransactionDataExtensionType :: Maybe ExtendedTransactionDataExtensionType -- ^ The type of transaction data extension.
   , _extendedTransactionDataExtendedDescription :: Maybe ExtendedTransactionDataExtendedDescription -- ^ An extended string description. Only present if specified by the extension$type field.
   , _extendedTransactionDataService :: ExtendedTransactionDataService -- ^ Identifier of the applicable overlay service.
   } deriving (Generic, Show, Eq)
@@ -32,15 +33,17 @@ extendedTransactionDataDecoder = D.withCursor $ \c -> do
   o <- D.down c
   payer <- D.fromKey "payer" (D.maybeOrNull D.text) o
   payee <- D.fromKey "payee" (D.maybeOrNull D.text) o
+  et <- D.fromKey "extensionType" (D.maybeOrNull extendedTransactionDataExtensionTypeDecoder) o
   ed <- D.fromKey "extendedDescription"
     (D.maybeOrNull $ ExtendedTransactionDataExtendedDescription <$> D.text) o
   serv <- D.fromKey "service" extendedTransactionDataServiceDecoder o
-  pure $ ExtendedTransactionData payer payee ed serv
+  pure $ ExtendedTransactionData payer payee et ed serv
 
 extendedTransactionDataEncoder :: Encoder' ExtendedTransactionData
-extendedTransactionDataEncoder = E.mapLikeObj $ \(ExtendedTransactionData payer payee ed serv) ->
+extendedTransactionDataEncoder = E.mapLikeObj $ \(ExtendedTransactionData payer payee et ed serv) ->
   E.atKey' "payer" (E.maybeOrNull E.text) payer .
   E.atKey' "payee" (E.maybeOrNull E.text) payee .
+  E.atKey' "extensionType" (E.maybeOrNull extendedTransactionDataExtensionTypeEncoder) et .
   E.atKey' "extendedDescription" (E.maybeOrNull (unExtendedTransactionDataExtendedDescription >$< E.text)) ed .
   E.atKey' "service" extendedTransactionDataServiceEncoder serv
 
@@ -64,6 +67,11 @@ extendedTransactionDataExtensionTypeText =
           "extendedDescription" -> Right ExtendedDescription
           t -> Left t
       )
+
+extendedTransactionDataExtensionTypeDecoder ::
+  Monad f => Decoder f ExtendedTransactionDataExtensionType
+extendedTransactionDataExtensionTypeDecoder =
+  D.prismDOrFail (D.ConversionFailure "Unexpected value in extension$type") extendedTransactionDataExtensionTypeText D.text
 
 extendedTransactionDataExtensionTypeEncoder ::
   Encoder' ExtendedTransactionDataExtensionType
