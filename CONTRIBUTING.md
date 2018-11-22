@@ -4,7 +4,7 @@
 
 You will need to install [nix](https://nixos.org/nix/) for this project, which means using a nix-supported OS (not Windows, not FreeBSD). Using nix will get you all the right versions of GHC and Cabal for free.
 
-We use the [gitflow](https://danielkummer.github.io/git-flow-cheatsheet/) workflow. There are various supporting toolsets available for performing the high-level gitflow operations (`gitAndTools.gitflow` in nix, https://github.com/nvie/gitflow), if you would prefer to avoid using underlying git commands.
+We use the [gitflow](https://danielkummer.github.io/git-flow-cheatsheet/) workflow. There are various supporting toolsets available for performing the high-level gitflow operations, if you would prefer to avoid using underlying git commands (`gitAndTools.gitflow` in nix, https://github.com/nvie/gitflow).
 
 ## Making Changes
 
