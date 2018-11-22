@@ -1,0 +1,10 @@
+/dist
+/dist-newstyle
+*.tags
+.nvimrc
+.ghci
+*.hi
+*.o
+*.dyn_hi
+*.dyn_o
+/result
