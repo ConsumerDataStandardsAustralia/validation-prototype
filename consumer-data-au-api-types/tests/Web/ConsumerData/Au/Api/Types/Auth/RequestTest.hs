@@ -48,10 +48,8 @@ roundTripAuthRequest ::
 roundTripAuthRequest =
   property $ do
     ar <- forAllT genAuthRequest
-    jwk <- forAllT genJWK
+    (jwk,alg) <- forAllT genJWK
     let
-      alg = signingAlg (jwk ^. JWK.jwkMaterial)
-
       mkJwt :: AuthorisationRequest -> ExceptT Error (PropertyT IO) ByteString
       mkJwt = fmap encodeCompact . authRequestToJwt jwk alg
 
