@@ -12,8 +12,8 @@ maintainer:          contact@qfpl.io
 copyright:           Commonwealth Science and Industrial Research Organisation, 2018
 category:            Web
 build-type:          Simple
-extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
+tested-with:         GHC == 8.4.4
 
 library
   exposed-modules:
