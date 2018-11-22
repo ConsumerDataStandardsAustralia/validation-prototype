@@ -5,15 +5,14 @@
 
 module Web.ConsumerData.Au.Api.Types.Auth.RequestTest where
 
-import           Control.Lens           (( # ), (^.))
-import           Control.Monad          ((<=<))
-import           Control.Monad.Catch    (Exception, MonadThrow, throwM)
-import           Control.Monad.Except   (ExceptT)
-import           Control.Monad.IO.Class (MonadIO, liftIO)
+import           Control.Lens         (( # ), (^.))
+import           Control.Monad        ((<=<))
+import           Control.Monad.Catch  (Exception, MonadThrow, throwM)
+import           Control.Monad.Except (ExceptT)
 import           Crypto.JOSE
     (Alg (ES256, PS256), decodeCompact, encodeCompact)
-import qualified Crypto.JOSE.JWK        as JWK
-import           Crypto.JWT             (Audience (Audience), string, uri)
+import qualified Crypto.JOSE.JWK      as JWK
+import           Crypto.JWT           (Audience (Audience), string, uri)
 -- import           Data.Aeson             (encode, eitherDecode')
 import Data.ByteString.Lazy (ByteString)
 import Network.URI          (parseURI)
@@ -22,16 +21,17 @@ import           Hedgehog
     (MonadGen, Property, PropertyT, evalExceptT, property, (===))
 import qualified Hedgehog.Gen as Gen
 -- `forAllT` should probs be public: https://github.com/hedgehogqa/haskell-hedgehog/issues/203
-import           Hedgehog.Internal.Property (forAllT)
-import qualified Hedgehog.Range             as Range
-import           Test.Tasty                 (TestTree)
-import           Test.Tasty.Hedgehog        (testProperty)
-
-import Text.URI.Gens                                 (genURI)
-import Web.ConsumerData.Au.Api.Types.Auth.Gens (genClaims)
+import           Hedgehog.Internal.Property              (forAllT)
+import qualified Hedgehog.Range                          as Range
+import           Test.Tasty                              (TestTree)
+import           Test.Tasty.Hedgehog                     (testProperty)
+import           Text.URI.Gens                           (genURI)
+import           Web.ConsumerData.Au.Api.Types.Auth.Gens (genJWK)
+import           Web.ConsumerData.Au.Api.Types.Auth.Gens (genClaims)
 
 import Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
-    (AuthorisationRequest (AuthorisationRequest), authRequestToJwt, jwtToAuthRequest)
+    (AuthorisationRequest (AuthorisationRequest), authRequestToJwt,
+    jwtToAuthRequest)
 import Web.ConsumerData.Au.Api.Types.Auth.Common
     (ClientId (ClientId), Nonce (Nonce), RedirectUri (RedirectUri),
     ResponseType (CodeIdToken), Scope (..), mkScopes)
@@ -104,21 +104,3 @@ signingAlg = \case
   JWK.ECKeyMaterial _ -> ES256
   _ -> PS256
 
-genJWK ::
-  ( MonadGen n
-  , MonadIO n
-  )
-  => n JWK.JWK
-genJWK =
-  genKeyMaterial >>= liftIO . JWK.genJWK
-
--- | Valid key material dictated by allowed signing algorithms (see 'signingAlg') and the
--- <https://github.com/frasertweedale/hs-jose/blob/18865d7af9d3b16d737f38579643399cf4facc1b/src/Crypto/JOSE/JWA/JWK.hs#L610 JWK module in @jose@>
-genKeyMaterial ::
-  MonadGen n
-  => n JWK.KeyMaterialGenParam
-genKeyMaterial =
-  Gen.choice
-    [ pure (JWK.ECGenParam JWK.P_256)
-    , JWK.RSAGenParam <$> Gen.int (Range.linear (2048 `div` 8) (4096 `div` 8))
-    ]
