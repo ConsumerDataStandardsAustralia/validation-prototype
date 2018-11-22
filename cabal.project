@@ -1,5 +1,5 @@
 packages:
   consumer-data-au-api-types
-  consumer-data-au-api-bank
+  consumer-data-au-lambdabank
 
 haddock-css: ../haddock.css

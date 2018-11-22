@@ -5,7 +5,7 @@
 , text, time, transformers, wai, warp
 }:
 mkDerivation {
-  pname = "consumer-data-au-api-bank";
+  pname = "consumer-data-au-lambdabank";
   version = "0.1.0.0";
   src = ./.;
   isLibrary = true;
