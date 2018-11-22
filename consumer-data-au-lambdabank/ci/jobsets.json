@@ -3,7 +3,7 @@
     "hidden": false,
     "description": "jobsets",
     "nixexprinput": "conformance-develop",
-    "nixexprpath": "consumer-data-au-api-bank/ci/jobsets.nix",
+    "nixexprpath": "consumer-data-au-lambdabank/ci/jobsets.nix",
     "checkinterval": 300,
     "schedulingshares": 1,
     "enableemail": false,

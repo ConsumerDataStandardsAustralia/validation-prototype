@@ -5,12 +5,12 @@
     EOF
     cat > $out <<EOF
     {
-        "consumer-data-au-api-bank": {
+        "consumer-data-au-lambdabank": {
             "enabled": 1,
             "hidden": false,
-            "description": "consumer-data-au-api-bank",
+            "description": "consumer-data-au-lambdabank",
             "nixexprinput": "conformance-develop",
-            "nixexprpath": "consumer-data-au-api-bank/ci/ci.nix",
+            "nixexprpath": "consumer-data-au-lambdabank/ci/ci.nix",
             "checkinterval": 300,
             "schedulingshares": 1,
             "enableemail": false,

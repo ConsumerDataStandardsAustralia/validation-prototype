@@ -22,9 +22,9 @@ let
             compiler = configuration.compiler;
             system = configuration.system;
             nixpkgs = { pkgs = pkgsFor system; };
-            consumer-data-au-api-bank = import ../default.nix { inherit nixpkgs compiler; };
+            consumer-data-au-lambdabank = import ../default.nix { inherit nixpkgs compiler; };
           in
-            consumer-data-au-api-bank
+            consumer-data-au-lambdabank
       ) configurations;
 in
 jobs

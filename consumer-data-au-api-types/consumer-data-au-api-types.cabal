@@ -30,6 +30,7 @@ library
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.Common
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.RefreshToken
+                     , Web.ConsumerData.Au.Api.Types.Auth.Registration
                      , Web.ConsumerData.Au.Api.Types.Auth.Error
                      , Web.ConsumerData.Au.Api.Types.Banking
                      , Web.ConsumerData.Au.Api.Types.Banking.Accounts
@@ -86,7 +87,7 @@ library
                      , aeson == 1.3.*
                      , base64-bytestring == 1.0.*
                      , bytestring == 0.10.*
-                     , constraints
+                     , constraints == 0.10.*
                      , containers == 0.5.*
                      , contravariant == 1.4.*
                      , country == 0.1.*
@@ -94,7 +95,7 @@ library
                      , dependent-map == 0.2.*
                      , dependent-sum == 0.4.*
                      , dependent-sum-template == 0.0.*
-                     , errors
+                     , errors == 2.*
                      , exceptions == 0.10.*
                      , ghc-prim == 0.5.*
                      , jose == 0.7.*
@@ -104,157 +105,66 @@ library
                      , modern-uri == 0.2.*
                      , monad-time == 0.3.*
                      , mtl == 2.2.*
-                     , nat
+                     , nat == 0.3.*
                      , network-uri == 2.6.*
                      , semigroupoids
                      , servant == 0.14.*
                      , servant-client == 0.14.*
                      , servant-client-core == 0.14.*
                      , servant-waargonaut
-                     , tagged
+                     , tagged == 0.8.*
                      , template-haskell == 2.13.*
                      , text == 1.2.*
                      , time >= 1.8 && < 1.10
                      , transformers == 0.5.*
                      , unordered-containers == 0.2.*
-                     , waargonaut
+                     , waargonaut == 0.3.*
   hs-source-dirs:      src
   default-language:    Haskell2010
 
 test-suite tasty
   type:                exitcode-stdio-1.0
-  hs-source-dirs:      src, tests
+  hs-source-dirs:      tests
   main-is:             Main.hs
   ghc-options:         -Wall -Werror
-  -- Please copy paste build-depends from the library here until `cabal2nix` understands common
-  -- stanzas. When that happens we can at least factor out this dupe.
   build-depends:
                        base == 4.11.*
+                     , consumer-data-au-api-types
                      , aeson == 1.3.*
                      , aeson-diff == 1.1.*
-                     , base64-bytestring == 1.0.*
+                     , attoparsec == 0.13.*
                      , bytestring == 0.10.*
-                     , constraints
                      , containers == 0.5.*
-                     , contravariant == 1.4.*
                      , country == 0.1.*
-                     , cryptonite == 0.25.*
                      , dependent-map == 0.2.*
                      , dependent-sum == 0.4.*
-                     , dependent-sum-template == 0.0.*
-                     , errors
                      , exceptions == 0.10.*
-                     , ghc-prim == 0.5.*
+                     , hedgehog == 0.6.*
+                     , http-client == 0.5.*
                      , jose == 0.7.*
                      , lens == 4.16.*
-                     , memory == 0.14.*
-                     , mmorph == 1.1.*
-                     , modern-uri == 0.2.*
-                     , monad-time == 0.3.*
                      , mtl == 2.2.*
-                     , nat
+                     , modern-uri == 0.2.*
                      , network-uri == 2.6.*
+                     , profunctors == 5.*
                      , servant == 0.14.*
                      , servant-client == 0.14.*
-                     , servant-client-core == 0.14.*
-                     , tagged
-                     , semigroupoids
-                     , servant-waargonaut
-                     , template-haskell == 2.13.*
-                     , text == 1.2.*
-                     , time >= 1.8 && < 1.10
-                     , transformers == 0.5.*
-                     , unordered-containers == 0.2.*
-                     , waargonaut
-                     , attoparsec
-
-  -----------------------------------------------------------
-  --                 TEST DEPS START HERE
-  -----------------------------------------------------------
-                     , aeson-pretty == 0.8.*
-                     , hedgehog == 0.6.*
-                     , hspec
-                     , http-client == 0.5.*
-                     , profunctors
                      , servant-server == 0.14.*
+                     , servant-waargonaut == 0.2.*
+                     , tagged == 0.8.*
                      , tasty == 1.1.*
                      , tasty-discover == 4.2.*
                      , tasty-golden == 2.*
                      , tasty-hedgehog == 0.2.*
                      , tasty-hunit == 0.10.*
-                     , temporary-rc == 1.2.*
-                     , wai
-                     , warp
+                     , text == 1.2.*
+                     , time >= 1.8 && < 1.10
+                     , transformers == 0.5.*
+                     , wai == 3.2.*
+                     , waargonaut == 0.3.*
+                     , warp == 3.2.*
   other-modules:
-  -- Please copy paste exposed-modules from the library to this section. Gross.
-                       Country.Waargonaut
-                     , Data.GADT.Aeson
-                     , Data.GADT.Aeson.TH
-                     , Data.GADT.Tag.TH
-                     , Data.Time.Waargonaut
-                     , Web.ConsumerData.Au.Api.Client
-                     , Web.ConsumerData.Au.Api.Types
-                     , Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
-                     , Web.ConsumerData.Au.Api.Types.Auth.Common
-                     , Web.ConsumerData.Au.Api.Types.Auth.Common.AccessToken
-                     , Web.ConsumerData.Au.Api.Types.Auth.Common.Common
-                     , Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
-                     , Web.ConsumerData.Au.Api.Types.Auth.Common.RefreshToken
-                     , Web.ConsumerData.Au.Api.Types.Auth.Error
-                     , Web.ConsumerData.Au.Api.Types.Auth.Registration
-                     , Web.ConsumerData.Au.Api.Types.Banking
-                     , Web.ConsumerData.Au.Api.Types.Banking.Accounts
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDetail
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransaction
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.AuthorisedEntity
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.ExtendedTransactionData
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.Identified
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.PayeeDetail
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.Payees
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionBasic
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionDetail
-                     , Web.ConsumerData.Au.Api.Types.Banking.Payees
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.ProductDetail
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.Products
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.DepositRate
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.Discount
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.Feature
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.Fee
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.LendingRate
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.AdditionalValue
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Constraint
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.DepositRate
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Discount
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Eligibility
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Feature
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Fee
-                     , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.LendingRate
-                     , Web.ConsumerData.Au.Api.Types.Banking.Products
-                     , Web.ConsumerData.Au.Api.Types.Common
-                     , Web.ConsumerData.Au.Api.Types.Common.Customer
-                     , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.CustomerDetailResponse
-                     , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.CustomerResponse
-                     , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.EmailAddress
-                     , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.Organisation
-                     , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.OrganisationDetail
-                     , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.Person
-                     , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.PersonDetail
-                     , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.PhoneNumber
-                     , Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
-                     , Web.ConsumerData.Au.Api.Types.Data.PhysicalAddress
-                     , Web.ConsumerData.Au.Api.Types.Response
-                     , Web.ConsumerData.Au.Api.Types.Stub
-                     , Web.ConsumerData.Au.Api.Types.SumTypeHelpers
-                     , Web.ConsumerData.Au.Api.Types.Tag
-
-  --------------------------------------------------------------
-  --                 TEST MODULES START HERE
-  --------------------------------------------------------------
-                     , Data.Time.Gens
+                       Data.Time.Gens
                      , Text.URI.Gens
                      , WaargoRoundTrip
                      , Web.ConsumerData.Au.Api.Types.Auth.Gens
@@ -264,7 +174,6 @@ test-suite tasty
                      , Web.ConsumerData.Au.Api.Types.Banking.Gens
                      , Web.ConsumerData.Au.Api.Types.Banking.PayeesTest
                      , Web.ConsumerData.Au.Api.Types.Common.CustomerTest
-                     , Web.ConsumerData.Au.Api.Types.FakeServer
                      , Web.ConsumerData.Au.Api.Types.ResponseTest
                      , WaaaargonautTest
   default-language:    Haskell2010
