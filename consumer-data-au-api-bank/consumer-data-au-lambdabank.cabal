@@ -1,4 +1,4 @@
-name:                consumer-data-au-api-bank
+name:                consumer-data-au-lambdabank
 version:             0.1.0.0
 synopsis:            Mock bank for the Australian Consumer Data Rights Specification
 description:         See https://github.com/ConsumerDataStandardsAustralia/standards for more details.
@@ -13,8 +13,8 @@ extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
 library
-  exposed-modules:
-                       LambdaBank.Main
+  exposed-modules:   Web.ConsumerData.Au.LambdaBank.Main
+                   , Web.ConsumerData.Au.LambdaBank.FakeData
   -- other-modules:
   -- We probably need to tweak these for more than just GHC 8.4 support.
   build-depends:
@@ -22,45 +22,54 @@ library
                      , aeson == 1.3.*
                      , bytestring == 0.10.*
                      , consumer-data-au-api-types
+                     , country == 0.1.*
+                     , lens == 4.16.*
+                     , modern-uri == 0.2.*
+                     , profunctors == 5.*
                      , servant == 0.14.*
                      , servant-server == 0.14.*
+                     , text == 1.2.*
+                     , time >= 1.8 && < 1.10
+                     , wai == 3.2.*
+                     , warp == 3.2.*
   hs-source-dirs:      src
   default-language:    Haskell2010
 
 executable lambda-bank
   build-depends:
                        base == 4.11.*
-                     , consumer-data-au-api-bank
-  other-modules:       LambdaBank.Main
-  hs-source-dirs:      src
+                     , consumer-data-au-lambdabank
+  --other-modules:
+  hs-source-dirs:      exe
   main-is:             Main.hs
   ghc-options:         -Wall -Werror
   default-language:    Haskell2010
 
 test-suite tasty
   type:                exitcode-stdio-1.0
-  hs-source-dirs:      src, tests
+  hs-source-dirs:      tests
   main-is:             Tests.hs
   ghc-options:         -Wall -Werror
-  -- Please copy paste build-depends from the library here until `cabal2nix` understands common
-  -- stanzas. When that happens we can at least factor out this dupe.
   build-depends:
                        base == 4.11.*
-                     , aeson == 1.3.*
-                     , bytestring == 0.10.*
+                     , consumer-data-au-lambdabank
                      , consumer-data-au-api-types
-                     , servant == 0.14.*
-                     , servant-server == 0.14.*
-
-  -----------------------------------------------------------
-  --                 TEST DEPS START HERE
-  -----------------------------------------------------------
+                     , exceptions == 0.10.*
                      , hedgehog == 0.6.*
-                     , hspec
+                     , http-client == 0.5.*
+                     , lens == 4.16.*
+                     , modern-uri == 0.2.*
+                     , servant-client == 0.14.*
                      , tasty == 1.1.*
                      , tasty-discover == 4.2.*
                      , tasty-golden == 2.*
                      , tasty-hedgehog == 0.2.*
                      , tasty-hunit == 0.10.*
-  other-modules:       
+                     , transformers == 0.5.*
+                     , text == 1.2.*
+  other-modules:  Web.ConsumerData.Au.LambdaBank.Banking.AccountsTest
+                  Web.ConsumerData.Au.LambdaBank.Banking.PayeesTest
+                  Web.ConsumerData.Au.LambdaBank.Common.CustomerTest
+                  Web.ConsumerData.Au.LambdaBank.WithServer
+
   default-language:    Haskell2010
