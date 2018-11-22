@@ -6,6 +6,7 @@
 module Web.ConsumerData.Au.Api.Types.Banking.PayeesTest where
 
 import Control.Lens
+
 import Control.Monad.IO.Class   (liftIO)
 import Data.Functor.Identity    (Identity)
 import Data.Tagged              (Tagged)
