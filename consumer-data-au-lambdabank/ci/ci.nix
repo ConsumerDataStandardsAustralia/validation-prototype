@@ -11,7 +11,7 @@ let
     pkgs.lib.listToAttrs (
       pkgs.lib.concatMap (compiler:
         pkgs.lib.concatMap (system:
-          [{name = "haskell.packages." + compiler + ".consumer-data-au-api-bank." + system ; value = {inherit compiler system;};}]
+          [{name = "haskell.packages." + compiler + ".consumer-data-au-lambdabank." + system ; value = {inherit compiler system;};}]
         ) supportedSystems
       ) supportedCompilers
     );
@@ -22,9 +22,9 @@ let
             compiler = configuration.compiler;
             system = configuration.system;
             nixpkgs = { pkgs = pkgsFor system; };
-            consumer-data-au-api-bank = import ../default.nix { inherit nixpkgs compiler; };
+            consumer-data-au-lambdabank = import ../default.nix { inherit nixpkgs compiler; };
           in
-            consumer-data-au-api-bank
+            consumer-data-au-lambdabank
       ) configurations;
 in
 jobs
