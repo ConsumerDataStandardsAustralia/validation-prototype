@@ -3,7 +3,7 @@
     "hidden": false,
     "description": "jobsets",
     "nixexprinput": "conformance-develop",
-    "nixexprpath": "consumer-data-au-lambdabank/ci/jobsets.nix",
+    "nixexprpath": "ci/jobsets.nix",
     "checkinterval": 300,
     "schedulingshares": 1,
     "enableemail": false,
@@ -12,7 +12,7 @@
     "inputs": {
         "conformance-develop": {
             "type": "git",
-            "value": "https://github.com/ConsumerDataStandardsAustralia/conformance develop",
+            "value": "https://github.com/ConsumerDataStandardsAustralia/conformance feature/top-level-ci",
             "emailresponsible": false
         },
         "nixpkgs": {
