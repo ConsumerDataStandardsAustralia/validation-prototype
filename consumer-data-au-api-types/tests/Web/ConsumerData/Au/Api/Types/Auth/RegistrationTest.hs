@@ -6,7 +6,6 @@
 
 module Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest where
 
-import           Control.Exception                        (IOException)
 import           Control.Lens                             (( # ))
 import           Control.Monad                            ((<=<))
 import           Control.Monad.Catch
@@ -16,14 +15,16 @@ import           Crypto.JWT
     (Audience (Audience), NumericDate (..), StringOrURI, decodeCompact,
     encodeCompact, string, uri)
 import           Data.Aeson
-    (FromJSON (..), Result (..), ToJSON (..), Value, fromJSON)
+    (FromJSON (..), Result (..), ToJSON (..), Value, eitherDecode, encode,
+    fromJSON)
 import           Data.ByteString.Lazy                     (ByteString)
 import           Data.Maybe                               (isNothing)
 import qualified Data.Set                                 as Set
 import           Data.Time.Calendar                       (fromGregorian)
 import           Data.Time.Clock
 import           Hedgehog
-    (MonadGen, Property, PropertyT, assert, evalExceptT, property, (===))
+    (MonadGen, Property, PropertyT, assert, evalEither, evalExceptT, property,
+    (===))
 import qualified Hedgehog.Gen                             as Gen
 import           Network.URI                              (parseURI)
 import           Text.URI
@@ -73,7 +74,7 @@ regoJsonRoundTrips ::
 regoJsonRoundTrips =
   property $ do
     regoReq <- forAllT genRegReq
-    regoReq' <- fromVal.toJSON $ regoReq
+    regoReq'<- evalEither.eitherDecode.encode $ regoReq
     regoReq === regoReq'
 
 regoJwtRoundTrips::
@@ -86,11 +87,7 @@ regoJwtRoundTrips =
       ar2jwt :: RegistrationRequest -> ExceptT Error (PropertyT IO) ByteString
       ar2jwt = fmap encodeCompact . regoReqToJwt jwk alg
       jwt2ar =  jwtToRegoReq (const True) (const True) jwk <=< decodeCompact
-
     (=== rr) <=< evalExceptT . (jwt2ar <=< ar2jwt) $ rr
-
---TODO:
-instance AsError IOException where
 
 genRegReq::
   ( MonadGen n
@@ -125,7 +122,6 @@ m2e e = maybe (throwM e) pure
 -- Might actually want a relevant time here
 genNumDate ::
   ( MonadGen n
-  , MonadThrow n
   )
   => n NumericDate
 genNumDate = NumericDate . utc <$> Gen.integral (Range.linear 1 31)
@@ -140,9 +136,7 @@ genAud::
 genAud = Audience <$> Gen.list (Range.linear 10 10) genStringOrUri
 
 genJti ::
-  ( MonadGen n
-  , MonadThrow n
-  )
+  ( MonadGen n)
   => n JTI
 genJti  = JTI <$> Gen.text (Range.linear 10 10) Gen.unicode
 
@@ -189,7 +183,7 @@ genSs::
   => n SoftwareStatement
 genSs = SoftwareStatement <$> genJwtHeaders <*> genMeta
 
-genAlg :: ( MonadGen n , MonadThrow n ) => n FapiPermittedAlg
+genAlg :: ( MonadGen n ) => n FapiPermittedAlg
 genAlg = Gen.element [PS256,ES256]
 
 genGrantTypes :: ( MonadGen n , MonadThrow n ) => n FapiGrantTypes
@@ -198,19 +192,19 @@ genGrantTypes = m2e BadGrantType $ fapiGrantTypes . GrantTypes . Set.fromList $ 
 genApplicationType :: ( MonadGen n , MonadThrow n ) => n FapiApplicationType
 genApplicationType = m2e BadApplicationType =<< fapiApplicationType <$> Gen.element [Web]
 
-genAuthMeth :: ( MonadGen n , MonadThrow n ) => n FapiTokenEndpointAuthMethod
+genAuthMeth :: ( MonadGen n , MonadThrow n) => n FapiTokenEndpointAuthMethod
 genAuthMeth = fapiTokenEndpointAuthMethod <$> (Gen.element [PrivateKeyJwt,ClientSecretJwt] <*> genAlg) >>= maybe (throwM BadAuthMeth) pure
 
-genScript :: ( MonadGen n , MonadThrow n ) => n Script
+genScript :: ( MonadGen n ) => n Script
 genScript = Script DefaultLang <$> Gen.text (Range.linear 10 10) Gen.unicode
 
 genScriptUri :: ( MonadGen n , MonadThrow n ) => n ScriptUri
 genScriptUri = ScriptUri DefaultLang <$> genURI
 
-genContacts :: ( MonadGen n , MonadThrow n ) => n RegistrationContacts
+genContacts :: ( MonadGen n ) => n RegistrationContacts
 genContacts = RegistrationContacts <$> Gen.list (Range.linear 10 10) (EmailAddress <$> Gen.text (Range.linear 10 10) Gen.unicode)
 
-genSubjectType :: ( MonadGen n , MonadThrow n ) => n SubjectType
+genSubjectType :: ( MonadGen n ) => n SubjectType
 genSubjectType = Gen.element [Pairwise, Public]
 
 genJwks :: ( MonadGen n , MonadThrow n ) => n JwkSet
@@ -219,19 +213,19 @@ genJwks = Gen.choice [JwksRef . JwksUri <$> genURI , JwksVal <$> Gen.text (Range
 genRequestUris :: ( MonadGen n , MonadThrow n ) => n RequestUris
 genRequestUris = RequestUris <$> (map RequestUri <$> Gen.list (Range.linear 10 10) genURI)
 
-genEnc :: ( MonadGen n , MonadThrow n ) => n FapiEnc
+genEnc :: ( MonadGen n ) => n FapiEnc
 genEnc = Gen.element [A128CBC_HS256 , A192CBC_HS384 , A256CBC_HS512 , A128GCM , A192GCM , A256GCM]
 
-genResponseTypes :: ( MonadGen n , MonadThrow n ) => n FapiResponseTypes
+genResponseTypes :: ( MonadGen n ) => n FapiResponseTypes
 genResponseTypes = FapiResponseTypes <$> genSubs [CodeIdToken, CodeIdTokenToken]
 
-genSubs  :: ( MonadGen n , MonadThrow n ) => [a] -> n [a]
+genSubs  :: ( MonadGen n) => [a] -> n [a]
 genSubs as = Gen.shuffle as >>= Gen.subsequence
 
-genAcr :: ( MonadGen n , MonadThrow n ) => n FapiAcrValues
+genAcr :: ( MonadGen n) => n FapiAcrValues
 genAcr = FapiAcrValues <$> Gen.text (Range.linear 10 10) Gen.unicode
 
-genScopes :: ( MonadGen n , MonadThrow n ) => n FapiScopes
+genScopes :: ( MonadGen n ) => n FapiScopes
 genScopes = FapiScopes . mkScopes . Set.fromList <$> genSubs  [ ProfileScope, EmailScope]
 
 genUrlHttps::
