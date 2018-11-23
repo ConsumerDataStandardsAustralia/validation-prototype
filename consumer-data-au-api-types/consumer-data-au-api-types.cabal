@@ -22,7 +22,6 @@ library
                      , Data.GADT.Aeson.TH
                      , Data.GADT.Tag.TH
                      , Data.Time.Waargonaut
-                     , Web.ConsumerData.Au.Api.Client
                      , Web.ConsumerData.Au.Api.Types
                      , Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
                      , Web.ConsumerData.Au.Api.Types.Auth.Common

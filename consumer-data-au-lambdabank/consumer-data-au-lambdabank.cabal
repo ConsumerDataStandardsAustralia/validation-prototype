@@ -23,6 +23,7 @@ library
                      , aeson == 1.3.*
                      , bytestring == 0.10.*
                      , consumer-data-au-api-types
+                     , consumer-data-au-api-client
                      , country == 0.1.*
                      , lens == 4.16.*
                      , modern-uri == 0.2.*
@@ -55,6 +56,7 @@ test-suite tasty
                        base == 4.11.*
                      , consumer-data-au-lambdabank
                      , consumer-data-au-api-types
+                     , consumer-data-au-api-client
                      , exceptions == 0.10.*
                      , hedgehog == 0.6.*
                      , http-client == 0.5.*
