@@ -26,13 +26,14 @@ import           Crypto.JOSE.JWS
 import           Crypto.JWT
     (AsJWTError, Audience, ClaimsSet, JWT, NumericDate, SignedJWT, StringOrURI,
     claimAud, claimIss, decodeCompact, defaultJWTValidationSettings,
-    emptyClaimsSet, issuerPredicate, signClaims, unregisteredClaims,
-    verifyClaims)
+    emptyClaimsSet, encodeCompact, issuerPredicate, signClaims,
+    unregisteredClaims, verifyClaims)
 import           Crypto.Random.Types                       (MonadRandom)
 import           Data.Aeson
     (FromJSON (..), Result (..), ToJSON (..), Value, fromJSON)
 import           Data.ByteString.Base64                    as B64
-import           Data.ByteString.Lazy                      as BSL (fromStrict)
+import           Data.ByteString.Lazy                      as BSL
+    (fromStrict, toStrict)
 import           Data.HashMap.Strict                       (HashMap)
 import qualified Data.HashMap.Strict                       as M
 import           Data.Set                                  (Set, isSubsetOf)
@@ -522,7 +523,7 @@ regoReqToJwt jwk alg rr =
     -- sign the software statement and encode it as a b64 string
     ssb64 <- case _regReqsoftwareStatement rr of
                   SuppliedSs ss -> return $ toJSON ss
-                  GenerateSs ss -> jwtToJson =<< signClaims jwk (newJWSHeader ((), alg)) (ssClaims ss)
+                  GenerateSs ss -> jwtToJson <$> signClaims jwk (newJWSHeader ((), alg)) (ssClaims ss)
     -- .. and now sign the rego reuest
     signClaims jwk (newJWSHeader ((), alg)) (reqClaims ssb64)
 
@@ -574,9 +575,9 @@ getSigningHeaders claims = do
     where
     getRegClaim g name cs = cs ^. g & maybeErrors (_MissingClaim # name)
 
--- convert a signed jwt to JSON, encode it, then back to a json Value
-jwtToJson :: (AsError e, MonadError e f, ToJSON a) => a -> f Value
-jwtToJson j = toJSON . TE.decodeUtf8 . B64.encode . TE.encodeUtf8 <$> fromVal (toJSON j)
+-- convert a signed jwt to JSON, encode it, then make it a json Value (for a claim)
+jwtToJson :: SignedJWT -> Value
+jwtToJson = toJSON . TE.decodeUtf8 . B64.encode . BSL.toStrict . encodeCompact
 
 instance ToJSON (JWT (a JWSHeader)) where
   toJSON = toJSON
