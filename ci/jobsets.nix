@@ -17,7 +17,7 @@ let
       "inputs": {
           "conformance-develop": {
             "type": "git",
-            "value": "https://github.com/ConsumerDataStandardsAustralia/conformance feature/top-level-ci",
+            "value": "https://github.com/ConsumerDataStandardsAustralia/conformance develop",
             "emailresponsible": false
           },
           "nixpkgs": {
