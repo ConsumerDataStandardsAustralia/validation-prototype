@@ -11,7 +11,7 @@ let
     pkgs.lib.listToAttrs (
       pkgs.lib.concatMap (compiler:
         pkgs.lib.concatMap (system:
-          [{name = "haskell.packages." + compiler + ".lambda-bank." + system ; value = {inherit compiler system;};}]
+          [{name = "consumer-data-au-lambdabank:" + compiler + ":" + system; value = {inherit compiler system;};}]
         ) supportedSystems
       ) supportedCompilers
     );
