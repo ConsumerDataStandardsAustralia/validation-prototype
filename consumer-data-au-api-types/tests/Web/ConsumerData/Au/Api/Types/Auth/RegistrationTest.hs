@@ -35,6 +35,7 @@ import           Text.URI.Gens
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, Error, _MissingClaim, _ParseError)
 -- `forAllT` should probs be public: https://github.com/hedgehogqa/haskell-hedgehog/issues/203
+import           Control.Monad.Except                            (runExceptT)
 import           Hedgehog.Internal.Property                      (forAllT)
 import qualified Hedgehog.Range                                  as Range
 import           Test.Tasty                                      (TestTree)
@@ -88,6 +89,14 @@ regoJwtRoundTrips =
       ar2jwt = fmap encodeCompact . regoReqToJwt jwk alg
       jwt2ar =  jwtToRegoReq (const True) (const True) jwk <=< decodeCompact
     (=== rr) <=< evalExceptT . (jwt2ar <=< ar2jwt) $ rr
+
+showround :: IO (Either Error RegistrationRequest)
+showround = do
+  rr <- sampleT genRegReq
+  (jwk,alg) <- sampleT genJWK
+  let ar2jwt = fmap encodeCompact . regoReqToJwt jwk alg
+      jwt2ar =  jwtToRegoReq (const True) (const True) jwk <=< decodeCompact
+  runExceptT $ (jwt2ar <=< ar2jwt) rr
 
 genRegReq::
   ( MonadGen n
