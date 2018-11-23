@@ -1,0 +1,85 @@
+{
+  "data": {
+    "productId": "string",
+    "effectiveFrom": "2018-11-01T05:33:52Z",
+    "effectiveTo": "2018-11-01T05:33:52Z",
+    "lastUpdated": "2018-11-01T05:33:52Z",
+    "productCategory": "PERS_AT_CALL_DEPOSITS",
+    "name": "string",
+    "description": "string",
+    "applicationUri": "http://example.com/",
+    "isNegotiable": true,
+    "additionalInformation": {
+      "overviewUri": "http://example.com/",
+      "termsUri": "http://example.com/",
+      "eligibilityUri": "http://example.com/",
+      "feesAndPricingUri": "http://example.com/",
+      "bundleUri": "http://example.com/"
+    },
+    "bundles":[
+    ],
+    "features": [
+      {
+        "featureType": "DEBIT_CARD",
+        "discountType": "DEBIT_CARD"
+      }
+    ],
+    "fees": [
+      {
+        "name": "string",
+        "feeType": "PERIODIC",
+        "amount": 0,
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "discounts": [
+          {
+            "discountType": "BALANCE",
+            "additionalValue": 0
+          }
+        ],
+        "additionalValue": "DAILY"
+      }
+    ],
+    "depositRates": [
+      {
+        "rate": "string",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "depositRateType": "FIXED",
+        "additionalValue": "2018-11-01T05:33:52Z",
+        "discountType": "FIXED"
+      }
+    ],
+    "lendingRates": [
+      {
+        "rate": "string",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "lendingRateType": "FIXED",
+        "additionalValue": "2018-11-01T05:33:52Z",
+        "discountType": "FIXED"
+      }
+    ],
+    "constraints": [
+      {
+        "constraintType": "MIN_BALANCE",
+        "additionalValue": 0
+      }
+    ],
+    "eligibility": [
+      {
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "eligibilityType": "BUSINESS"
+      }
+    ],
+    "repaymentType": [
+
+    ]
+  },
+  "links": {
+    "self": "http://example.com/"
+  },
+  "meta": {
+  }
+}

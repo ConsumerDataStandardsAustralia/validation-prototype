@@ -26,6 +26,25 @@ import Web.ConsumerData.Au.Api.Types.Response
 import Web.ConsumerData.Au.Api.Types.Tag
 
 
+data Products = Products { getProducts :: [Product] }
+  deriving (Eq, Show)
+
+productsDecoder :: Monad f => Decoder f Products
+productsDecoder = D.withCursor $ \c -> do
+  o <- D.down c
+  ps <- D.fromKey "products" (D.list productDecoder) o
+  pure $ Products ps
+
+instance JsonDecode OB Products where
+  mkDecoder = tagOb productsDecoder
+
+productsEncoder :: Applicative f => Encoder f Products
+productsEncoder = E.mapLikeObj $ \(Products ps) ->
+  E.atKey' "products" (E.list productEncoder) ps
+
+instance JsonEncode OB Products where
+  mkEncoder = tagOb productsEncoder
+
 -- | Product <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocBankingCommonSchemas CDR AU v0.1.0 Product>
 data Product = Product
   { _productProductId             :: AsciiString -- ^ A provider specific unique identifier for this product. This identifier must be unique to a product but does not otherwise need to adhere to ID permanence guidelines.
@@ -54,7 +73,8 @@ productDecoder = D.withCursor $ \c -> do
     <*> D.fromKey "name" D.text o
     <*> D.fromKey "description" D.text o
     <*> D.fromKey "brand" D.text o
-    <*> D.fromKey "brandName" (D.maybeOrNull D.text) o
+    <*> (D.try $ D.fromKey "brandName" D.text o)
+    -- <*> D.fromKey "brandName" (D.maybeOrNull D.text) o
     <*> D.fromKey "applicationUri" (D.maybeOrNull uriDecoder) o
     <*> D.fromKey "isNegotiable" D.bool o
     <*> D.fromKey "additionalInformation" (D.maybeOrNull productAdditionalInformationDecoder) o

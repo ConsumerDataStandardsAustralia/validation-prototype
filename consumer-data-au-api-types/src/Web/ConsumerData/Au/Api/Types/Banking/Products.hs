@@ -40,5 +40,5 @@ productsGet = to _productsGet
 productsByIdGet :: Getter (ProductsApi r) (ProductsByIdGetRoute r)
 productsByIdGet = to _productsByIdGet
 
-type ProductsGetResponse = PaginatedResponse [Product]
+type ProductsGetResponse = PaginatedResponse Products
 type ProductByIdResponse = StandardResponse ProductDetail

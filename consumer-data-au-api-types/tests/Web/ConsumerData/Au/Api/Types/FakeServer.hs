@@ -161,8 +161,12 @@ testProduct :: Product
 testProduct = Product (AsciiString "product-id-5") Nothing Nothing (DateTimeString (UTCTime (fromGregorian 2018 1 1) 0))
   PCTermDeposits "product name" "description" "fancy" Nothing Nothing True Nothing
 
+testProducts :: Products
+testProducts = Products [testProduct]
+
 testProductDetail :: ProductDetail
-testProductDetail = ProductDetail (Just testProduct) Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+testProductDetail = ProductDetail (testProduct) 
+-- testProductDetail = ProductDetail (Just testProduct) Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 server :: LinkQualifier -> ToServant Api AsServer
 server lq = genericServer Api
@@ -214,7 +218,7 @@ server lq = genericServer Api
       , _payeesByIdGet = \_payeeId -> pure $ mkStandardResponse testPayeeDetail lq (links^.bankingLinks.bankingPayeesLinks.payeesByIdGet $ _payeeId)
       }
     , _bankingProducts = genericServer ProductsApi
-      { _productsGet = pure $ mkPaginatedResponse [testProduct] lq (fakePaginator Nothing (const $ links^.bankingLinks.bankingProductsLinks.productsGet))
+      { _productsGet = pure $ mkPaginatedResponse testProducts lq (fakePaginator Nothing (const $ links^.bankingLinks.bankingProductsLinks.productsGet))
       , _productsByIdGet = \_productId -> pure $ mkStandardResponse testProductDetail lq (links^.bankingLinks.bankingProductsLinks.productsByIdGet $ _productId)
       }
     }

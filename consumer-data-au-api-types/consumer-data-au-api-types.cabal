@@ -263,6 +263,8 @@ test-suite tasty
                      , Web.ConsumerData.Au.Api.Types.Banking.AccountsTest
                      , Web.ConsumerData.Au.Api.Types.Banking.Gens
                      , Web.ConsumerData.Au.Api.Types.Banking.PayeesTest
+                     , Web.ConsumerData.Au.Api.Types.Banking.ProductsGens
+                     , Web.ConsumerData.Au.Api.Types.Banking.ProductsTest
                      , Web.ConsumerData.Au.Api.Types.Common.CustomerTest
                      , Web.ConsumerData.Au.Api.Types.FakeServer
                      , Web.ConsumerData.Au.Api.Types.ResponseTest

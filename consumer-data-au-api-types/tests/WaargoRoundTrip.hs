@@ -25,6 +25,10 @@ roundTripTest d e tn gp = testCase tn . run $ do
     decodeRes <- ExceptT $ first showErr . (decodeBs d) <$> BS.readFile gp
     expectedVal <- ExceptT . pure $ note "Aeson parsing of waargonaut output failed" . decodeValue . BL.fromStrict . encodeBs e $ decodeRes
     let ddiff = diff goldenVal expectedVal
+    liftIO $ putStrLn "\n\n goldenValue: \n"
+    liftIO $ putStrLn $ show goldenVal
+    liftIO $ putStrLn "\n\n expectedValue: \n"
+    liftIO $ putStrLn $ show expectedVal
     liftIO $ ddiff @?= mempty
   where
     run = runExceptT >=> either error pure
