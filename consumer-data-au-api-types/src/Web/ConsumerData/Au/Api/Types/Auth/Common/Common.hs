@@ -292,7 +292,8 @@ instance FromJSON Scope where
 newtype TokenHeaders = TokenHeaders [Header]
 data Header = Header {key::Text, value::Text}
 
-data FapiPermittedAlg = PS256 | ES256 deriving (Eq, Ord, Show) -- ^ Use @PS256@ or @ES256@ in @alg@ for a JWT
+-- | Use @PS256@ or @ES256@ in @alg@ for a JWT
+data FapiPermittedAlg = PS256 | ES256 deriving (Eq, Ord, Show)
 
 fapiPermittedAlgText ::
   Prism' Text FapiPermittedAlg

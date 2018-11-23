@@ -44,7 +44,7 @@ transactionDetailDecoder :: Monad f => Decoder f TransactionDetail
 transactionDetailDecoder = D.withCursor $ \c -> do
   o <- D.down c
   tid <- D.fromKey "transactionId" (D.maybeOrNull transactionIdDecoder) o
-  ts <- D.fromKey "transactionStatus" transactionStatusDecoder o
+  ts <- D.fromKey "status" transactionStatusDecoder o
   desc <- D.fromKey "description" D.text o
   pdt <- D.fromKey "postDateTime" (D.maybeOrNull dateTimeStringDecoder) o
   edt <- D.fromKey "executionDateTime" (D.maybeOrNull dateTimeStringDecoder) o
@@ -57,7 +57,7 @@ transactionDetailDecoder = D.withCursor $ \c -> do
 transactionDetailEncoder :: Encoder' TransactionDetail
 transactionDetailEncoder = E.mapLikeObj $ \(TransactionDetail tid ts desc pdt edt amt cur ref ed) ->
   E.atKey' "transactionId" (E.maybeOrNull transactionIdEncoder) tid .
-  E.atKey' "transactionStatus" transactionStatusEncoder ts .
+  E.atKey' "status" transactionStatusEncoder ts .
   E.atKey' "description" E.text desc .
   E.atKey' "postDateTime" (E.maybeOrNull dateTimeStringEncoder) pdt .
   E.atKey' "executionDateTime" (E.maybeOrNull dateTimeStringEncoder) edt .
