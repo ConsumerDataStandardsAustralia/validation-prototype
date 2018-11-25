@@ -6,6 +6,7 @@ module Web.ConsumerData.Au.Api.Client
 , bankingAccountsClient
 , accountsByIdClient
 , payeesClient
+, productsClient
 ) where
 
 import Control.Lens           (Getter, to)
@@ -37,3 +38,6 @@ accountsByIdClient = accountsById . to (\r i -> fromServant (r i))
 
 payeesClient :: Getter (GenericClient BankingApi) (GenericClient PayeesApi)
 payeesClient = bankingPayees . to fromServant
+
+productsClient :: Getter (GenericClient BankingApi) (GenericClient ProductsApi)
+productsClient = bankingProducts . to fromServant

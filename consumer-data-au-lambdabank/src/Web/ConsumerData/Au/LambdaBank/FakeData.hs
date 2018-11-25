@@ -20,13 +20,9 @@ import Data.Profunctor          (lmap)
 import Data.List.NonEmpty       (NonEmpty((:|)))
 import Data.Maybe               (fromMaybe)
 import Data.Time (fromGregorian, UTCTime(..))
-import Network.HTTP.Client      (defaultManagerSettings, newManager)
 import Network.Wai              (Application)
 import Network.Wai.Handler.Warp (run)
 import Servant.API.Generic      (ToServant)
-import Servant.Client
-    (BaseUrl (BaseUrl), ClientEnv (ClientEnv), ClientM, Scheme (Http),
-    runClientM)
 import Servant.Links            (Link)
 import Servant.Server           (serve)
 import Servant.Server.Generic   (AsServer, genericServer)
@@ -173,5 +169,4 @@ testProducts :: Products
 testProducts = Products [testProduct]
 
 testProductDetail :: ProductDetail
-testProductDetail = ProductDetail (testProduct) 
--- testProductDetail = ProductDetail (Just testProduct) Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+testProductDetail = ProductDetail (Just testProduct) Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing

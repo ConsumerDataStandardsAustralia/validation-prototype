@@ -81,7 +81,7 @@ server lq = genericServer Api
       , _payeesByIdGet = \_payeeId -> pure $ mkStandardResponse testPayeeDetail lq (links^.bankingLinks.bankingPayeesLinks.payeesByIdGet $ _payeeId)
       }
     , _bankingProducts = genericServer ProductsApi
-      { _productsGet = pure $ mkPaginatedResponse [testProduct] lq (fakePaginator Nothing (const $ links^.bankingLinks.bankingProductsLinks.productsGet))
+      { _productsGet = pure $ mkPaginatedResponse testProducts lq (fakePaginator Nothing (const $ links^.bankingLinks.bankingProductsLinks.productsGet))
       , _productsByIdGet = \_productId -> pure $ mkStandardResponse testProductDetail lq (links^.bankingLinks.bankingProductsLinks.productsByIdGet $ _productId)
       }
     }
