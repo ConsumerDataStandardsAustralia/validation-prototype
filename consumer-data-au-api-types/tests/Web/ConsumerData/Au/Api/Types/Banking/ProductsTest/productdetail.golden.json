@@ -1,27 +1,96 @@
 {
-    "data": {
-      "productId": "string",
-      "effectiveFrom": "2018-11-01T05:33:52Z",
-      "effectiveTo": "2018-11-01T05:33:52Z",
-      "lastUpdated": "2018-11-01T05:33:52Z",
-      "productCategory": "PERS_AT_CALL_DEPOSITS",
+  "data": {
+    "productId": "string",
+    "effectiveFrom": "2018-11-01T05:33:52Z",
+    "effectiveTo": "2018-11-01T05:33:52Z",
+    "lastUpdated": "2018-11-01T05:33:52Z",
+    "productCategory": "PERS_AT_CALL_DEPOSITS",
+    "name": "string",
+    "brand": "missing",
+    "brandName": "optional",
+    "description": "string",
+    "applicationUri": "http://example.com/",
+    "isNegotiable": true,
+    "additionalInformation": {
+      "overviewUri": "http://example.com/",
+      "termsUri": "http://example.com/",
+      "eligibilityUri": "http://example.com/",
+      "feesAndPricingUri": "http://example.com/",
+      "bundleUri": "http://example.com/"
+    },
+    "bundles": [
+      {
       "name": "string",
       "description": "string",
-      "brand": "string",
-      "brandName": "string",
       "applicationUri": "http://example.com/",
-      "isNegotiable": true,
-      "additionalInformation": {
-        "overviewUri": "http://example.com/",
-        "termsUri": "http://example.com/",
-        "eligibilityUri": "http://example.com/",
-        "feesAndPricingUri": "http://example.com/",
-        "bundleUri": "http://example.com/"
+      "productIds": ["id1", "id2"]
       }
-    },
-    "links": {
-      "self": "http://example.com/"
-    },
-    "meta": {
-    }
+    ],
+    "features": [
+      {
+        "featureType": "ADDITIONAL_CARDS",
+        "additionalValue": 2
+      }
+    ],
+    "fees": [
+      {
+        "name": "string",
+        "feeType": "PERIODIC",
+        "amount": "120",
+        "balanceRate": "0",
+        "transactionRate": "1",
+        "currency": "string",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "discounts": [
+          {
+            "description": "string",
+            "discountType": "BALANCE",
+            "additionalValue": "100",
+            "amount": "100"
+          }
+        ],
+        "additionalValue": "DAILY"
+      }
+    ],
+    "depositRates": [
+      {
+        "rate": "string",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "depositRateType": "FIXED",
+        "additionalValue": "2018-11-01T05:33:52Z"
+      }
+    ],
+    "lendingRates": [
+      {
+        "rate": "string",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "lendingRateType": "FIXED",
+        "additionalValue": "2018-11-01T05:33:52Z"
+      }
+    ],
+    "constraints": [
+      {
+        "constraintType": "MIN_BALANCE",
+        "additionalValue": "123"
+      }
+    ],
+    "eligibility": [
+      {
+        "description": "string",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "eligibilityType": "MIN_AGE",
+        "additionalValue": 30
+      }
+    ],
+    "repaymentType": "INTEREST_ONLY"
+  },
+  "links": {
+    "self": "http://example.com/"
+  },
+  "meta": {
+  }
 }

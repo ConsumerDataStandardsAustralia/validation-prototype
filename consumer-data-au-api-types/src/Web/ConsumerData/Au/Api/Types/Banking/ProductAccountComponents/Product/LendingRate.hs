@@ -99,9 +99,7 @@ data ProductLendingRateType =
   deriving (Show, Eq)
 
 productLendingRateTypeDecoder :: Monad f => Decoder f ProductLendingRateType
-productLendingRateTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
+productLendingRateTypeDecoder = D.withCursor $ \o -> do
   lendingRateType <- D.fromKey "lendingRateType" D.text o
   additionalValue <- case lendingRateType of
     "FIXED" -> PLendingRateFixed <$> (additionalValueDecoder durationStringDecoder o)
@@ -161,8 +159,6 @@ productLendingRateTypeToType' (PLendingRateComparison {}) = PLendingRateComparis
 
 productLendingRateTypeFields :: (Monoid ws, Semigroup ws) => ProductLendingRateType -> MapLikeObj ws Json -> MapLikeObj ws Json
 productLendingRateTypeFields pc =
--- productLendingRateTypeEncoder :: Applicative f => Encoder f ProductLendingRateType
--- productLendingRateTypeEncoder = E.mapLikeObj $ \pc -> do
   case pc of
     PLendingRateFixed v ->
       E.atKey' "lendingRateType" productLendingRateType'Encoder (productLendingRateTypeToType' pc) .
@@ -170,7 +166,6 @@ productLendingRateTypeFields pc =
     PLendingRateIntroductory v ->
       E.atKey' "lendingRateType" productLendingRateType'Encoder (productLendingRateTypeToType' pc) .
       E.atKey' "additionalValue" durationStringEncoder v
-
     PLendingRateDiscount v ->
       E.atKey' "lendingRateType" productLendingRateType'Encoder (productLendingRateTypeToType' pc) .
       E.atKey' "additionalValue" E.text v

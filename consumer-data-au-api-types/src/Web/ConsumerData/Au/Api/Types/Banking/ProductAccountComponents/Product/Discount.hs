@@ -86,9 +86,7 @@ data ProductDiscountType =
   deriving (Show, Eq)
 
 productDiscountTypeDecoder :: Monad f => Decoder f ProductDiscountType
-productDiscountTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
+productDiscountTypeDecoder = D.withCursor $ \o -> do
   depositRateType <- D.fromKey "discountType" D.text o
   additionalValue <- case depositRateType of
     "BALANCE" -> PDiscountBalance <$> (additionalValueDecoder amountStringDecoder o)
@@ -123,8 +121,6 @@ productDiscountTypeToType' (PDiscountBundle {})   = PDiscountBundle'
 
 productDiscountTypeFields :: (Monoid ws, Semigroup ws) => ProductDiscountType -> MapLikeObj ws Json -> MapLikeObj ws Json
 productDiscountTypeFields pc =
--- productDiscountTypeEncoder :: Applicative f => Encoder f ProductDiscountType
--- productDiscountTypeEncoder = E.mapLikeObj $ \pc -> do
   case pc of
     PDiscountBalance v ->
       E.atKey' "discountType" productDiscountType'Encoder (productDiscountTypeToType' pc) .

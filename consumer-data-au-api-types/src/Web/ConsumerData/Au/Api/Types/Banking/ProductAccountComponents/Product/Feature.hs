@@ -72,7 +72,6 @@ data ProductFeatureType =
 
 productFeatureTypeDecoder :: Monad f => Decoder f ProductFeatureType
 productFeatureTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
   o <- D.down c
   featureType <- D.fromKey "featureType" D.text o
   additionalValue <- case featureType of
@@ -95,7 +94,7 @@ productFeatureTypeDecoder = D.withCursor $ \c -> do
     "NPP_ENABLED" -> pure PFeatureNppEnabled
     "DONATE_INTEREST" -> pure PFeatureDonateInterest
     "BILL_PAYMENT" -> PFeatureBillPayment <$> (additionalValueDecoder D.text o)
-    _ -> throwError D.KeyDecodeFailed
+    _ -> throwError $ D.ParseFailed featureType  --D.KeyDecodeFailed
   pure additionalValue
 
 productFeatureType'ToText :: ProductFeatureType' -> Text

@@ -55,7 +55,6 @@ data ProductConstraint =
 
 productConstraintDecoder :: Monad f => Decoder f ProductConstraint
 productConstraintDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
   o <- D.down c
   constraintType <- D.fromKey "constraintType" D.text o
   additionalValue <- case constraintType of

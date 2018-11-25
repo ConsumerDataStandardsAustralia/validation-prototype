@@ -94,9 +94,9 @@ data ProductDepositRateType =
   deriving (Show, Eq)
 
 productDepositRateTypeDecoder :: Monad f => Decoder f ProductDepositRateType
-productDepositRateTypeDecoder = D.withCursor $ \c -> do
+productDepositRateTypeDecoder = D.withCursor $ \o -> do
   -- D.focus D.text c >>= \case
-  o <- D.down c
+  -- o <- D.down c
   depositRateType <- D.fromKey "depositRateType" D.text o
   additionalValue <- case depositRateType of
     "FIXED" -> PDepositRateTypeFixed <$> (additionalValueDecoder durationStringDecoder o)
@@ -135,8 +135,6 @@ productDepositRateTypeToType' (PDepositRateTypeIntroductory {}) = PDepositRateTy
 
 productDepositRateTypeFields :: (Monoid ws, Semigroup ws) => ProductDepositRateType -> MapLikeObj ws Json -> MapLikeObj ws Json
 productDepositRateTypeFields pc =
--- productDepositRateTypeEncoder :: Applicative f => Encoder f ProductDepositRateType
--- productDepositRateTypeEncoder = E.mapLikeObj $ \pc -> do
   case pc of
     PDepositRateTypeFixed v ->
       E.atKey' "depositRateType" productDepositRateType'Encoder (productDepositRateTypeToType' pc) .

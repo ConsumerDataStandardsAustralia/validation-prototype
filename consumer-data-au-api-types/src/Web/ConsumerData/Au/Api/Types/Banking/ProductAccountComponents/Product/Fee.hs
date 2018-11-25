@@ -122,9 +122,7 @@ data ProductFeeType =
   deriving (Show, Eq)
 
 productFeeTypeDecoder :: Monad f => Decoder f ProductFeeType
-productFeeTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
+productFeeTypeDecoder = D.withCursor $ \o -> do
   feeType <- D.fromKey "feeType" D.text o
   additionalValue <- case feeType of
     "PERIODIC" -> PFeePeriodicPeriodic <$> (additionalValueDecoder durationStringDecoder o)
@@ -195,8 +193,6 @@ productFeeTypeToType' (PFeePeriodicOtherEvent {}) = PFeePeriodicOtherEvent'
 
 productFeeTypeFields :: (Monoid ws, Semigroup ws) => ProductFeeType -> MapLikeObj ws Json -> MapLikeObj ws Json
 productFeeTypeFields pc =
--- productFeeTypeEncoder :: Applicative f => Encoder f ProductFeeType
--- productFeeTypeEncoder = E.mapLikeObj $ \pc -> do
   case pc of
     PFeePeriodicPeriodic v ->
       E.atKey' "feeType" productFeeType'Encoder (productFeeTypeToType' pc) .

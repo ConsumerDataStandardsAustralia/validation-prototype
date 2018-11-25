@@ -73,8 +73,7 @@ productDecoder = D.withCursor $ \c -> do
     <*> D.fromKey "name" D.text o
     <*> D.fromKey "description" D.text o
     <*> D.fromKey "brand" D.text o
-    <*> (D.try $ D.fromKey "brandName" D.text o)
-    -- <*> D.fromKey "brandName" (D.maybeOrNull D.text) o
+    <*> D.fromKey "brandName" (D.maybeOrNull D.text) o
     <*> D.fromKey "applicationUri" (D.maybeOrNull uriDecoder) o
     <*> D.fromKey "isNegotiable" D.bool o
     <*> D.fromKey "additionalInformation" (D.maybeOrNull productAdditionalInformationDecoder) o

@@ -98,11 +98,9 @@ data ProductEligibilityType =
 
 
 productEligibilityTypeDecoder :: Monad f => Decoder f ProductEligibilityType
-productEligibilityTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
-  depositRateType <- D.fromKey "eligibilityType" D.text o
-  additionalValue <- case depositRateType of
+productEligibilityTypeDecoder = D.withCursor $ \o -> do
+  eligibilityType <- D.fromKey "eligibilityType" D.text o
+  additionalValue <- case eligibilityType of
     "BUSINESS" -> pure PEligibilityBusiness
     "PENSION_RECIPIENT" -> pure PEligibilityPensionRecipient
     "MIN_AGE" -> PEligibilityMinAge <$> (additionalValueDecoder D.int o)
@@ -163,8 +161,6 @@ productEligibilityTypeToType' (PEligibilityOther {})   = PEligibilityOther'
 
 productEligibilityTypeFields :: (Monoid ws, Semigroup ws) => ProductEligibilityType -> MapLikeObj ws Json -> MapLikeObj ws Json
 productEligibilityTypeFields pc =
--- productEligibilityTypeEncoder :: Applicative f => Encoder f ProductEligibilityType
--- productEligibilityTypeEncoder = E.mapLikeObj $ \pc -> do
   case pc of
     PEligibilityBusiness ->
       E.atKey' "eligibilityType" productEligibilityType'Encoder (productEligibilityTypeToType' pc)

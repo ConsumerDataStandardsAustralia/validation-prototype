@@ -23,48 +23,55 @@ import Web.ConsumerData.Au.Api.Types.Tag
 
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Products
     (Product, productDecoder, productFields)
--- import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Constraint
---     (ProductConstraints, productConstraintsDecoder, productConstraintsEncoder)
--- import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.DepositRate
---     (ProductDepositRates, productDepositRatesDecoder,
---     productDepositRatesEncoder)
--- import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Eligibility
---     (ProductEligibilities, productEligibilitiesDecoder,
---     productEligibilitiesEncoder)
--- import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Feature
---     (ProductFeatures, productFeaturesDecoder, productFeaturesEncoder)
--- import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Fee
---     (ProductFees, productFeesDecoder, productFeesEncoder)
--- import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.LendingRate
---     (ProductLendingRates, productLendingRatesDecoder,
---     productLendingRatesEncoder)
+import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Constraint
+    (ProductConstraints, productConstraintsDecoder, productConstraintsEncoder)
+import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.DepositRate
+    (ProductDepositRates, productDepositRatesDecoder,
+    productDepositRatesEncoder)
+import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Eligibility
+    (ProductEligibilities, productEligibilitiesDecoder,
+    productEligibilitiesEncoder)
+import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Feature
+    (ProductFeatures, productFeaturesDecoder, productFeaturesEncoder)
+import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Fee
+    (ProductFees, productFeesDecoder, productFeesEncoder)
+import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.LendingRate
+    (ProductLendingRates, productLendingRatesDecoder,
+    productLendingRatesEncoder)
 
 
 -- | ProductDetail <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocBankingCommonSchemas CDR AU v0.1.0 ProductDetail>
 data ProductDetail = ProductDetail
-  { _productDetailProduct       :: Product--Maybe Product
-  -- , _productDetailBundles       :: Maybe ProductBundles -- ^ An array of bundles that this product participates in. Each bundle is described by free form information but also by a list of product IDs of the other products that are included in the bundle. It is assumed that the current product is included in the bundle also
-  -- , _productDetailFeatures      :: Maybe ProductFeatures -- ^ Array of features available for the product
-  -- , _productDetailConstraints   :: Maybe ProductConstraints -- ^ Constraints on the application for or operation of the product such as minimum balances or limit thresholds
-  -- , _productDetailEligibility   :: Maybe ProductEligibilities -- ^ Eligibility criteria for the product
-  -- , _productDetailFees          :: Maybe ProductFees -- ^ Fees and charges applicable for the product
-  -- , _productDetailDepositRates  :: Maybe ProductDepositRates -- ^ Interest rates available for deposits
-  -- , _productDetailLendingRates  :: Maybe ProductLendingRates -- ^ Interest rates charged against lending balances
-  -- , _productDetailRepaymentType :: Maybe ProductRepaymentType -- ^ For lending style products what are the options for repayments that are available. If absent (and relevant) defaults to PRINCIPAL_AND_INTEREST
+  { _productDetailProduct       :: Maybe Product
+  , _productDetailBundles       :: Maybe ProductBundles -- ^ An array of bundles that this product participates in. Each bundle is described by free form information but also by a list of product IDs of the other products that are included in the bundle. It is assumed that the current product is included in the bundle also
+  , _productDetailFeatures      :: Maybe ProductFeatures -- ^ Array of features available for the product
+  , _productDetailConstraints   :: Maybe ProductConstraints -- ^ Constraints on the application for or operation of the product such as minimum balances or limit thresholds
+  , _productDetailEligibility   :: Maybe ProductEligibilities -- ^ Eligibility criteria for the product
+  , _productDetailFees          :: Maybe ProductFees -- ^ Fees and charges applicable for the product
+  , _productDetailDepositRates  :: Maybe ProductDepositRates -- ^ Interest rates available for deposits
+  , _productDetailLendingRates  :: Maybe ProductLendingRates -- ^ Interest rates charged against lending balances
+  , _productDetailRepaymentType :: Maybe ProductRepaymentType -- ^ For lending style products what are the options for repayments that are available. If absent (and relevant) defaults to PRINCIPAL_AND_INTEREST
   } deriving (Eq, Show)
 
 productDetailDecoder :: Monad f => Decoder f ProductDetail
-productDetailDecoder = D.withCursor $ \c -> do
-  ProductDetail
-    <$> D.focus productDecoder c
-    -- <*> D.fromKey "repaymentType" (D.maybeOrNull productRepaymentTypeDecoder) c
-
+productDetailDecoder = D.withCursor $ \o -> do
+  p1 <- D.focus (D.maybeOrNull productDecoder) o
+  c <- D.down o
+  p2 <- D.fromKey "bundles" (D.maybeOrNull productBundlesDecoder) c
+  p3 <- D.fromKey "features" (D.maybeOrNull productFeaturesDecoder) c
+  p4 <- D.fromKey "constraints" (D.maybeOrNull productConstraintsDecoder) c
+  p5 <- D.fromKey "eligibility" (D.maybeOrNull productEligibilitiesDecoder) c
+  p6 <- D.fromKey "fees" (D.maybeOrNull productFeesDecoder) c
+  p7 <- D.fromKey "depositRates" (D.maybeOrNull productDepositRatesDecoder) c
+  p8 <- D.fromKey "lendingRates" (D.maybeOrNull productLendingRatesDecoder) c
+  p9 <- D.fromKey "repaymentType" (D.maybeOrNull productRepaymentTypeDecoder) c
+  pure $ ProductDetail p1 p2 p3 p4 p5 p6 p7 p8 p9
 
 {-
   -- D.withCursor $ \c -> do
   -- o <- D.down c
   ProductDetail
-{-     <$> D.focus (D.maybeOrNull productDecoder) o
+    <$> D.focus (D.maybeOrNull productDecoder) o
     <*> D.fromKey "bundles" (D.maybeOrNull productBundlesDecoder) o
     <*> D.fromKey "features" (D.maybeOrNull productFeaturesDecoder) o
     <*> D.fromKey "constraints" (D.maybeOrNull productConstraintsDecoder) o
@@ -73,17 +80,6 @@ productDetailDecoder = D.withCursor $ \c -> do
     <*> D.fromKey "depositRates" (D.maybeOrNull productDepositRatesDecoder) o
     <*> D.fromKey "lendingRates" (D.maybeOrNull productLendingRatesDecoder) o
     <*> D.fromKey "repaymentType" (D.maybeOrNull productRepaymentTypeDecoder) o
--}
-    -- <$> (D.try $ D.focus productDecoder o)
-    <$> productDecoder
-    -- <*> (D.try $ D.fromKey "bundles" productBundlesDecoder o)
-    -- <*> (D.try $ D.fromKey "features"  productFeaturesDecoder o)
-    -- <*> (D.try $ D.fromKey "constraints"  productConstraintsDecoder o)
-    -- <*> (D.try $ D.fromKey "eligibility"  productEligibilitiesDecoder o)
-    -- <*> (D.try $ D.fromKey "fees"  productFeesDecoder o)
-    -- <*> (D.try $ D.fromKey "depositRates" productDepositRatesDecoder o)
-    -- <*> (D.try $ D.fromKey "lendingRates" productLendingRatesDecoder o)
-    <*> D.try $ D.fromKey "repaymentType"  productRepaymentTypeDecoder
 -}
 
 instance JsonDecode OB ProductDetail where
@@ -94,17 +90,15 @@ instance JsonEncode OB ProductDetail where
 
 productDetailEncoder :: Applicative f => Encoder f ProductDetail
 productDetailEncoder = E.mapLikeObj $ \pd ->
-  -- maybe id productFields (_productDetailProduct pd) .
-  productFields (_productDetailProduct pd)
-  -- E.atKey' "bundles" (E.maybeOrNull productBundlesEncoder) (_productDetailBundles pd) .
-  -- E.atKey' "features" (E.maybeOrNull productFeaturesEncoder) (_productDetailFeatures pd) .
-  -- E.atKey' "constraints" (E.maybeOrNull productConstraintsEncoder) (_productDetailConstraints pd) .
-  -- E.atKey' "eligibility" (E.maybeOrNull productEligibilitiesEncoder) (_productDetailEligibility pd) .
-  -- E.atKey' "fees" (E.maybeOrNull productFeesEncoder) (_productDetailFees pd) .
-  -- E.atKey' "depositRates" (E.maybeOrNull productDepositRatesEncoder) (_productDetailDepositRates pd) .
-  -- E.atKey' "lendingRates" (E.maybeOrNull productLendingRatesEncoder) (_productDetailLendingRates pd) .
-  -- E.atKey' "repaymentType" (E.maybeOrNull productRepaymentTypeEncoder) (_productDetailRepaymentType pd)
-
+  maybe id productFields (_productDetailProduct pd) .
+  E.atKey' "bundles" (E.maybeOrNull productBundlesEncoder) (_productDetailBundles pd) .
+  E.atKey' "features" (E.maybeOrNull productFeaturesEncoder) (_productDetailFeatures pd) .
+  E.atKey' "constraints" (E.maybeOrNull productConstraintsEncoder) (_productDetailConstraints pd) .
+  E.atKey' "eligibility" (E.maybeOrNull productEligibilitiesEncoder) (_productDetailEligibility pd) .
+  E.atKey' "fees" (E.maybeOrNull productFeesEncoder) (_productDetailFees pd) .
+  E.atKey' "depositRates" (E.maybeOrNull productDepositRatesEncoder) (_productDetailDepositRates pd) .
+  E.atKey' "lendingRates" (E.maybeOrNull productLendingRatesEncoder) (_productDetailLendingRates pd) .
+  E.atKey' "repaymentType" (E.maybeOrNull productRepaymentTypeEncoder) (_productDetailRepaymentType pd)
 
 newtype ProductBundles =
   ProductBundles { getProductBundles :: [ProductBundle] }
