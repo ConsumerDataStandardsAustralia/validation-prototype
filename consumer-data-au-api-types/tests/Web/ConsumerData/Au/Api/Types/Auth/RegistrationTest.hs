@@ -35,7 +35,7 @@ import           Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, Error, _MissingClaim, _ParseError)
 -- `forAllT` should probs be public: https://github.com/hedgehogqa/haskell-hedgehog/issues/203
 import           Control.Monad.Except
-    (ExceptT, runExceptT)
+    (ExceptT, MonadIO, liftIO, runExceptT)
 import           Hedgehog.Internal.Property                      (forAllT)
 import qualified Hedgehog.Range                                  as Range
 import           Test.Tasty                                      (TestTree)
@@ -52,6 +52,7 @@ test_request =
   [
   testProperty "The 'redirect_urls' smart constructor only accepts https  && !localhost hosts." redirectUrlsValid
   , testProperty "The 'redirect_urls' smart constructor rejects any non-https or localhost hosts." redirectUrlsInvalid
+  , testProperty "Claims round-trips to/from ClaimsMap." claimsRoundTrips
   , testProperty "Redirect request round-trips to/from JSON." regoJsonRoundTrips
   , testProperty "Redirect request round-trips to/from JWT." regoJwtRoundTrips
   ]
@@ -69,6 +70,14 @@ redirectUrlsInvalid =
   property $ do
     mRedirectUrl<- redirectUrls <$> forAllT genInvalidRedirectUris
     assert (isNothing mRedirectUrl)
+
+claimsRoundTrips ::
+  Property
+claimsRoundTrips =
+  property $ do
+    md <- forAllT genMeta
+    md' <- evalExceptT (aesonClaimsToMetaData $ metaDataToAesonClaims md :: ExceptT Error (PropertyT IO) ClientMetaData)
+    md === md'
 
 regoJsonRoundTrips ::
   Property
@@ -101,6 +110,7 @@ showround = do
 genRegReq::
   ( MonadGen n
   , MonadThrow n
+  , MonadIO n
   )
   => n RegistrationRequest
 genRegReq =
@@ -109,10 +119,12 @@ genRegReq =
 genJwtHeaders::
   ( MonadGen n
   , MonadThrow n
+  , MonadIO n
   )
   => n JwsSigningHeaders
-genJwtHeaders =
-  JwsSigningHeaders <$> (Just <$> genStringOrUri) <*> (Just <$> genAud) <*> (Just <$> genNumDate) <*> (Just <$> genNumDate) <*> (Just <$> genJti)
+genJwtHeaders = do
+  (iat,exp) <- genIatExp
+  JwsSigningHeaders <$> (Just <$> genStringOrUri) <*> (Just <$> genAud) <*> pure (Just iat) <*> pure (Just exp) <*> (Just <$> genJti)
 
 genStringOrUri::
   ( MonadGen n
@@ -128,13 +140,23 @@ m2e :: forall m e a.
      e -> Maybe a -> m a
 m2e e = maybe (throwM e) pure
 
--- Might actually want a relevant time here
+-- Generate an iat and exp, with exp being +1s to 10m later
+genIatExp ::
+  ( MonadGen n
+  , MonadIO n
+  )
+  => n (NumericDate,NumericDate)
+genIatExp = do
+  iat <- liftIO getCurrentTime
+  exp <- NumericDate . flip addUTCTime iat . fromInteger <$> Gen.integral (Range.linear 1 600)
+  return (NumericDate iat, exp)
+
 genNumDate ::
   ( MonadGen n
   )
   => n NumericDate
 genNumDate = NumericDate . utc <$> Gen.integral (Range.linear 1 31)
-  where utc a = UTCTime (fromGregorian 2018 1 a) (secondsToDiffTime 1)
+  where utc a = UTCTime (fromGregorian 2018 11 a) (secondsToDiffTime 1)
 
 --TODO: check if multi `aud` URLs are allowed.
 genAud::
@@ -188,6 +210,7 @@ genMeta =
 genSs::
   ( MonadGen n
   , MonadThrow n
+  , MonadIO n
   )
   => n SoftwareStatement
 genSs = SoftwareStatement <$> genJwtHeaders <*> genMeta
