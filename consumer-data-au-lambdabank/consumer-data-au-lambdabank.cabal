@@ -14,6 +14,7 @@ tested-with:         GHC == 8.4.4
 
 library
   exposed-modules:   Web.ConsumerData.Au.LambdaBank.Main
+                   , Web.ConsumerData.Au.LambdaBank.Alien.Servant.Server
                    , Web.ConsumerData.Au.LambdaBank.FakeData
                    , Web.ConsumerData.Au.LambdaBank.Server
                    , Web.ConsumerData.Au.LambdaBank.Server.Banking
@@ -40,6 +41,7 @@ library
                      , wai == 3.2.*
                      , warp == 3.2.*
   hs-source-dirs:      src
+  ghc-options:         -Wall -Werror
   default-language:    Haskell2010
 
 executable lambda-bank

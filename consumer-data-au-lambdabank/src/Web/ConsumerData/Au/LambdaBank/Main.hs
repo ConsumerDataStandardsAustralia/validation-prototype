@@ -11,7 +11,6 @@ import Web.ConsumerData.Au.Api.Types
 import Text.URI                 (Authority (..))
 import Text.URI.QQ              (host, scheme)
 
-import Web.ConsumerData.Au.LambdaBank.FakeData
 import Web.ConsumerData.Au.LambdaBank.Server
 
 fakeQualifier :: Int -> LinkQualifier

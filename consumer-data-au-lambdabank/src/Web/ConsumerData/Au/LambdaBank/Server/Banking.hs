@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
 module Web.ConsumerData.Au.LambdaBank.Server.Banking where
 
 {--
@@ -12,21 +11,8 @@ that it looks heinous for now!
 import Control.Lens
 import Web.ConsumerData.Au.Api.Types
 
-import Control.Concurrent       (forkIO, killThread)
-import Control.Exception        (bracket, throwIO)
-import Country.Identifier       (australia)
-import Data.List.NonEmpty       (NonEmpty ((:|)))
-import Data.Maybe               (fromMaybe)
-import Data.Profunctor          (lmap)
-import Data.Time                (UTCTime (..), fromGregorian)
-import Network.Wai              (Application)
-import Network.Wai.Handler.Warp (run)
 import Servant.API.Generic      (ToServant)
-import Servant.Links            (Link)
-import Servant.Server           (serve)
 import Servant.Server.Generic   (AsServerT, genericServerT)
-import Text.URI                 (Authority (..))
-import Text.URI.QQ              (host, scheme)
 
 import Web.ConsumerData.Au.LambdaBank.FakeData
 import Web.ConsumerData.Au.LambdaBank.Server.Internal

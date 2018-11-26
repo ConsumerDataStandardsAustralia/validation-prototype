@@ -1,8 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
 module Web.ConsumerData.Au.LambdaBank.FakeData where
-
-import Web.ConsumerData.Au.Api.Types
 
 {--
 Notes: this is just moving the FakeServer from the types tests across for now.
@@ -11,23 +8,12 @@ and not all in one file. Don't be too upset
 that it looks heinous for now!
 --}
 
-import Control.Lens
-
-import Control.Concurrent       (forkIO, killThread)
-import Control.Exception        (bracket, throwIO)
 import Country.Identifier       (australia)
 import Data.Profunctor          (lmap)
 import Data.List.NonEmpty       (NonEmpty((:|)))
 import Data.Maybe               (fromMaybe)
 import Data.Time (fromGregorian, UTCTime(..))
-import Network.Wai              (Application)
-import Network.Wai.Handler.Warp (run)
-import Servant.API.Generic      (ToServant)
 import Servant.Links            (Link)
-import Servant.Server           (serve)
-import Servant.Server.Generic   (AsServer, genericServer)
-import Text.URI                 (Authority (..))
-import Text.URI.QQ              (host, scheme)
 
 import Web.ConsumerData.Au.Api.Types
 
