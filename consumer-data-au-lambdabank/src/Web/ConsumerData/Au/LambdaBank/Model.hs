@@ -10,7 +10,6 @@ import Web.ConsumerData.Au.Api.Types
 
 import Control.Monad.Free        (MonadFree, liftF)
 import Control.Monad.Free.Church (F, iterM)
-import Control.Monad.Free.TH     (makeFreeCon)
 
 import Web.ConsumerData.Au.LambdaBank.FakeData
 
@@ -20,8 +19,11 @@ data ModelF next where
 
 deriving instance Functor ModelF
 
-makeFreeCon 'GetCustomer
-makeFreeCon 'GetCustomerDetail
+getCustomer :: MonadFree ModelF m => m CustomerResponse
+getCustomer = liftF $ GetCustomer id
+
+getCustomerDetail :: MonadFree ModelF m => m CustomerDetailResponse
+getCustomerDetail = liftF $ GetCustomerDetail id
 
 type ModelM = F ModelF
 
