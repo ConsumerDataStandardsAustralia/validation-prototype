@@ -31,8 +31,7 @@ import           Crypto.JWT
 import           Crypto.Random.Types                       (MonadRandom)
 import           Data.Aeson
     (FromJSON (..), Result (..), ToJSON (..), Value, fromJSON)
-import           Data.ByteString.Base64                    as B64
-import           Data.ByteString.Lazy                      as BSL
+import qualified Data.ByteString.Lazy                      as BSL
     (fromStrict, toStrict)
 import           Data.HashMap.Strict                       (HashMap)
 import qualified Data.HashMap.Strict                       as M
@@ -520,7 +519,7 @@ regoReqToJwt jwk alg rr =
     --TODO: If necessary, remove ssb64 and just use the SS in the meta data, if SS creation not reqd.
     reqClaims ssb64 = mkCs (_regoReqSigningData rr) (reqAcm & at "software_statement" ?~ ssb64)
   in do
-    -- sign the software statement and encode it as a b64 string
+    -- sign the software statement and get the b64 encoded JWS as an aeson Value
     ssb64 <- case _regReqsoftwareStatement rr of
                   SuppliedSs ss -> return $ toJSON ss
                   GenerateSs ss -> jwtToJson <$> signClaims jwk (newJWSHeader ((), alg)) (ssClaims ss)
@@ -549,9 +548,7 @@ jwtToRegoReq  ::
 jwtToRegoReq audPred issPred jwk jwt = do
   let
     -- TODO: we need seperate predicates here for the JWT?
-    validationSettings =
-      defaultJWTValidationSettings audPred
-      & issuerPredicate .~ issPred
+    validationSettings = defaultJWTValidationSettings audPred & issuerPredicate .~ issPred
     c2m c = c ^. unregisteredClaims . to aesonClaimsToMetaData
   claims <- verifyClaims validationSettings jwk jwt
   ssjwt <- decodeCompact =<< BSL.fromStrict . TE.encodeUtf8 <$> claims ^. unregisteredClaims . to (`getClaim` "software_statement")
@@ -577,7 +574,7 @@ getSigningHeaders claims = do
 
 -- convert a signed jwt to JSON, encode it, then make it a json Value (for a claim)
 jwtToJson :: SignedJWT -> Value
-jwtToJson = toJSON . TE.decodeUtf8 . B64.encode . BSL.toStrict . encodeCompact
+jwtToJson = toJSON . TE.decodeUtf8 . BSL.toStrict . encodeCompact
 
 instance ToJSON (JWT (a JWSHeader)) where
   toJSON = toJSON
