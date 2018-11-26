@@ -178,6 +178,7 @@ test-suite tasty
                      , Web.ConsumerData.Au.Api.Types.Banking.PayeesTest
                      , Web.ConsumerData.Au.Api.Types.Common.CustomerTest
                      , Web.ConsumerData.Au.Api.Types.Common.Gens
+                     , Web.ConsumerData.Au.Api.Types.Data.Gens
                      , Web.ConsumerData.Au.Api.Types.ResponseTest
                      , WaaaargonautTest
   default-language:    Haskell2010
