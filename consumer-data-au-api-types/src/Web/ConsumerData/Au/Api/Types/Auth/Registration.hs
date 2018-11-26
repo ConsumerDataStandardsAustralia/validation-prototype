@@ -7,7 +7,6 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TemplateHaskell       #-}
-{-# OPTIONS_GHC -fno-warn-orphans  #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.Registration where
 import           Control.Applicative                       (liftA2, (<|>))
@@ -582,9 +581,6 @@ getSigningHeaders claims = do
 -- convert a signed jwt to JSON, encode it, then make it a json Value (for a claim)
 jwtToJson :: SignedJWT -> Value
 jwtToJson = toJSON . TE.decodeUtf8 . BSL.toStrict . encodeCompact
-
-instance ToJSON (JWT (a JWSHeader)) where
-  toJSON = toJSON
 
 getClaim :: forall e m a.
   ( AsError e
