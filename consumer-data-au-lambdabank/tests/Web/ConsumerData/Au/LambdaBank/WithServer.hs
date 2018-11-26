@@ -8,10 +8,11 @@ import Servant.Client
     (BaseUrl (BaseUrl), ClientEnv (ClientEnv), ClientM, Scheme (Http),
     runClientM)
 
-import Web.ConsumerData.Au.LambdaBank.Main
+import Web.ConsumerData.Au.LambdaBank.Main (fakeQualifier)
+import Web.ConsumerData.Au.LambdaBank.Server (runServer)
 
 withServer :: Int -> ClientM () -> IO ()
-withServer p f = bracket (forkIO $ runServer p) killThread . const $ do
+withServer p f = bracket (forkIO $ runServer p (fakeQualifier p)) killThread . const $ do
   m <- newManager defaultManagerSettings
   let env = ClientEnv m (BaseUrl Http "localhost" p "") Nothing
   runClientM f env >>= either throwIO pure
