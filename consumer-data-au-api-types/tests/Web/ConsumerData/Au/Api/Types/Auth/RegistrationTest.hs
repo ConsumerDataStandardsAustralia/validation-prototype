@@ -10,7 +10,6 @@ import           Control.Lens                             (( # ))
 import           Control.Monad                            ((<=<))
 import           Control.Monad.Catch
     (Exception, MonadThrow, throwM)
-import           Control.Monad.Except                     (ExceptT)
 import           Crypto.JWT
     (Audience (Audience), NumericDate (..), StringOrURI, decodeCompact,
     encodeCompact, string, uri)
@@ -35,7 +34,8 @@ import           Text.URI.Gens
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, Error, _MissingClaim, _ParseError)
 -- `forAllT` should probs be public: https://github.com/hedgehogqa/haskell-hedgehog/issues/203
-import           Control.Monad.Except                            (runExceptT)
+import           Control.Monad.Except
+    (ExceptT, runExceptT)
 import           Hedgehog.Internal.Property                      (forAllT)
 import qualified Hedgehog.Range                                  as Range
 import           Test.Tasty                                      (TestTree)
