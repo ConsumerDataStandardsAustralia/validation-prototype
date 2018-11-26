@@ -16,6 +16,7 @@ library
   exposed-modules:   Web.ConsumerData.Au.LambdaBank.Main
                    , Web.ConsumerData.Au.LambdaBank.Alien.Servant.Server
                    , Web.ConsumerData.Au.LambdaBank.FakeData
+                   , Web.ConsumerData.Au.LambdaBank.Model
                    , Web.ConsumerData.Au.LambdaBank.Server
                    , Web.ConsumerData.Au.LambdaBank.Server.Banking
                    , Web.ConsumerData.Au.LambdaBank.Server.Common
@@ -29,6 +30,7 @@ library
                      , consumer-data-au-api-types
                      , consumer-data-au-api-client
                      , country == 0.1.*
+                     , free == 5.0.*
                      , lens == 4.16.*
                      , modern-uri == 0.2.*
                      , mtl == 2.2.*
@@ -66,6 +68,7 @@ test-suite tasty
                      , consumer-data-au-api-types
                      , consumer-data-au-api-client
                      , exceptions == 0.10.*
+                     , free == 5.0.*
                      , hedgehog == 0.6.*
                      , http-client == 0.5.*
                      , lens == 4.16.*

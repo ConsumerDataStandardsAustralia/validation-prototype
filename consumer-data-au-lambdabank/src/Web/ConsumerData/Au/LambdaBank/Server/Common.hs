@@ -14,19 +14,18 @@ import Web.ConsumerData.Au.Api.Types
 import Servant.API.Generic    (ToServant)
 import Servant.Server.Generic (AsServerT, genericServerT)
 
-import Web.ConsumerData.Au.LambdaBank.FakeData
+import Web.ConsumerData.Au.LambdaBank.Model
 import Web.ConsumerData.Au.LambdaBank.Server.Internal
     (LambdaBankM, bankStandardResponse)
 
 commonServer :: ToServant CustomerApi (AsServerT LambdaBankM)
 commonServer = genericServerT CommonApi
   { _customer = genericServerT CustomerApi
-    { _customerBriefGet = bankStandardResponse
-      --(CustomerPerson testPerson)
-      (CustomerOrganisation testOrganisation)
+    { _customerBriefGet = getCustomer >>= \c -> bankStandardResponse
+      c
       (links ^.commonLinks.customerLinks.customerBriefGet)
-    , _customerDetailsGet = bankStandardResponse
-      (CustomerDetailPerson testPersonDetail)
+    , _customerDetailsGet = getCustomerDetail >>= \c -> bankStandardResponse
+      c
       --(CustomerDetailOrganisation testOrganisationDetail)
       (links ^.commonLinks.customerLinks.customerDetailsGet)
     }
