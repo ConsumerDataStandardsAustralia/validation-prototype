@@ -110,14 +110,14 @@ library
                      , servant == 0.14.*
                      , servant-client == 0.14.*
                      , servant-client-core == 0.14.*
-                     , servant-waargonaut
+                     , servant-waargonaut == 0.4.*
                      , tagged == 0.8.*
                      , template-haskell == 2.13.*
                      , text == 1.2.*
                      , time >= 1.8 && < 1.10
                      , transformers == 0.5.*
                      , unordered-containers == 0.2.*
-                     , waargonaut == 0.3.*
+                     , waargonaut == 0.4.*
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -Werror
@@ -151,7 +151,7 @@ test-suite tasty
                      , servant == 0.14.*
                      , servant-client == 0.14.*
                      , servant-server == 0.14.*
-                     , servant-waargonaut == 0.2.*
+                     , servant-waargonaut == 0.4.*
                      , tagged == 0.8.*
                      , tasty == 1.1.*
                      , tasty-discover == 4.2.*
@@ -162,7 +162,7 @@ test-suite tasty
                      , time >= 1.8 && < 1.10
                      , transformers == 0.5.*
                      , wai == 3.2.*
-                     , waargonaut == 0.3.*
+                     , waargonaut == 0.4.*
                      , warp == 3.2.*
   other-modules:
                        Data.Time.Gens
