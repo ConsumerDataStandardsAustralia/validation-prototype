@@ -62,6 +62,7 @@ newtype GrantTypes = GrantTypes (Set GrantType)
 --NB: Neither OIDC FAPI nor AU OB specifies any details on dynamic client registration.
 
 -- | Items requiring clarification and/or further development:
+--   * Do we have to support BCP47 [RFC5646] language tags?
 --   * CIBA:
 --     - If CIBA is to be used, we'll require client to specify whether using `Notification mode` or `Polling mode` (see: https://openid.net/specs/openid-connect-modrna-client-initiated-backchannel-authentication-1_0.html#overview)
 --   * `subject_type`: are they supported in FAPI?
@@ -70,13 +71,17 @@ newtype GrantTypes = GrantTypes (Set GrantType)
 --     - `response_type`: should be `code id_token`?
 --     - `grant_types`: OIDC Registration spec defaults to just `authorization_code` when none supplied, but it also states that `implicit` must also be included to use the hybrid flow; is `implicit` therefore also mandatory?
 --   * What purpose does supplying `acr` values in the registration request have, if any, if these values are automatically overridden by the mandatorily supplied values in the auth requests?
+--   * Will the registration end-point require a form of client authentication? i.e are requests required to be signed by the client? `OIDC Registration: 3.1. Client Registration Request` does not mandate this.
 --   * TODO: What type of predicate checking is required (aud/iss) for the registration request and the software statement?
---   * TODO: @Script@ does not yet support any language tags.
+--   * TODO: @Script@ does not yet support any BCP47 [RFC5646] language tags.
+--   * TODO: JSON encoder/decoder must support BCP47 [RFC5646] language tags in keys.
 --   * TODO: Implementation of ToJSON/FromJSON to correctly map to OIDC expected values.
+--   * TODO: Successful registration response will return with a HTTP 201.
+--   * TODO: Registration server checks and generation and storage of server response data.
 
 -- | Determines the set of credentials that will be used by a client when accessing /token endpoint. OIDC requires a restricted subset of the allowed OAuth values (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>). Also, because OZ OB only supports `code id_token` and `code id_token token` (i.e. the `hybrid` flow), this means `grant_types` must contain at least `authorization_code` and `implicit`, as per the OIDC Registration spec (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>).
--- NB: for UK OB, `client_credentials` is required as a grant type, as is it needed for the client to submit a JWT to the /token endpoint to obtain a consent ID / payment ID before sending the request to /payments.
-data GrantType = Implicit | AuthorizationCode | RefreshToken
+-- NB: For UK OB, `client_credentials` is required as a grant type, as is it needed for the client to submit a JWT to the /token endpoint to obtain a consent ID / payment ID before sending the request to /payments.
+data GrantType = Implicit | AuthorizationCode | RefreshToken -- | ClientCredentials
   deriving (Generic, ToJSON, FromJSON, Show, Eq, Ord)
 
 newtype FapiGrantTypes = FapiGrantTypes GrantTypes
@@ -106,8 +111,8 @@ newtype RegistrationContacts = RegistrationContacts [EmailAddress]
 newtype EmailAddress = EmailAddress T.Text
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
--- TODO: JSON encoder/decoder must support BCP47 [RFC5646] language tags in keys.
--- e.g. client_name#ja-Jpan-JP :: クライアント名", as per https://openid.net/specs/openid-connect-registration-1_0.html#LanguagesAndScripts
+-- | Text with support for BCP47 [RFC5646] language tags in keys.
+-- e.g. client_name#ja-Jpan-JP :: クライアント名", as required by https://openid.net/specs/openid-connect-registration-1_0.html#LanguagesAndScripts.
 data Script = Script Language T.Text
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 data Language = DefaultLang
@@ -195,7 +200,7 @@ data RequestObjectEncryption = RequestObjectEncryption
 data TokenEndpointAuthMethod = ClientSecretPost | ClientSecretBasic | ClientSecretJwt FapiPermittedAlg | PrivateKeyJwt FapiPermittedAlg | None
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
--- | Only ClientSecretJwt and PrivateKeyJwt are supported by FAPI. @token_endpoint_auth_signing_alg@ may be required to be specified depending on the specified authentication method. All token requests will be rejected by the server if they are not signed by the algorithm specified in @alg@, or if they are signed with @none@.
+-- | Only ClientSecretJwt and PrivateKeyJwt are supported by FAPI (Section 5.2.4 of the FAPI RO). @token_endpoint_auth_signing_alg@ may be required to be specified depending on the specified authentication method. All token requests will be rejected by the server if they are not signed by the algorithm specified in @alg@, or if they are signed with @none@.
 newtype FapiTokenEndpointAuthMethod = FapiTokenEndpointAuthMethod TokenEndpointAuthMethod
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 fapiTokenEndpointAuthMethod :: TokenEndpointAuthMethod -> Maybe FapiTokenEndpointAuthMethod
@@ -403,11 +408,11 @@ newtype ClientName = ClientName T.Text
 newtype SoftwareVersion = SoftwareVersion T.Text
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
--- | Response type for a dynamic registration request.
+-- | Response type for a dynamic registration request. NB: A successful response will return a HTTP 201 (<https://openid.net/specs/openid-connect-registration-1_0.html §3.2. Client Registration Response>)
 data RegistrationResponse = RegistrationResponse
   {
-    _clientId                 :: ClientId -- ^ OAuth 2.0 client identifier string. RFC7591 mandated.
-  , _clientSecret             :: Maybe ClientSecret -- ^ OAuth 2.0 client secret string, used by confidential clients to authenticate to token end-point.
+    _clientId                 :: ClientId -- ^ OAuth 2.0 unique client identifier string. RFC7591 mandated.
+  , _clientSecret             :: Maybe ClientSecret -- ^ OAuth 2.0 unique client secret string, used by confidential clients to authenticate to token end-point. NB: This will only ever be used by the `client_secret_jwt` client auth method.
   , _clientIdIssuedAt         :: Maybe ClientIdIssuedAt -- ^ Time at which the client identifier was issued.
   , _regReqAccessToken        :: Maybe RegReqAccessToken -- ^ URI and token to perform further operations if necessary.
   , _regRespClientMetaData    :: ClientMetaData -- ^ The rego server must return all registered metadata about the client (OIDC-R 3.2. Client Registration Response).
