@@ -69,7 +69,9 @@ newtype GrantTypes = GrantTypes (Set GrantType)
 --     - `response_type`: should be `code id_token`?
 --     - `grant_types`: OIDC Registration spec defaults to just `authorization_code` when none supplied, but it also states that `implicit` must also be included to use the hybrid flow; is `implicit` therefore also mandatory?
 --   * What purpose does supplying `acr` values in the registration request have, if any, if these values are automatically overridden by the mandatorily supplied values in the auth requests?
---   * Will the registration end-point require a form of client authentication? i.e are requests required to be signed by the client? `OIDC Registration: 3.1. Client Registration Request` does not mandate this.
+--   * Will the registration end-point require a form of client authentication? i.e are requests required to be signed by the client? `OIDC Registration: 3.1. Client Registration Request` does not mandate this, although UK OB does (and it makes sense to do so).
+--   * Will need clarification on what is in the aud/iss fields if a JWT is required.
+--   * Will the dynamic registration endpoint be mandated? i.e `.../register`
 --   * TODO: What type of predicate checking is required (aud/iss) for the registration request and the software statement?
 --   * TODO: @Script@ does not yet support any BCP47 [RFC5646] language tags.
 --   * TODO: JSON encoder/decoder must support BCP47 [RFC5646] language tags in keys.
