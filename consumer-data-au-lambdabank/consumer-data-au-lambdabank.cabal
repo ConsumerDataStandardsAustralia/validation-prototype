@@ -19,7 +19,11 @@ library
                    , Web.ConsumerData.Au.LambdaBank.Model
                    , Web.ConsumerData.Au.LambdaBank.Server
                    , Web.ConsumerData.Au.LambdaBank.Server.Banking
+                   , Web.ConsumerData.Au.LambdaBank.Server.Banking.Accounts
+                   , Web.ConsumerData.Au.LambdaBank.Server.Banking.Payees
+                   , Web.ConsumerData.Au.LambdaBank.Server.Banking.Products
                    , Web.ConsumerData.Au.LambdaBank.Server.Common
+                   , Web.ConsumerData.Au.LambdaBank.Server.Common.Customer
                    , Web.ConsumerData.Au.LambdaBank.Server.Internal
   -- other-modules:
   -- We probably need to tweak these for more than just GHC 8.4 support.
