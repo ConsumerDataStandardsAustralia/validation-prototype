@@ -27,9 +27,9 @@ bankingServer = genericServerT BankingApi
       , _accountsBalancesGet = \pMay -> bankPaginatedResponse
         testBalances
         (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsBalancesGet))
-      , _accountsBalancesPost = bankPaginatedResponse
+      , _accountsBalancesPost = bankStandardResponse
         testBalances
-        (fakePaginator Nothing (links^.bankingLinks.bankingAccountsLinks.accountsBalancesGet))
+        (links^.bankingLinks.bankingAccountsLinks.accountsBalancesPost)
       , _accountsTransactionsGet = \pMay -> bankPaginatedResponse
         testAccountsTransactions
         (fakePaginator pMay (const $ (links^.bankingLinks.bankingAccountsLinks.accountsTransactionsGet) pMay))
