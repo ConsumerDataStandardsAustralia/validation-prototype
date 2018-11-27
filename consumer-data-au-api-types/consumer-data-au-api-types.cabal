@@ -90,6 +90,7 @@ library
                      , containers == 0.5.*
                      , contravariant == 1.4.*
                      , country == 0.1.*
+                     , currency-codes == 3.0.*
                      , cryptonite == 0.25.*
                      , dependent-map == 0.2.*
                      , dependent-sum == 0.4.*

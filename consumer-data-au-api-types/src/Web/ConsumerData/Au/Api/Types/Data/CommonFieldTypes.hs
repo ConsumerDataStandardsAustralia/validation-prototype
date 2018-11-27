@@ -7,6 +7,7 @@ module Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
   ( module Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
   ) where
 
+import           Data.Currency                       (Alpha)
 import           Data.Functor.Contravariant          ((>$<))
 import           Data.Text                           (Text)
 import           Data.Time                           (UTCTime)
@@ -63,7 +64,7 @@ instance FromHttpApiData AsciiString where
 -- “USD”
 -- “GBP”
 data CurrencyString =
-  CurrencyString { unCurrencyString :: Text}
+  CurrencyString { unCurrencyString :: Alpha }
   deriving (Show, Eq)
 
 currencyStringDecoder :: Monad f => Decoder f CurrencyString
