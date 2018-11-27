@@ -114,7 +114,7 @@ genRegReq::
   )
   => n RegistrationRequest
 genRegReq =
-  RegistrationRequest <$> genJwtHeaders <*> genMeta <*> (GenerateSs <$> genSs)
+  RegistrationRequest <$> genJwtHeaders <*> genMeta <*> (DecodedSs <$> genSs)
 
 genJwtHeaders::
   ( MonadGen n
@@ -179,9 +179,9 @@ genMeta ::
 genMeta =
   ClientMetaData <$>
     genAlg <*>
-    genGrantTypes <*>
     genApplicationType <*>
     genAuthMeth <*>
+    Gen.maybe genGrantTypes <*>
     Gen.maybe genScript <*>
     Gen.maybe genScriptUri <*>
     Gen.maybe genContacts <*>
@@ -219,7 +219,7 @@ genAlg :: ( MonadGen n ) => n FapiPermittedAlg
 genAlg = Gen.element [PS256,ES256]
 
 genGrantTypes :: ( MonadGen n , MonadThrow n ) => n FapiGrantTypes
-genGrantTypes = m2e BadGrantType $ fapiGrantTypes . GrantTypes . Set.fromList $ [AuthorizationCode]
+genGrantTypes = m2e BadGrantType $ fapiGrantTypes . GrantTypes . Set.fromList $ [Implicit,AuthorizationCode,RefreshToken]
 
 genApplicationType :: ( MonadGen n , MonadThrow n ) => n FapiApplicationType
 genApplicationType = m2e BadApplicationType =<< fapiApplicationType <$> Gen.element [Web]
