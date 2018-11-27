@@ -19,8 +19,8 @@ test_customer =
   [ testCase "briefGet" . withServer 1337 $ do
       res <- apiClient ^. commonClient . customerClient . customerBriefGet
       liftIO $ res @?= Response
---        (CustomerPerson testPerson)
-        (CustomerOrganisation testOrganisation)
+        (CustomerPerson testPerson)
+--        (CustomerOrganisation testOrganisation)
         (LinksStandard [uri|http://localhost:1337/common/customer|])
         MetaStandard
 
