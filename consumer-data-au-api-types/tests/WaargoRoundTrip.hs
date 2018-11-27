@@ -2,13 +2,13 @@
 module WaargoRoundTrip where
 
 import Control.Lens
-import Control.Error (note)
 import Control.Monad ((>=>))
 import Control.Monad.Except (ExceptT(ExceptT), runExceptT, liftIO)
-import Data.Aeson (Value, decode)
+import Data.Aeson (Value, eitherDecode)
 import Data.Aeson.Diff (diff)
 import Data.Bifunctor (first)
 import Data.Either (either)
+import Data.String (IsString)
 import Test.Tasty (TestTree, TestName)
 import Test.Tasty.HUnit ((@?=),testCase)
 import Waargonaut
@@ -21,9 +21,9 @@ import Data.Attoparsec.ByteString
 
 roundTripTest :: Decoder Identity a -> Encoder' a -> TestName -> FilePath -> TestTree
 roundTripTest d e tn gp = testCase tn . run $ do
-    goldenVal <- ExceptT $ note "Couldn't decode value from golden file" . decodeValue <$> BL.readFile gp
+    goldenVal <- ExceptT $ prefixError "Couldn't decode value from golden file:" . decodeValue <$> BL.readFile gp
     decodeRes <- ExceptT $ first showErr . (decodeBs d) <$> BS.readFile gp
-    expectedVal <- ExceptT . pure $ note "Aeson parsing of waargonaut output failed" . decodeValue . BL.fromStrict . encodeBs e $ decodeRes
+    expectedVal <- ExceptT . pure $ prefixError "Aeson parsing of waargonaut output failed:" . decodeValue . BL.fromStrict . encodeBs e $ decodeRes
     let ddiff = diff goldenVal expectedVal
     liftIO $ ddiff @?= mempty
   where
@@ -38,5 +38,8 @@ decodeBs d = simpleDecode d (over _Left (const $ ParseFailed "") . eitherResult 
 encodeBs :: Encoder' a -> a -> BS.ByteString
 encodeBs e = BL.toStrict . runIdentity . simpleEncodeNoSpaces e
 
-decodeValue :: BL.ByteString -> Maybe Value
-decodeValue = decode
+decodeValue :: BL.ByteString -> Either String Value
+decodeValue = eitherDecode
+
+prefixError :: (Bifunctor p, Semigroup b, IsString b) => b -> p b c -> p b c
+prefixError e = first (\x -> e <> " " <> x)

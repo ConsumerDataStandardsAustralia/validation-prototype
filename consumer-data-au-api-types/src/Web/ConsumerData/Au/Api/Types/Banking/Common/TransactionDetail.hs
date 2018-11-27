@@ -43,21 +43,21 @@ data TransactionDetail = TransactionDetail
 transactionDetailDecoder :: Monad f => Decoder f TransactionDetail
 transactionDetailDecoder = D.withCursor $ \c -> do
   o <- D.down c
-  tid <- D.try $ D.fromKey "transactionId" transactionIdDecoder o
-  ts <- D.fromKey "transactionStatus" transactionStatusDecoder o
+  tid <- D.fromKey "transactionId" (D.maybeOrNull transactionIdDecoder) o
+  ts <- D.fromKey "status" transactionStatusDecoder o
   desc <- D.fromKey "description" D.text o
-  pdt <- D.try $ D.fromKey "postDateTime" dateTimeStringDecoder o
-  edt <- D.try $ D.fromKey "executionDateTime" dateTimeStringDecoder o
-  amt <- D.try $ D.fromKey "amount" amountStringDecoder o
-  cur <- D.try $ D.fromKey "currency" currencyStringDecoder o
+  pdt <- D.fromKey "postDateTime" (D.maybeOrNull dateTimeStringDecoder) o
+  edt <- D.fromKey "executionDateTime" (D.maybeOrNull dateTimeStringDecoder) o
+  amt <- D.fromKey "amount" (D.maybeOrNull amountStringDecoder) o
+  cur <- D.fromKey "currency" (D.maybeOrNull currencyStringDecoder) o
   ref <- D.fromKey "reference" D.text o
-  ed <- D.try $ D.fromKey "extendedData" extendedTransactionDataDecoder o
+  ed <- D.fromKey "extendedData" (D.maybeOrNull extendedTransactionDataDecoder) o
   pure $ TransactionDetail tid ts desc pdt edt amt cur ref ed
 
 transactionDetailEncoder :: Encoder' TransactionDetail
 transactionDetailEncoder = E.mapLikeObj $ \(TransactionDetail tid ts desc pdt edt amt cur ref ed) ->
   E.atKey' "transactionId" (E.maybeOrNull transactionIdEncoder) tid .
-  E.atKey' "transactionStatus" transactionStatusEncoder ts .
+  E.atKey' "status" transactionStatusEncoder ts .
   E.atKey' "description" E.text desc .
   E.atKey' "postDateTime" (E.maybeOrNull dateTimeStringEncoder) pdt .
   E.atKey' "executionDateTime" (E.maybeOrNull dateTimeStringEncoder) edt .

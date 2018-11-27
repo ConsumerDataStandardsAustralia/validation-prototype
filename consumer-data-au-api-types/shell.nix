@@ -7,10 +7,12 @@ let
   inherit (nixpkgs) pkgs;
 
   drv = (import ./. {});
+  hie-nix-src = (import ../nix/hie-nix.nix {});
+  hie-nix = import hie-nix-src {};
 
   haskellPackages = import ./nix/haskellPackages.nix {inherit nixpkgs compiler;};
-  hie-tools = if !hie then [] else (with pkgs.haskellPackages; 
-    [ Cabal_2_4_0_1 apply-refact hsimport hasktags hlint hoogle brittany ]); 
+  hie-tools = if !hie then [] else (with pkgs.haskellPackages;
+    [ Cabal_2_4_0_1 apply-refact hie-nix.hie84 hsimport hasktags hlint hoogle brittany ]);
 
   shellDrv = pkgs.haskell.lib.overrideCabal drv (drv': {
     buildDepends =

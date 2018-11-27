@@ -46,18 +46,18 @@ productDecoder :: Monad f => Decoder f Product
 productDecoder = D.withCursor $ \c -> do
   o <- D.down c
   Product
-    <$> (D.fromKey "productId" asciiStringDecoder o)
-    <*> (D.try $ D.fromKey "effectiveFrom" dateTimeStringDecoder o)
-    <*> (D.try $ D.fromKey "effectiveTo" dateTimeStringDecoder o)
-    <*> (D.fromKey "lastUpdated" dateTimeStringDecoder o)
-    <*> (D.fromKey "productCategory" productCategoryDecoder o)
-    <*> (D.fromKey "name" D.text o)
-    <*> (D.fromKey "description" D.text o)
-    <*> (D.fromKey "brand" D.text o)
-    <*> (D.try $ D.fromKey "brandName" D.text o)
-    <*> (D.try $ D.fromKey "applicationUri" uriDecoder o)
-    <*> (D.fromKey "isNegotiable" D.bool o)
-    <*> (D.try $ D.fromKey "additionalInformation" productAdditionalInformationDecoder o)
+    <$> D.fromKey "productId" asciiStringDecoder o
+    <*> D.fromKey "effectiveFrom" (D.maybeOrNull dateTimeStringDecoder) o
+    <*> D.fromKey "effectiveTo" (D.maybeOrNull dateTimeStringDecoder) o
+    <*> D.fromKey "lastUpdated" dateTimeStringDecoder o
+    <*> D.fromKey "productCategory" productCategoryDecoder o
+    <*> D.fromKey "name" D.text o
+    <*> D.fromKey "description" D.text o
+    <*> D.fromKey "brand" D.text o
+    <*> D.fromKey "brandName" (D.maybeOrNull D.text) o
+    <*> D.fromKey "applicationUri" (D.maybeOrNull uriDecoder) o
+    <*> D.fromKey "isNegotiable" D.bool o
+    <*> D.fromKey "additionalInformation" (D.maybeOrNull productAdditionalInformationDecoder) o
 
 instance JsonDecode OB Product where
   mkDecoder = tagOb productDecoder
@@ -98,11 +98,11 @@ productAdditionalInformationDecoder :: Monad f => Decoder f ProductAdditionalInf
 productAdditionalInformationDecoder = D.withCursor $ \c -> do
   o <- D.down c
   ProductAdditionalInformation
-    <$> (D.try $ D.fromKey "overviewUri" uriDecoder o)
-    <*> (D.try $ D.fromKey "termsUri" uriDecoder o)
-    <*> (D.try $ D.fromKey "eligibilityUri" uriDecoder o)
-    <*> (D.try $ D.fromKey "feesAndPricingUri" uriDecoder o)
-    <*> (D.try $ D.fromKey "bundleUri" uriDecoder o)
+    <$> D.fromKey "overviewUri" (D.maybeOrNull uriDecoder) o
+    <*> D.fromKey "termsUri" (D.maybeOrNull uriDecoder) o
+    <*> D.fromKey "eligibilityUri" (D.maybeOrNull uriDecoder) o
+    <*> D.fromKey "feesAndPricingUri" (D.maybeOrNull uriDecoder) o
+    <*> D.fromKey "bundleUri" (D.maybeOrNull uriDecoder) o
 
 instance JsonDecode OB ProductAdditionalInformation where
   mkDecoder = tagOb productAdditionalInformationDecoder

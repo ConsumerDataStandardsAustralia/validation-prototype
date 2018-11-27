@@ -1,7 +1,7 @@
 {
   "url": "https://github.com/qfpl/servant-waargonaut",
-  "rev": "3f5573ecc126eb943fab41f618818eaac4e93dc0",
-  "date": "2018-11-19T14:06:40+10:00",
-  "sha256": "1v3ixnlxb6vxacz26q306cg3yh0zqnvdg5ia6qrqjq35yrsajd8v",
+  "rev": "f2c530230cb9a0595f88900e41168ba9b0af55d4",
+  "date": "2018-11-26T14:46:14+10:00",
+  "sha256": "1s2laza7kc83i9ngn7rywjbb05pwk728ck96pzjvwz2fhzf5a96f",
   "fetchSubmodules": false
 }

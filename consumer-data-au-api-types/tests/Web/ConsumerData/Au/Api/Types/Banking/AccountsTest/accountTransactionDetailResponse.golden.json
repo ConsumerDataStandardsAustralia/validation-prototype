@@ -1,0 +1,29 @@
+{
+    "data": {
+        "accountId": "string",
+        "displayName": "string",
+        "nickname": "string",
+        "transaction": {
+            "transactionId": "string",
+            "status": "PENDING",
+            "description": "string",
+            "postDateTime": "2018-11-01T05:33:52Z",
+            "executionDateTime": "2018-11-01T05:33:52Z",
+            "amount": "300.56",
+            "currency": "AUD",
+            "reference": "string",
+            "extendedData": {
+                "payer": "string",
+                "payee": "string",
+                "extensionType": "extendedDescription",
+                "extendedDescription": "string",
+                "service": "X2P1.01"
+            }
+        }
+    },
+    "links": {
+        "self": "http://example.com/self"
+    },
+    "meta": {
+    }
+}

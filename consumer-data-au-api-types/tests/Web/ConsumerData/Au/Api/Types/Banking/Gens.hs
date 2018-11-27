@@ -9,10 +9,7 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 import Web.ConsumerData.Au.Api.Types
--- import Web.ConsumerData.Au.Api.Types.Tag
-
-textGen :: Gen Text
-textGen = Gen.text (Range.linear 5 20) Gen.unicode
+import Data.Text.Gens
 
 payeeGen :: Gen Payee
 payeeGen = Payee <$> payeeIdGen <*> textGen <*> Gen.maybe textGen <*> payeeTypeGen

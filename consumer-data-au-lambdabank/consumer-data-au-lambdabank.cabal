@@ -1,0 +1,89 @@
+name:                consumer-data-au-lambdabank
+version:             0.1.0.0
+synopsis:            Mock bank for the Australian Consumer Data Rights Specification
+description:         See https://github.com/ConsumerDataStandardsAustralia/standards for more details.
+license:             MIT
+license-file:        LICENSE
+author:              Queensland Functional Programming Lab, Data 61, CSIRO
+maintainer:          contact@qfpl.io
+copyright:           Commonwealth Science and Industrial Research Organisation, 2018
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+tested-with:         GHC == 8.4.4
+
+library
+  exposed-modules:   Web.ConsumerData.Au.LambdaBank.Main
+                   , Web.ConsumerData.Au.LambdaBank.Alien.Servant.Server
+                   , Web.ConsumerData.Au.LambdaBank.FakeData
+                   , Web.ConsumerData.Au.LambdaBank.Model
+                   , Web.ConsumerData.Au.LambdaBank.Server
+                   , Web.ConsumerData.Au.LambdaBank.Server.Banking
+                   , Web.ConsumerData.Au.LambdaBank.Server.Common
+                   , Web.ConsumerData.Au.LambdaBank.Server.Internal
+  -- other-modules:
+  -- We probably need to tweak these for more than just GHC 8.4 support.
+  build-depends:
+                       base == 4.11.*
+                     , aeson == 1.3.*
+                     , bytestring == 0.10.*
+                     , consumer-data-au-api-types
+                     , consumer-data-au-api-client
+                     , country == 0.1.*
+                     , free == 5.0.*
+                     , lens == 4.16.*
+                     , modern-uri == 0.2.*
+                     , mtl == 2.2.*
+                     , profunctors == 5.*
+                     , servant == 0.14.*
+                     , servant-server == 0.14.*
+                     , text == 1.2.*
+                     , time >= 1.8 && < 1.10
+                     , transformers == 0.5.*
+                     , wai == 3.2.*
+                     , warp == 3.2.*
+  hs-source-dirs:      src
+  ghc-options:         -Wall -Werror
+  default-language:    Haskell2010
+
+executable lambda-bank
+  build-depends:
+                       base == 4.11.*
+                     , consumer-data-au-lambdabank
+  --other-modules:
+  hs-source-dirs:      exe
+  main-is:             Main.hs
+  ghc-options:         -Wall -Werror
+  default-language:    Haskell2010
+
+test-suite tasty
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      tests
+  main-is:             Tests.hs
+  ghc-options:         -Wall -Werror
+  build-tool-depends:  tasty-discover:tasty-discover
+  build-depends:
+                       base == 4.11.*
+                     , consumer-data-au-lambdabank
+                     , consumer-data-au-api-types
+                     , consumer-data-au-api-client
+                     , exceptions == 0.10.*
+                     , free == 5.0.*
+                     , hedgehog == 0.6.*
+                     , http-client == 0.5.*
+                     , lens == 4.16.*
+                     , modern-uri == 0.2.*
+                     , servant-client == 0.14.*
+                     , tasty == 1.1.*
+                     , tasty-discover == 4.2.*
+                     , tasty-golden == 2.*
+                     , tasty-hedgehog == 0.2.*
+                     , tasty-hunit == 0.10.*
+                     , transformers == 0.5.*
+                     , text == 1.2.*
+  other-modules:  Web.ConsumerData.Au.LambdaBank.Banking.AccountsTest
+                  Web.ConsumerData.Au.LambdaBank.Banking.PayeesTest
+                  Web.ConsumerData.Au.LambdaBank.Common.CustomerTest
+                  Web.ConsumerData.Au.LambdaBank.WithServer
+
+  default-language:    Haskell2010

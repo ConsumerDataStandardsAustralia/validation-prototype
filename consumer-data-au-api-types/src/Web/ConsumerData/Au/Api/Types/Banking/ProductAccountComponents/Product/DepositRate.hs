@@ -66,9 +66,9 @@ productDepositRateDecoder = D.withCursor $ \c -> do
   o <- D.down c
   ProductDepositRate
     <$> D.focus productDepositRateTypeDecoder o
-    <*> (D.fromKey "rate" rateStringDecoder o)
-    <*> (D.try $ D.fromKey "additionalInfo" D.text o)
-    <*> (D.try $ D.fromKey "additionalInfoUri" uriDecoder o)
+    <*> D.fromKey "rate" rateStringDecoder o
+    <*> D.fromKey "additionalInfo" (D.maybeOrNull D.text) o
+    <*> D.fromKey "additionalInfoUri" (D.maybeOrNull uriDecoder) o
 
 instance JsonDecode OB ProductDepositRate where
   mkDecoder = tagOb productDepositRateDecoder

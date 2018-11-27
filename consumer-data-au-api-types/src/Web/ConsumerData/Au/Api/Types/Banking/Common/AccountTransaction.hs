@@ -33,7 +33,7 @@ accountTransactionDecoder :: Monad f => Decoder f AccountTransaction
 accountTransactionDecoder = D.withCursor $ \c -> do
   o <- D.down c
   accId <- D.fromKey "accountId" accountIdDecoder o
-  basic <- D.try $ D.focus transactionBasicDecoder c
+  basic <- D.focus (D.maybeOrNull transactionBasicDecoder) c
   pure $ AccountTransaction accId basic
 
 accountTransactionEncoder :: Applicative f => Encoder f AccountTransaction

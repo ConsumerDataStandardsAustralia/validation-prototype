@@ -1,14 +1,17 @@
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module Web.ConsumerData.Au.Api.Types.Banking.PayeesTest where
 
 import Data.Functor.Identity (Identity)
-import Data.Tagged (Tagged)
-import Test.Tasty               (TestTree)
-import Waargonaut.Decode (Decoder)
-import Waargonaut.Encode (Encoder)
-import Waargonaut.Generic       (mkDecoder, mkEncoder, untag)
-import WaargoRoundTrip          (roundTripTest)
+import Data.Tagged           (Tagged)
+import Test.Tasty            (TestTree)
+import Waargonaut.Decode     (Decoder)
+import Waargonaut.Encode     (Encoder)
+import Waargonaut.Generic    (mkDecoder, mkEncoder, untag)
+import WaargoRoundTrip       (roundTripTest)
 
 import Web.ConsumerData.Au.Api.Types
 import Web.ConsumerData.Au.Api.Types.Tag

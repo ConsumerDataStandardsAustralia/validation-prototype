@@ -1,0 +1,31 @@
+{
+  "data": {
+    "accountId": "acc-id",
+    "displayName": "disp-name",
+    "nickname": "nick name",
+    "transactions": [
+      {
+        "transactionId": "transaction id",
+        "isDetailAvailable": true,
+        "status": "PENDING",
+        "description": "desc",
+        "postDateTime": "2018-11-01T05:33:52Z",
+        "executionDateTime": "2018-11-22T05:33:52Z",
+        "amount": "300.56",
+        "currency": "AUD",
+        "reference": "ref"
+      }
+    ]
+  },
+  "links": {
+    "self": "http://example.com/self",
+    "first": "http://example.com/first",
+    "prev": "http://example.com/prev",
+    "next": "http://example.com/next",
+    "last": "http://example.com/last"
+  },
+  "meta": {
+    "totalRecords": 6,
+    "totalPages": 2
+  }
+}
