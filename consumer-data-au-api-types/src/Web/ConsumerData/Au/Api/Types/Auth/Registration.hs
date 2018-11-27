@@ -12,8 +12,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration where
 import           Control.Applicative                       (liftA2, (<|>))
 import           Control.Lens
     (Prism', at, makePrisms, prism, to, ( # ), (&), (.~), (?~), (^.), (^?),
-    _Just, _Right)
-import           Control.Monad                             (join)
+    _Right)
 import           Control.Monad.Error.Class
     (MonadError, throwError)
 import           Control.Monad.Time                        (MonadTime)
@@ -21,10 +20,9 @@ import qualified Crypto.JOSE.Error                         as JE
 import           Crypto.JOSE.JWA.JWE                       (Enc)
 import qualified Crypto.JOSE.JWA.JWE                       as JWE
 import           Crypto.JOSE.JWK                           (JWK)
-import           Crypto.JOSE.JWS
-    (Alg, JWSHeader, newJWSHeader)
+import           Crypto.JOSE.JWS                           (Alg, newJWSHeader)
 import           Crypto.JWT
-    (AsJWTError, Audience, ClaimsSet, JWT, NumericDate, SignedJWT, StringOrURI,
+    (AsJWTError, Audience, ClaimsSet, NumericDate, SignedJWT, StringOrURI,
     claimAud, claimExp, claimIat, claimIss, claimJti, decodeCompact,
     defaultJWTValidationSettings, emptyClaimsSet, encodeCompact,
     issuerPredicate, signClaims, unregisteredClaims, verifyClaims)
