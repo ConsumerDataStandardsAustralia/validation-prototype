@@ -11,10 +11,10 @@ that it looks heinous for now!
 import Control.Lens
 import Web.ConsumerData.Au.Api.Types
 
-import Servant.API.Generic      (ToServant)
-import Servant.Server.Generic   (AsServerT, genericServerT)
+import Servant.API.Generic    (ToServant)
+import Servant.Server.Generic (AsServerT, genericServerT)
 
-import Web.ConsumerData.Au.LambdaBank.FakeData (fakePaginator)
+import Web.ConsumerData.Au.LambdaBank.FakeData        (fakePaginator)
 import Web.ConsumerData.Au.LambdaBank.Model
 import Web.ConsumerData.Au.LambdaBank.Server.Internal
     (LambdaBankM, bankPaginatedResponse, bankStandardResponse)
