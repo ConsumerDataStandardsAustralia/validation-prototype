@@ -6,7 +6,11 @@ import qualified Hedgehog.Gen as Gen
 import Country.Gens (countryGen)
 import Data.Text.Gens (textGen)
 
+import Web.ConsumerData.Au.Api.Types.Data.Currency
 import Web.ConsumerData.Au.Api.Types.Data.PhysicalAddress
+
+currencyGen :: Gen Currency
+currencyGen = Gen.enumBounded
 
 physicalAddressGen ::  Gen PhysicalAddress
 physicalAddressGen =
