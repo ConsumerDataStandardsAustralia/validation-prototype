@@ -74,6 +74,7 @@ library
                      , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.PersonDetail
                      , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.PhoneNumber
                      , Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
+                     , Web.ConsumerData.Au.Api.Types.Data.Currency
                      , Web.ConsumerData.Au.Api.Types.Data.PhysicalAddress
                      , Web.ConsumerData.Au.Api.Types.Response
                      , Web.ConsumerData.Au.Api.Types.Stub
