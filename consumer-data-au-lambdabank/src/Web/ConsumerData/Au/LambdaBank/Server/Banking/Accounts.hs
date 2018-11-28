@@ -20,9 +20,9 @@ accountsServer = genericServerT AccountsApi
     , _accountsBalancesGet = \pMay -> getBalancesAll >>= \bs -> bankPaginatedResponse
       bs
       (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsBalancesGet))
-    , _accountsBalancesPost = getBalancesForAccounts (error "TODO") >>= \bs -> bankPaginatedResponse
+    , _accountsBalancesPost = getBalancesForAccounts (error "TODO") >>= \bs -> bankStandardResponse
       bs
-      (fakePaginator Nothing (links^.bankingLinks.bankingAccountsLinks.accountsBalancesGet))
+      (links^.bankingLinks.bankingAccountsLinks.accountsBalancesPost)
     , _accountsTransactionsGet = \pMay -> getTransactionsAll >>= \as -> bankPaginatedResponse
       as
       (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsTransactionsGet))
