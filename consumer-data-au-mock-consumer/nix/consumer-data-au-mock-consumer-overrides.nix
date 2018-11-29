@@ -12,6 +12,7 @@ let
     Glob = pkgs.haskell.lib.dontCheck super.Glob;
     iproute = pkgs.haskell.lib.dontCheck super.iproute;
     mockery = pkgs.haskell.lib.dontCheck super.mockery;
+    silently = pkgs.haskell.lib.dontCheck super.silently;
   };
 
   composedOverrides =
