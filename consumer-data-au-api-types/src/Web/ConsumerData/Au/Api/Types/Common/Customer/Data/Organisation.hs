@@ -23,6 +23,7 @@ import           Waargonaut.Encode       (Encoder)
 import qualified Waargonaut.Encode       as E
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json   (Json)
+import           Waargonaut.Helpers      (atKeyOptional', maybeOrAbsentE)
 
 -- | The authorisation was given to a business agent and this type represents that business. This type should not be used where a retail customer was authorised.
 -- <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocCommonCommonSchemas CDR AU v0.1.0>
@@ -53,38 +54,37 @@ organisationFields
   => Organisation -> MapLikeObj ws Json -> MapLikeObj ws Json
 organisationFields o =
   E.atKey' "lastUpdateTime" utcTimeEncoder (_organisationLastUpdateTime o ) .
-  E.atKey' "agentFirstName" (E.maybeOrNull E.text) (_organisationAgentFirstName o ) .
+  maybeOrAbsentE "agentFirstName" E.text (_organisationAgentFirstName o ) .
   E.atKey' "agentLastName" E.text (_organisationAgentLastName o ) .
   E.atKey' "agentRole" E.text (_organisationAgentRole o ) .
   E.atKey' "businessName" E.text (_organisationBusinessName o ) .
-  E.atKey' "legalName" (E.maybeOrNull E.text) (_organisationLegalName o ) .
-  E.atKey' "shortName" (E.maybeOrNull E.text) (_organisationShortName o ) .
-  E.atKey' "abn" (E.maybeOrNull E.text) (_organisationAbn o ) .
-  E.atKey' "acn" (E.maybeOrNull E.text) (_organisationAcn o ) .
-  E.atKey' "isACNRegistered" (E.maybeOrNull E.bool) (_organisationIsACNCRegistered o ) .
-  E.atKey' "industryCode" (E.maybeOrNull E.text) (_organisationIndustryCode o ) .
-  E.atKey' "organisationType" (E.maybeOrNull organisationTypeEncoder) (_organisationOrganisationType o ) .
-  E.atKey' "registeredCountry" (E.maybeOrNull countryAlphaThreeEncoder) (_organisationRegisteredCountry o ) .
-  E.atKey' "establishmentDate" (E.maybeOrNull utcTimeEncoder) (_organisationEstablishmentDate o )
+  maybeOrAbsentE "legalName" E.text (_organisationLegalName o ) .
+  maybeOrAbsentE "shortName" E.text (_organisationShortName o ) .
+  maybeOrAbsentE "abn" E.text (_organisationAbn o ) .
+  maybeOrAbsentE "acn" E.text (_organisationAcn o ) .
+  maybeOrAbsentE "isACNRegistered" E.bool (_organisationIsACNCRegistered o ) .
+  maybeOrAbsentE "industryCode" E.text (_organisationIndustryCode o ) .
+  maybeOrAbsentE "organisationType" organisationTypeEncoder (_organisationOrganisationType o ) .
+  maybeOrAbsentE "registeredCountry" countryAlphaThreeEncoder (_organisationRegisteredCountry o ) .
+  maybeOrAbsentE "establishmentDate" utcTimeEncoder (_organisationEstablishmentDate o )
 
 organisationDecoder :: Monad f => Decoder f Organisation
-organisationDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+organisationDecoder =
   Organisation
-    <$> (D.fromKey "lastUpdateTime" utcTimeDecoder o)
-    <*> (D.fromKey "agentFirstName" (D.maybeOrNull D.text) o)
-    <*> (D.fromKey "agentLastName" D.text o)
-    <*> (D.fromKey "agentRole" D.text o)
-    <*> (D.fromKey "businessName" D.text o)
-    <*> (D.fromKey "legalName" (D.maybeOrNull D.text) o)
-    <*> (D.fromKey "shortName" (D.maybeOrNull D.text) o)
-    <*> (D.fromKey "abn" (D.maybeOrNull D.text) o)
-    <*> (D.fromKey "acn" (D.maybeOrNull D.text) o)
-    <*> (D.fromKey "isACNRegistered" (D.maybeOrNull D.bool) o)
-    <*> (D.fromKey "industryCode" (D.maybeOrNull D.text) o)
-    <*> (D.fromKey "organisationType" (D.maybeOrNull organisationTypeDecoder) o)
-    <*> (D.fromKey "registeredCountry" (D.maybeOrNull countryAlphaThreeDecoder) o)
-    <*> (D.fromKey "establishmentDate" (D.maybeOrNull utcTimeDecoder) o)
+    <$> D.atKey "lastUpdateTime" utcTimeDecoder
+    <*> atKeyOptional' "agentFirstName" D.text
+    <*> D.atKey "agentLastName" D.text
+    <*> D.atKey "agentRole" D.text
+    <*> D.atKey "businessName" D.text
+    <*> atKeyOptional' "legalName" D.text
+    <*> atKeyOptional' "shortName" D.text
+    <*> atKeyOptional' "abn" D.text
+    <*> atKeyOptional' "acn" D.text
+    <*> atKeyOptional' "isACNRegistered" D.bool
+    <*> atKeyOptional' "industryCode" D.text
+    <*> atKeyOptional' "organisationType" organisationTypeDecoder
+    <*> atKeyOptional' "registeredCountry" countryAlphaThreeDecoder
+    <*> atKeyOptional' "establishmentDate" utcTimeDecoder
 
 -- | List of organisation types.
 data OrganisationType =

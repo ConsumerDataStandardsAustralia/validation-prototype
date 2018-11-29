@@ -20,6 +20,7 @@ import qualified Waargonaut.Encode          as E
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 
 -- | The individual who authorised the session.
 -- <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocCommonCommonSchemas CDR AU v0.1.0>
@@ -59,17 +60,16 @@ personFields p =
   E.atKey' "lastName" E.text (_personLastName p) .
   E.atKey' "middleNames" (E.list E.text) (_personMiddleNames p) .
   E.atKey' "prefix" E.text (_personPrefix p) .
-  E.atKey' "suffix" (E.maybeOrNull E.text) (_personSuffix p) .
-  E.atKey' "occupationCode" (E.maybeOrNull occupationCodeEncoder) (_personOccupationCode p)
+  maybeOrAbsentE "suffix" E.text (_personSuffix p) .
+  maybeOrAbsentE "occupationCode" occupationCodeEncoder (_personOccupationCode p)
 
 personDecoder :: Monad f => Decoder f Person
-personDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+personDecoder =
   Person
-    <$> (D.fromKey "lastUpdateTime" utcTimeDecoder o)
-    <*> (D.fromKey "firstName" D.text o)
-    <*> (D.fromKey "lastName" D.text o)
-    <*> (D.fromKey "middleNames" (D.list D.text) o)
-    <*> (D.fromKey "prefix" D.text o)
-    <*> (D.fromKey "suffix" (D.maybeOrNull D.text) o)
-    <*> (D.fromKey "occupationCode" (D.maybeOrNull occupationCodeDecoder) o)
+    <$> D.atKey "lastUpdateTime" utcTimeDecoder
+    <*> D.atKey "firstName" D.text
+    <*> D.atKey "lastName" D.text
+    <*> D.atKey "middleNames" (D.list D.text)
+    <*> D.atKey "prefix" D.text
+    <*> atKeyOptional' "suffix" D.text
+    <*> atKeyOptional' "occupationCode" occupationCodeDecoder

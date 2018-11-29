@@ -22,6 +22,7 @@ import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers         (fromKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.Discount
     (AccountDiscounts, accountDiscountsDecoder, accountDiscountsEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.AdditionalValue
@@ -77,13 +78,13 @@ accountFeeDecoder = D.withCursor $ \c -> do
   AccountFee
     <$> D.fromKey "name" D.text o
     <*> D.focus accountFeeTypeDecoder o
-    <*> D.fromKey "amount" (D.maybeOrNull amountStringDecoder) o
-    <*> D.fromKey "balanceRate" (D.maybeOrNull rateStringDecoder) o
-    <*> D.fromKey "transactionRate" (D.maybeOrNull rateStringDecoder) o
-    <*> D.fromKey "currency" (D.maybeOrNull currencyStringDecoder) o
-    <*> D.fromKey "additionalInfo" (D.maybeOrNull D.text) o
-    <*> D.fromKey "additionalInfoUri" (D.maybeOrNull uriDecoder) o
-    <*> D.fromKey "discounts" (D.maybeOrNull accountDiscountsDecoder) o
+    <*> fromKeyOptional' "amount" amountStringDecoder o
+    <*> fromKeyOptional' "balanceRate" rateStringDecoder o
+    <*> fromKeyOptional' "transactionRate" rateStringDecoder o
+    <*> fromKeyOptional' "currency" currencyStringDecoder o
+    <*> fromKeyOptional' "additionalInfo" D.text o
+    <*> fromKeyOptional' "additionalInfoUri" uriDecoder o
+    <*> fromKeyOptional' "discounts" accountDiscountsDecoder o
 
 instance JsonDecode OB AccountFee where
   mkDecoder = tagOb accountFeeDecoder
@@ -92,13 +93,13 @@ accountFeeEncoder :: Applicative f => Encoder f AccountFee
 accountFeeEncoder = E.mapLikeObj $ \p ->
   E.atKey' "name" E.text (_accountFeeName p) .
   accountFeeTypeFields (_accountFeeFeeType p) .
-  E.atKey' "amount" (E.maybeOrNull amountStringEncoder) (_accountFeeAmount p) .
-  E.atKey' "balanceRate" (E.maybeOrNull rateStringEncoder) (_accountFeeBalanceRate p) .
-  E.atKey' "transactionRate" (E.maybeOrNull rateStringEncoder) (_accountFeeTransactionRate p) .
-  E.atKey' "currency" (E.maybeOrNull currencyStringEncoder) (_accountFeeCurrency p) .
-  E.atKey' "additionalInfo" (E.maybeOrNull E.text) (_accountFeeAdditionalInfo p) .
-  E.atKey' "additionalInfoUri" (E.maybeOrNull uriEncoder) (_accountFeeAdditionalInfoUri p) .
-  E.atKey' "discounts" (E.maybeOrNull accountDiscountsEncoder) (_accountFeeDiscounts p)
+  maybeOrAbsentE "amount" amountStringEncoder (_accountFeeAmount p) .
+  maybeOrAbsentE "balanceRate" rateStringEncoder (_accountFeeBalanceRate p) .
+  maybeOrAbsentE "transactionRate" rateStringEncoder (_accountFeeTransactionRate p) .
+  maybeOrAbsentE "currency" currencyStringEncoder (_accountFeeCurrency p) .
+  maybeOrAbsentE "additionalInfo" E.text (_accountFeeAdditionalInfo p) .
+  maybeOrAbsentE "additionalInfoUri" uriEncoder (_accountFeeAdditionalInfoUri p) .
+  maybeOrAbsentE "discounts" accountDiscountsEncoder (_accountFeeDiscounts p)
 
 instance JsonEncode OB AccountFee where
   mkEncoder = tagOb accountFeeEncoder

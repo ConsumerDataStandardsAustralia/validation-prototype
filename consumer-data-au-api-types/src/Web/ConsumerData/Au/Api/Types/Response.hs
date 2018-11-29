@@ -49,6 +49,7 @@ import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 
+import Waargonaut.Helpers                   (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Tag
 
 eitherDecoder :: Monad m => Either Text a -> Decoder m a
@@ -212,22 +213,21 @@ data LinksPaginated = LinksPaginated
   deriving (Eq, Ord, Show)
 
 linksPaginatedDecoder :: Monad f => Decoder f LinksPaginated
-linksPaginatedDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+linksPaginatedDecoder =
   LinksPaginated
-    <$> D.fromKey "self" uriDecoder o
-    <*> D.fromKey "first" (D.maybeOrNull uriDecoder) o
-    <*> D.fromKey "prev" (D.maybeOrNull uriDecoder) o
-    <*> D.fromKey "next" (D.maybeOrNull uriDecoder) o
-    <*> D.fromKey "last" (D.maybeOrNull uriDecoder) o
+    <$> D.atKey "self" uriDecoder
+    <*> atKeyOptional' "first" uriDecoder
+    <*> atKeyOptional' "prev" uriDecoder
+    <*> atKeyOptional' "next" uriDecoder
+    <*> atKeyOptional' "last" uriDecoder
 
 linksPaginatedEncoder :: Applicative f => Encoder f LinksPaginated
 linksPaginatedEncoder = E.mapLikeObj $ \r ->
   E.atKey' "self" uriEncoder (_linksPaginatedSelf r) .
-  E.atKey' "first" (E.maybeOrNull uriEncoder) (_linksPaginatedFirst r) .
-  E.atKey' "prev" (E.maybeOrNull uriEncoder) (_linksPaginatedPrev r) .
-  E.atKey' "next" (E.maybeOrNull uriEncoder) (_linksPaginatedNext r) .
-  E.atKey' "last" (E.maybeOrNull uriEncoder) (_linksPaginatedLast r)
+  maybeOrAbsentE "first" uriEncoder (_linksPaginatedFirst r) .
+  maybeOrAbsentE "prev" uriEncoder (_linksPaginatedPrev r) .
+  maybeOrAbsentE "next" uriEncoder (_linksPaginatedNext r) .
+  maybeOrAbsentE "last" uriEncoder (_linksPaginatedLast r)
 
 instance JsonDecode OB LinksPaginated where
   mkDecoder = tagOb $ linksPaginatedDecoder
