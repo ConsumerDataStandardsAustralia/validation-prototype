@@ -8,6 +8,10 @@ let
   bankOverrides = pkgs: self: super: {
     consumer-data-au-api-types = self.callPackage (import ../../consumer-data-au-api-types/consumer-data-au-api-types.nix) {};
     consumer-data-au-api-client = self.callPackage (import ../../consumer-data-au-api-client/consumer-data-au-api-client.nix) {};
+
+    # HPack just won't work in ghcjs atm because of the yaml lib at the moment. Let's cheat.
+    hpack = pkgs.haskellPackages.hpack;
+
     base-compat-batteries = pkgs.haskell.lib.dontCheck super.base-compat-batteries;
     Glob = pkgs.haskell.lib.dontCheck super.Glob;
     iproute = pkgs.haskell.lib.dontCheck super.iproute;
@@ -32,10 +36,8 @@ let
     http2 = pkgs.haskell.lib.dontCheck super.http2;
     yaml = pkgs.haskell.lib.dontCheck super.yaml;
     wai-extra = pkgs.haskell.lib.dontCheck super.wai-extra;
-    hpack = pkgs.haskell.lib.dontCheck super.hpack;
     wai-app-static = pkgs.haskell.lib.dontCheck super.wai-app-static;
-
-
+    waargonaut = pkgs.haskell.lib.dontCheck super.acme-default;
   };
 
   composedOverrides =
