@@ -10,7 +10,7 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# OPTIONS_GHC -Wwarn #-}
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   ( ErrorCode (ErrorCode)
