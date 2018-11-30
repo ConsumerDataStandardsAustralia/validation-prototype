@@ -18,6 +18,7 @@ import qualified Waargonaut.Encode as E
 import           Waargonaut.Generic (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types (MapLikeObj, WS, Json)
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Tag
 
 newtype PayeeId = PayeeId { unPayeeId :: Text } deriving (Eq, Show)
@@ -55,13 +56,12 @@ payeesEncoder = E.mapLikeObj $ \(Payees ps) ->
   E.atKey' "payees" (E.list payeeEncoder) ps
 
 payeeDecoder :: Monad f => Decoder f Payee
-payeeDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  pid <- D.fromKey "payeeId" payeeIdDecoder o
-  nick <- D.fromKey "nickname" D.text o
-  desc <- D.fromKey "description" (D.maybeOrNull D.text) o
-  ptype <- D.fromKey "type" payeeTypeDecoder o
-  pure $ Payee pid nick desc ptype
+payeeDecoder =
+  Payee
+    <$> D.atKey "payeeId" payeeIdDecoder
+    <*> D.atKey "nickname" D.text
+    <*> atKeyOptional' "description" D.text
+    <*> D.atKey "type" payeeTypeDecoder
 
 payeeEncoder :: Applicative f => Encoder f Payee
 payeeEncoder = E.mapLikeObj payeeMLO
@@ -70,7 +70,7 @@ payeeMLO :: Payee -> MapLikeObj WS Json -> MapLikeObj WS Json
 payeeMLO (Payee pid nick desc ptype) =
   E.atKey' "payeeId" payeeIdEncoder pid .
   E.atKey' "nickname" E.text nick .
-  E.atKey' "description" (E.maybeOrNull E.text) desc .
+  maybeOrAbsentE "description" E.text desc .
   E.atKey' "type" (payeeTypeEncoder True) ptype
 
 payeeIdDecoder :: Monad f => Decoder f PayeeId

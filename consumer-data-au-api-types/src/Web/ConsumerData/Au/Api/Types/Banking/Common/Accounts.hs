@@ -20,6 +20,7 @@ import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount
     (CurrencyAmount, currencyAmountDecoder, currencyAmountEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Products
@@ -38,17 +39,16 @@ data Account = Account
   deriving (Eq, Show)
 
 accountDecoder :: Monad f => Decoder f Account
-accountDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  accId <- D.fromKey "accountId" accountIdDecoder o
-  displayName <- D.fromKey "displayName" D.text o
-  nickname <- D.fromKey "nickname" (D.maybeOrNull D.text) o
-  maskedNum <- D.fromKey "maskedNumber" maskedAccountNumberDecoder o
-  prodCat <- D.fromKey "productCategory" (D.maybeOrNull productCategoryDecoder) o
-  prodType <- D.fromKey "productType" D.text o
-  balType <- D.fromKey "balance$type" balanceTypeDecoder o
-  balance <- D.fromKey (balanceTypeToText balType) (balanceDecoder balType) o
-  pure $ Account accId displayName nickname maskedNum prodCat prodType balance
+accountDecoder = do
+  balType <- D.atKey "balance$type" balanceTypeDecoder
+  Account
+    <$> D.atKey "accountId" accountIdDecoder
+    <*> D.atKey "displayName" D.text
+    <*> atKeyOptional' "nickname" D.text
+    <*> D.atKey "maskedNumber" maskedAccountNumberDecoder
+    <*> atKeyOptional' "productCategory" productCategoryDecoder
+    <*> D.atKey "productType" D.text
+    <*> D.atKey (balanceTypeToText balType) (balanceDecoder balType)
 
 instance JsonDecode OB Account where
   mkDecoder = tagOb accountDecoder
@@ -61,9 +61,9 @@ accountFields :: (Monoid ws, Semigroup ws) => Account -> MapLikeObj ws Json -> M
 accountFields a =
   E.atKey' "accountId" accountIdEncoder (_accountAccountId a) .
   E.atKey' "displayName" E.text (_accountDisplayName a) .
-  E.atKey' "nickname" (E.maybeOrNull E.text) (_accountNickname a) .
+  maybeOrAbsentE "nickname" E.text (_accountNickname a) .
   E.atKey' "maskedNumber" maskedAccountNumberEncoder (_accountMaskedNumber a) .
-  E.atKey' "productCategory" (E.maybeOrNull productCategoryEncoder) (_accountProductCategory a) .
+  maybeOrAbsentE "productCategory" productCategoryEncoder (_accountProductCategory a) .
   E.atKey' "productType" E.text (_accountProductType a) .
   E.atKey' "balance$type" (balanceToType >$< balanceTypeEncode) (_accountBalance a) .
   E.atKey' (balanceTypeToText $ balanceToType (_accountBalance a)) balanceEncoder (_accountBalance a)
@@ -152,21 +152,21 @@ data Balance
   deriving (Eq, Show)
 
 balanceDecoder :: Monad f => BalanceType -> Decoder f Balance
-balanceDecoder bt = D.withCursor $ \c -> do
-  o <- D.down c
+balanceDecoder bt =
   case bt of
-    BTDeposits -> do
-      currentBalance <- D.fromKey "currentBalance" currencyAmountDecoder o
-      availableBalance <- D.fromKey "availableBalance" currencyAmountDecoder o
-      pure $ Deposits currentBalance availableBalance
+    BTDeposits ->
+      Deposits
+        <$> D.atKey "currentBalance" currencyAmountDecoder
+        <*> D.atKey "availableBalance" currencyAmountDecoder
     BTLending -> do
-      currentBalance <- D.fromKey "currentBalance" currencyAmountDecoder o
-      availableBalance <- D.fromKey "availableBalance" currencyAmountDecoder o
-      creditLimit <- D.fromKey "creditLimit" currencyAmountDecoder o
-      amortisedLimit <- D.fromKey "amortisedLimit" (D.maybeOrNull currencyAmountDecoder) o
-      pure $ Lending currentBalance availableBalance creditLimit amortisedLimit
+      Lending
+        <$> D.atKey "currentBalance" currencyAmountDecoder
+        <*> D.atKey "availableBalance" currencyAmountDecoder
+        <*> D.atKey "creditLimit" currencyAmountDecoder
+        <*> atKeyOptional' "amortisedLimit" currencyAmountDecoder
     BTPurses ->
-      Purses <$> D.fromKey "purses" (D.list currencyAmountDecoder) o
+      Purses
+        <$> D.atKey "purses" (D.list currencyAmountDecoder)
 
 balanceEncoder :: Applicative f => Encoder f Balance
 balanceEncoder = E.mapLikeObj $ \case
@@ -177,7 +177,7 @@ balanceEncoder = E.mapLikeObj $ \case
     E.atKey' "currentBalance" currencyAmountEncoder curBal .
     E.atKey' "availableBalance" currencyAmountEncoder avBal .
     E.atKey' "creditLimit" currencyAmountEncoder credLim .
-    E.atKey' "amortisedLimit" (E.maybeOrNull currencyAmountEncoder) amLim
+    maybeOrAbsentE "amortisedLimit" currencyAmountEncoder amLim
   Purses purses ->
     E.atKey' "purses" (E.list currencyAmountEncoder) purses
 

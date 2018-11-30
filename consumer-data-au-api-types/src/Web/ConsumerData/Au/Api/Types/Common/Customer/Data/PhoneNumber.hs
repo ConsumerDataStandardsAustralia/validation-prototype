@@ -17,6 +17,8 @@ import qualified Waargonaut.Decode.Error             as D
 import           Waargonaut.Encode                   (Encoder)
 import qualified Waargonaut.Encode                   as E
 
+import           Waargonaut.Helpers                  (atKeyOptional', maybeOrAbsentE)
+
 -- | PhoneNumber <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaphonenumber CDR AU v0.1.0 PhoneNumber >
 data PhoneNumber = PhoneNumber
  { _phoneNumberIsPreferred :: Bool               -- ^ Required to be true for one and only one entry to indicate the preferred phone number
@@ -32,21 +34,21 @@ phoneNumberEncoder :: Applicative f => Encoder f PhoneNumber
 phoneNumberEncoder = E.mapLikeObj $ \pn ->
   E.atKey' "isPreferred" E.bool (_phoneNumberIsPreferred pn) .
   E.atKey' "purpose" phoneNumberPurposeEncoder (_phoneNumberPurpose pn) .
-  E.atKey' "countryCode" (E.maybeOrNull E.text) (_phoneNumberCountryCode pn) .
-  E.atKey' "areaCode" (E.maybeOrNull E.text) (_phoneNumberAreaCode pn) .
+  maybeOrAbsentE "countryCode" E.text (_phoneNumberCountryCode pn) .
+  maybeOrAbsentE "areaCode" E.text (_phoneNumberAreaCode pn) .
   E.atKey' "number" E.text (_phoneNumberNumber pn) .
-  E.atKey' "extension" (E.maybeOrNull E.text) (_phoneNumberExtension pn) .
+  maybeOrAbsentE "extension" E.text (_phoneNumberExtension pn) .
   E.atKey' "fullNumber" E.text (_phoneNumberFullNumber pn)
 
 phoneNumberDecoder :: Monad f => Decoder f PhoneNumber
 phoneNumberDecoder = PhoneNumber
-  <$> (D.atKey "isPreferred" D.bool)
-  <*> (D.atKey "purpose" phoneNumberPurposeDecoder)
-  <*> (D.atKey "countryCode" $ D.maybeOrNull D.text)
-  <*> (D.atKey "areaCode" $ D.maybeOrNull D.text)
-  <*> (D.atKey "number" D.text)
-  <*> (D.atKey "extension" $ D.maybeOrNull D.text)
-  <*> (D.atKey "fullNumber" D.text)
+  <$> D.atKey "isPreferred" D.bool
+  <*> D.atKey "purpose" phoneNumberPurposeDecoder
+  <*> atKeyOptional' "countryCode" D.text
+  <*> atKeyOptional' "areaCode"  D.text
+  <*> D.atKey "number" D.text
+  <*> atKeyOptional' "extension" D.text
+  <*> D.atKey "fullNumber" D.text
 
 
 -- | The purpose of the phone number.

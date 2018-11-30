@@ -17,6 +17,7 @@ import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 
+import           Waargonaut.Helpers         (atKeyOptional', fromKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Response
     (uriDecoder, uriEncoder)
 import Web.ConsumerData.Au.Api.Types.Tag
@@ -58,14 +59,14 @@ productDetailDecoder = D.withCursor $ \c -> do
   o <- D.down c
   ProductDetail
     <$> D.focus (D.maybeOrNull productDecoder) o
-    <*> D.fromKey "bundles" (D.maybeOrNull productBundlesDecoder) o
-    <*> D.fromKey "features" (D.maybeOrNull productFeaturesDecoder) o
-    <*> D.fromKey "constraints" (D.maybeOrNull productConstraintsDecoder) o
-    <*> D.fromKey "eligibility" (D.maybeOrNull productEligibilitiesDecoder) o
-    <*> D.fromKey "fees" (D.maybeOrNull productFeesDecoder) o
-    <*> D.fromKey "depositRates" (D.maybeOrNull productDepositRatesDecoder) o
-    <*> D.fromKey "lendingRates" (D.maybeOrNull productLendingRatesDecoder) o
-    <*> D.fromKey "repaymentType" (D.maybeOrNull productRepaymentTypeDecoder) o
+    <*> fromKeyOptional' "bundles" productBundlesDecoder o
+    <*> fromKeyOptional' "features" productFeaturesDecoder o
+    <*> fromKeyOptional' "constraints" productConstraintsDecoder o
+    <*> fromKeyOptional' "eligibility" productEligibilitiesDecoder o
+    <*> fromKeyOptional' "fees" productFeesDecoder o
+    <*> fromKeyOptional' "depositRates" productDepositRatesDecoder o
+    <*> fromKeyOptional' "lendingRates" productLendingRatesDecoder o
+    <*> fromKeyOptional' "repaymentType" productRepaymentTypeDecoder o
 
 instance JsonDecode OB ProductDetail where
   mkDecoder = tagOb productDetailDecoder
@@ -76,14 +77,14 @@ instance JsonEncode OB ProductDetail where
 productDetailEncoder :: Applicative f => Encoder f ProductDetail
 productDetailEncoder = E.mapLikeObj $ \pd ->
   maybe id productFields (_productDetailProduct pd) .
-  E.atKey' "bundles" (E.maybeOrNull productBundlesEncoder) (_productDetailBundles pd) .
-  E.atKey' "features" (E.maybeOrNull productFeaturesEncoder) (_productDetailFeatures pd) .
-  E.atKey' "constraints" (E.maybeOrNull productConstraintsEncoder) (_productDetailConstraints pd) .
-  E.atKey' "eligibility" (E.maybeOrNull productEligibilitiesEncoder) (_productDetailEligibility pd) .
-  E.atKey' "fees" (E.maybeOrNull productFeesEncoder) (_productDetailFees pd) .
-  E.atKey' "depositRates" (E.maybeOrNull productDepositRatesEncoder) (_productDetailDepositRates pd) .
-  E.atKey' "lendingRates" (E.maybeOrNull productLendingRatesEncoder) (_productDetailLendingRates pd) .
-  E.atKey' "repaymentType" (E.maybeOrNull productRepaymentTypeEncoder) (_productDetailRepaymentType pd)
+  maybeOrAbsentE "bundles" productBundlesEncoder (_productDetailBundles pd) .
+  maybeOrAbsentE "features" productFeaturesEncoder (_productDetailFeatures pd) .
+  maybeOrAbsentE "constraints" productConstraintsEncoder (_productDetailConstraints pd) .
+  maybeOrAbsentE "eligibility" productEligibilitiesEncoder (_productDetailEligibility pd) .
+  maybeOrAbsentE "fees" productFeesEncoder (_productDetailFees pd) .
+  maybeOrAbsentE "depositRates" productDepositRatesEncoder (_productDetailDepositRates pd) .
+  maybeOrAbsentE "lendingRates" productLendingRatesEncoder (_productDetailLendingRates pd) .
+  maybeOrAbsentE "repaymentType" productRepaymentTypeEncoder (_productDetailRepaymentType pd)
 
 
 newtype ProductBundles =
@@ -111,13 +112,12 @@ data ProductBundle = ProductBundle
   } deriving (Eq, Show)
 
 productBundleDecoder :: Monad f => Decoder f ProductBundle
-productBundleDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+productBundleDecoder =
   ProductBundle
-    <$> D.fromKey "name" D.text o
-    <*> D.fromKey "description" D.text o
-    <*> D.fromKey "applicationUri" (D.maybeOrNull uriDecoder) o
-    <*> D.fromKey "productIds" (D.list D.text) o
+    <$> D.atKey "name" D.text
+    <*> D.atKey "description" D.text
+    <*> atKeyOptional' "applicationUri" uriDecoder
+    <*> D.atKey "productIds" (D.list D.text)
 
 instance JsonDecode OB ProductBundle where
   mkDecoder = tagOb productBundleDecoder
@@ -126,7 +126,7 @@ productBundleEncoder :: Applicative f => Encoder f ProductBundle
 productBundleEncoder = E.mapLikeObj $ \p ->
   E.atKey' "name" E.text (_productBundleName p) .
   E.atKey' "description" E.text (_productBundleDescription p) .
-  E.atKey' "applicationUri" (E.maybeOrNull uriEncoder) (_productBundleAdditionalInfoUri p) .
+  maybeOrAbsentE "applicationUri" uriEncoder (_productBundleAdditionalInfoUri p) .
   E.atKey' "productIds" (E.list E.text) (_productBundleProductIds p)
 
 instance JsonEncode OB ProductBundle where

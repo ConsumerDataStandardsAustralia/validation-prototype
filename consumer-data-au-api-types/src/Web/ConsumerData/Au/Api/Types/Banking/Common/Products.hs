@@ -18,6 +18,7 @@ import           Waargonaut.Generic      (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers      (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
     (AsciiString, DateTimeString, asciiStringDecoder, asciiStringEncoder,
     dateTimeStringDecoder, dateTimeStringEncoder)
@@ -43,21 +44,20 @@ data Product = Product
   } deriving (Eq, Show)
 
 productDecoder :: Monad f => Decoder f Product
-productDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+productDecoder =
   Product
-    <$> D.fromKey "productId" asciiStringDecoder o
-    <*> D.fromKey "effectiveFrom" (D.maybeOrNull dateTimeStringDecoder) o
-    <*> D.fromKey "effectiveTo" (D.maybeOrNull dateTimeStringDecoder) o
-    <*> D.fromKey "lastUpdated" dateTimeStringDecoder o
-    <*> D.fromKey "productCategory" productCategoryDecoder o
-    <*> D.fromKey "name" D.text o
-    <*> D.fromKey "description" D.text o
-    <*> D.fromKey "brand" D.text o
-    <*> D.fromKey "brandName" (D.maybeOrNull D.text) o
-    <*> D.fromKey "applicationUri" (D.maybeOrNull uriDecoder) o
-    <*> D.fromKey "isNegotiable" D.bool o
-    <*> D.fromKey "additionalInformation" (D.maybeOrNull productAdditionalInformationDecoder) o
+    <$> D.atKey "productId" asciiStringDecoder
+    <*> atKeyOptional' "effectiveFrom" dateTimeStringDecoder
+    <*> atKeyOptional' "effectiveTo" dateTimeStringDecoder
+    <*> D.atKey "lastUpdated" dateTimeStringDecoder
+    <*> D.atKey "productCategory" productCategoryDecoder
+    <*> D.atKey "name" D.text
+    <*> D.atKey "description" D.text
+    <*> D.atKey "brand" D.text
+    <*> atKeyOptional' "brandName" D.text
+    <*> atKeyOptional' "applicationUri" uriDecoder
+    <*> D.atKey "isNegotiable" D.bool
+    <*> atKeyOptional' "additionalInformation" productAdditionalInformationDecoder
 
 instance JsonDecode OB Product where
   mkDecoder = tagOb productDecoder
@@ -70,17 +70,17 @@ productFields
   => Product -> MapLikeObj ws Json -> MapLikeObj ws Json
 productFields o =
   E.atKey' "productId" asciiStringEncoder (_productProductId o).
-  E.atKey' "effectiveFrom" (E.maybeOrNull dateTimeStringEncoder) (_productEffectiveFrom o).
-  E.atKey' "effectiveTo" (E.maybeOrNull dateTimeStringEncoder) (_productEffectiveTo o).
+  maybeOrAbsentE "effectiveFrom" dateTimeStringEncoder (_productEffectiveFrom o).
+  maybeOrAbsentE "effectiveTo" dateTimeStringEncoder (_productEffectiveTo o).
   E.atKey' "lastUpdated" dateTimeStringEncoder (_productLastUpdated o).
   E.atKey' "productCategory" productCategoryEncoder (_productProductCategory o).
   E.atKey' "name" E.text (_productName o).
   E.atKey' "description" E.text (_productDescription o).
   E.atKey' "brand" E.text (_productBrand o).
-  E.atKey' "brandName" (E.maybeOrNull E.text) (_productBrandName o).
-  E.atKey' "applicationUri" (E.maybeOrNull uriEncoder) (_productApplicationUri o).
+  maybeOrAbsentE "brandName" E.text (_productBrandName o).
+  maybeOrAbsentE "applicationUri" uriEncoder (_productApplicationUri o).
   E.atKey' "isNegotiable" E.bool (_productIsNegotiable o).
-  E.atKey' "additionalInformation" (E.maybeOrNull productAdditionalInformationEncoder) (_productAdditionalInformation o)
+  maybeOrAbsentE "additionalInformation" productAdditionalInformationEncoder (_productAdditionalInformation o)
 
 instance JsonEncode OB Product where
   mkEncoder = tagOb productEncoder
@@ -95,25 +95,24 @@ data ProductAdditionalInformation = ProductAdditionalInformation
   } deriving (Eq, Show)
 
 productAdditionalInformationDecoder :: Monad f => Decoder f ProductAdditionalInformation
-productAdditionalInformationDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+productAdditionalInformationDecoder =
   ProductAdditionalInformation
-    <$> D.fromKey "overviewUri" (D.maybeOrNull uriDecoder) o
-    <*> D.fromKey "termsUri" (D.maybeOrNull uriDecoder) o
-    <*> D.fromKey "eligibilityUri" (D.maybeOrNull uriDecoder) o
-    <*> D.fromKey "feesAndPricingUri" (D.maybeOrNull uriDecoder) o
-    <*> D.fromKey "bundleUri" (D.maybeOrNull uriDecoder) o
+    <$> atKeyOptional' "overviewUri" uriDecoder
+    <*> atKeyOptional' "termsUri" uriDecoder
+    <*> atKeyOptional' "eligibilityUri" uriDecoder
+    <*> atKeyOptional' "feesAndPricingUri" uriDecoder
+    <*> atKeyOptional' "bundleUri" uriDecoder
 
 instance JsonDecode OB ProductAdditionalInformation where
   mkDecoder = tagOb productAdditionalInformationDecoder
 
 productAdditionalInformationEncoder :: Applicative f => Encoder f ProductAdditionalInformation
 productAdditionalInformationEncoder = E.mapLikeObj $ \p ->
-    E.atKey' "overviewUri" (E.maybeOrNull uriEncoder) (_paiOverviewUri p) .
-    E.atKey' "termsUri" (E.maybeOrNull uriEncoder) (_paiTermsUri p) .
-    E.atKey' "eligibilityUri" (E.maybeOrNull uriEncoder) (_paiEligibilityUri p) .
-    E.atKey' "feesAndPricingUri" (E.maybeOrNull uriEncoder) (_paiDeesAndPricingUri p) .
-    E.atKey' "bundleUri" (E.maybeOrNull uriEncoder) (_paiBundleUri p)
+    maybeOrAbsentE "overviewUri" uriEncoder (_paiOverviewUri p) .
+    maybeOrAbsentE "termsUri" uriEncoder (_paiTermsUri p) .
+    maybeOrAbsentE "eligibilityUri" uriEncoder (_paiEligibilityUri p) .
+    maybeOrAbsentE "feesAndPricingUri" uriEncoder (_paiDeesAndPricingUri p) .
+    maybeOrAbsentE "bundleUri" uriEncoder (_paiBundleUri p)
 
 instance JsonEncode OB ProductAdditionalInformation where
   mkEncoder = tagOb productAdditionalInformationEncoder
