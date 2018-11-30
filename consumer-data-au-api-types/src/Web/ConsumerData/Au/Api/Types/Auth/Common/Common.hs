@@ -319,6 +319,7 @@ fapiPermittedAlg :: Alg -> Maybe FapiPermittedAlg
 fapiPermittedAlg alg = if alg `elem` validAlgs then Just $ FapiPermittedAlg alg else Nothing where
   validAlgs = [PS256,ES256]
 
+-- TODO: this doesn't look right
 fapiPermittedAlgText ::
   Prism' Text FapiPermittedAlg
 fapiPermittedAlgText =
