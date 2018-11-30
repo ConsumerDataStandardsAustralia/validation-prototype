@@ -22,6 +22,7 @@ library
                      , Data.GADT.Aeson.TH
                      , Data.GADT.Tag.TH
                      , Data.Time.Waargonaut
+                     , Data.Vector.V6
                      , Waargonaut.Helpers
                      , Web.ConsumerData.Au.Api.Types
                      , Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
@@ -96,6 +97,7 @@ library
                      , dependent-map == 0.2.*
                      , dependent-sum == 0.4.*
                      , dependent-sum-template == 0.0.*
+                     , digit == 0.7.*
                      , errors == 2.*
                      , exceptions == 0.10.*
                      , ghc-prim == 0.5.*
