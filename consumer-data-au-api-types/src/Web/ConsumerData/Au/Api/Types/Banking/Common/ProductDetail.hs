@@ -17,7 +17,7 @@ import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 
-import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE) --fromKeyOptional',
+import           Waargonaut.Helpers         (atKeyOptional', fromKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Response
     (uriDecoder, uriEncoder)
 import Web.ConsumerData.Au.Api.Types.Tag
@@ -58,30 +58,15 @@ productDetailDecoder :: Monad f => Decoder f ProductDetail
 productDetailDecoder = D.withCursor $ \o -> do
   p1 <- D.focus (D.maybeOrNull productDecoder) o
   c <- D.down o
-  p2 <- D.fromKey "bundles" (D.maybeOrNull productBundlesDecoder) c
-  p3 <- D.fromKey "features" (D.maybeOrNull productFeaturesDecoder) c
-  p4 <- D.fromKey "constraints" (D.maybeOrNull productConstraintsDecoder) c
-  p5 <- D.fromKey "eligibility" (D.maybeOrNull productEligibilitiesDecoder) c
-  p6 <- D.fromKey "fees" (D.maybeOrNull productFeesDecoder) c
-  p7 <- D.fromKey "depositRates" (D.maybeOrNull productDepositRatesDecoder) c
-  p8 <- D.fromKey "lendingRates" (D.maybeOrNull productLendingRatesDecoder) c
-  p9 <- D.fromKey "repaymentType" (D.maybeOrNull productRepaymentTypeDecoder) c
+  p2 <- fromKeyOptional' "bundles" productBundlesDecoder c
+  p3 <- fromKeyOptional' "features" productFeaturesDecoder c
+  p4 <- fromKeyOptional' "constraints" productConstraintsDecoder c
+  p5 <- fromKeyOptional' "eligibility" productEligibilitiesDecoder c
+  p6 <- fromKeyOptional' "fees" productFeesDecoder c
+  p7 <- fromKeyOptional' "depositRates" productDepositRatesDecoder c
+  p8 <- fromKeyOptional' "lendingRates" productLendingRatesDecoder c
+  p9 <- fromKeyOptional' "repaymentType" productRepaymentTypeDecoder c
   pure $ ProductDetail p1 p2 p3 p4 p5 p6 p7 p8 p9
-
-{-
-  -- D.withCursor $ \c -> do
-  -- o <- D.down c
-  ProductDetail
-    <$> D.focus (D.maybeOrNull productDecoder) o
-    <*> fromKeyOptional' "bundles" productBundlesDecoder o
-    <*> fromKeyOptional' "features" productFeaturesDecoder o
-    <*> fromKeyOptional' "constraints" productConstraintsDecoder o
-    <*> fromKeyOptional' "eligibility" productEligibilitiesDecoder o
-    <*> fromKeyOptional' "fees" productFeesDecoder o
-    <*> fromKeyOptional' "depositRates" productDepositRatesDecoder o
-    <*> fromKeyOptional' "lendingRates" productLendingRatesDecoder o
-    <*> fromKeyOptional' "repaymentType" productRepaymentTypeDecoder o
--}
 
 instance JsonDecode OB ProductDetail where
   mkDecoder = tagOb productDetailDecoder
