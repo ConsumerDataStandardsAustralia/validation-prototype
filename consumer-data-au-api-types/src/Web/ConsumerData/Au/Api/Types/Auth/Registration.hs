@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wwarn #-}
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -8,11 +9,67 @@
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TemplateHaskell       #-}
 
-module Web.ConsumerData.Au.Api.Types.Auth.Registration where
+module Web.ConsumerData.Au.Api.Types.Auth.Registration
+  (
+      RegistrationRequest(..)
+    , JwsRegisteredClaims (..)
+    , JwsHeaders (..)
+    , ClientMetaData (..)
+    -- Not exporting data constructor for RegoReqSoftwareStatement --- use the smart constructor
+    , RegoReqSoftwareStatement
+    , SoftwareStatement (..)
+    , JTI(..)
+    , FapiTokenEndpointAuthMethod (..)
+    , Script (..)
+    , Language (..)
+    , SubjectType (..)
+    , EmailAddress (..)
+    , ScriptUri (..)
+    , RegistrationContacts (..)
+    , JwkSet (..)
+    , RequestUris (..)
+    , FapiEnc (..)
+    , FapiResponseTypes (..)
+    , FapiApplicationType (..)
+    , FapiGrantTypes
+    , FapiAcrValues (..)
+    , FapiScopes (..)
+    , FapiKid (..)
+    , X509ThumbPrint (..)
+    , HttpsUrl (..)
+    , RedirectUrls (..)
+    , RequestObjectEncryption (..)
+    , IdTokenEncryption (..)
+    , DefaultMaxAge (..)
+    , UserInfoEncryption (..)
+    , MutualTlsSCAT (..)
+    , NotificationEndpoint (..)
+    , SoftwareId (..)
+    , SoftwareVersion (..)
+    , fapiGrantTypes
+    , GrantType (..)
+    , fapiApplicationType
+    , ApplicationType (..)
+    , TokenEndpointAuthMethod (..)
+    , RequestUri (..)
+    , redirectUrls
+    , aesonClaimsToMetaData
+    , metaDataToAesonClaims
+    , regoReqToJwt
+    , jwtToRegoReq
+    , JwksUri (..)
+    , fapiTokenEndpointAuthMethod
+    , GrantTypes (..)
+    , isX5t
+    , _X5T
+    , _X5T256
+    -- Remove from general API access, required only for testing.
+    , RegoReqSoftwareStatement (DecodedSs, EncodedSs)
+  ) where
 import           Control.Applicative                       (liftA2, (<|>))
 import           Control.Lens
-    (Prism', at, makePrisms, prism, to, ( # ), (&), (.~), (?~), (^.), (^?),
-    _Right)
+    (Lens', Prism', at, lens, makeLenses, makePrisms, makeWrapped, prism,
+    prism', to, ( # ), (&), (.~), (?~), (^.), (^?), _Right)
 import           Control.Monad.Error.Class
     (MonadError, throwError)
 import           Control.Monad.Time                        (MonadTime)
@@ -20,15 +77,21 @@ import qualified Crypto.JOSE.Error                         as JE
 import           Crypto.JOSE.JWA.JWE                       (Enc)
 import qualified Crypto.JOSE.JWA.JWE                       as JWE
 import           Crypto.JOSE.JWK                           (JWK)
-import           Crypto.JOSE.JWS                           (Alg, newJWSHeader)
+import           Crypto.JOSE.JWS
+    (Alg, HeaderParam (..), kid, newJWSHeader, x5t, x5tS256)
+import           Crypto.JOSE.Types
+    (Base64SHA1 (..), Base64SHA256 (..))
 import           Crypto.JWT
     (AsJWTError, Audience, ClaimsSet, NumericDate, SignedJWT, StringOrURI,
-    claimAud, claimExp, claimIat, claimIss, claimJti, decodeCompact,
+    addClaim, claimAud, claimExp, claimIat, claimIss, claimJti, decodeCompact,
     defaultJWTValidationSettings, emptyClaimsSet, encodeCompact,
     issuerPredicate, signClaims, unregisteredClaims, verifyClaims)
 import           Crypto.Random.Types                       (MonadRandom)
 import           Data.Aeson
     (FromJSON (..), Result (..), ToJSON (..), Value, fromJSON)
+import qualified Data.Aeson                                as A
+import           Data.Bool                                 (bool)
+import           Data.ByteString                           (ByteString)
 import qualified Data.ByteString.Lazy                      as BSL
     (fromStrict, toStrict)
 import           Data.HashMap.Strict                       (HashMap)
@@ -45,8 +108,8 @@ import qualified Text.URI                                  as URI
 import           Text.URI.Lens
     (authHost, uriAuthority, uriScheme)
 import           Web.ConsumerData.Au.Api.Types.Auth.Common
-    (ClientId, FapiPermittedAlg, RedirectUri, ResponseType, Scopes,
-    getRedirectUri)
+    (ClientId, ClientIss (..), FapiPermittedAlg, RedirectUri, ResponseType,
+    Scopes, fapiPermittedAlg, getFapiPermittedAlg, getRedirectUri)
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, _MissingClaim, _ParseError)
 
@@ -67,17 +130,21 @@ newtype GrantTypes = GrantTypes (Set GrantType)
 --   * `enc`: what values are supported? Nothing in FAPI references these, nor UK OB (<https://tools.ietf.org/html/rfc7518 §RFC 7518 5. Cryptographic Algorithms for Content Encryption>)
 --   * Confirm the following default values:
 --     - `response_type`: should be `code id_token`?
---     - `grant_types`: OIDC Registration spec defaults to just `authorization_code` when none supplied, but it also states that `implicit` must also be included to use the hybrid flow; is `implicit` therefore also mandatory?
+--     - `grant_types`: OIDC Registration spec defaults to just `authorization_code` when none supplied, but it also states that `implicit` must also be included to use the hybrid flow; is `implicit` therefore also mandatory? Especially if we are only doing @code id_token@
+--   * AR mentioned in CIBA backchannel auth states there is a 'mod_pr' and mod_mf' value, but this is not mentioned elswhere
 --   * What purpose does supplying `acr` values in the registration request have, if any, if these values are automatically overridden by the mandatorily supplied values in the auth requests?
 --   * Will the registration end-point require a form of client authentication? i.e are requests required to be signed by the client? `OIDC Registration: 3.1. Client Registration Request` does not mandate this, although UK OB does (and it makes sense to do so).
 --   * Will need clarification on what is in the aud/iss fields if a JWT is required.
---   * Will the dynamic registration endpoint be mandated? i.e `.../register`
+--   * Looks like suggestions of pairwise only; no refresh token grant_type, no support for 'code id_token token' (only code id_token), no support for secret key jwt. Does look like CIBA will be used, but optionally, and only through call-back not polling. Looks like directory will contain a list of JWK public keys that can be referenced when signing, by ID. CDR will be a CA and issue client/server certs.
+--   * TODO: exclude data constructors for those that have SC's
+--   * TODO: move common data types into Common: FapiJwtHeaders etc
 --   * TODO: What type of predicate checking is required (aud/iss) for the registration request and the software statement?
 --   * TODO: @Script@ does not yet support any BCP47 [RFC5646] language tags.
 --   * TODO: JSON encoder/decoder must support BCP47 [RFC5646] language tags in keys.
 --   * TODO: Implementation of ToJSON/FromJSON to correctly map to OIDC expected values.
 --   * TODO: Successful registration response will return with a HTTP 201.
 --   * TODO: Registration server checks and generation and storage of server response data.
+--   * TODO: /clients endpoint
 
 -- | Determines the set of credentials that will be used by a client when accessing /token endpoint. OIDC requires a restricted subset of the allowed OAuth values (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>). Also, because OZ OB only supports `code id_token` and `code id_token token` (i.e. the `hybrid` flow), this means `grant_types` must contain at least `authorization_code` and `implicit`, as per the OIDC Registration spec (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>).
 -- NB: For UK OB, `client_credentials` is required as a grant type, as is it needed for the client to submit a JWT to the /token endpoint to obtain a consent ID / payment ID before sending the request to /payments.
@@ -86,6 +153,39 @@ data GrantType = Implicit | AuthorizationCode | RefreshToken -- | ClientCredenti
 
 newtype FapiGrantTypes = FapiGrantTypes GrantTypes
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
+
+-- | The X.509 Certificate Thumbprint (SHA-1) field (@x5t@) must be included in the headers if present on the JWK, as must the @x5t#S256@ header (SHA-256). See <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header §AU OB spec>, <https://tools.ietf.org/html/rfc7515#section-4.1.7 §RFC7515 4.1.7> has further details.
+data X509ThumbPrint = X5T ByteString | X5T256 ByteString
+  deriving (Generic, Show, Eq)
+
+_X5T :: Prism' X509ThumbPrint ByteString
+_X5T = prism' X5T
+         (\case
+             X5T a -> Just a
+             _ -> Nothing
+         )
+
+_X5T256 :: Prism' X509ThumbPrint ByteString
+_X5T256 = prism' X5T256
+         (\case
+             X5T256 a -> Just a
+             _ -> Nothing
+         )
+
+isX5t :: Lens' X509ThumbPrint Bool
+isX5t f o@(X5T a)    = fmap (bool (X5T256 a) o) (f True)
+isX5t f o@(X5T256 a) = fmap (bool o (X5T a)) (f False)
+
+x509ByteString :: Lens' X509ThumbPrint ByteString
+x509ByteString f (X5T a)    = fmap X5T (f a)
+x509ByteString f (X5T256 a) = fmap X5T256 (f a)
+
+--TODO: remove all to/fromJSONs
+instance ToJSON X509ThumbPrint where
+  toJSON  = undefined
+
+instance FromJSON X509ThumbPrint where
+  parseJSON = undefined
 
 -- | Smart constructor for producing FAPI permitted `grant_types`
 fapiGrantTypes :: GrantTypes -> Maybe FapiGrantTypes
@@ -145,8 +245,8 @@ instance FromJSON HttpsUrl where
       toParser =
         either (fail . show) pure
 
--- @subject_type@ requested for responses to the client
-data SubjectType = Pairwise | Public
+-- @subject_type@ requested for responses to the client; only @pairwise@ is supported in AU OB.
+data SubjectType = Pairwise -- | Public
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 newtype JwksUri = JwksUri URI
@@ -164,6 +264,8 @@ instance FromJSON JwksUri where
         either (fail . show) pure
 
 --TODO use keyset instead of Text for JwksVal
+--TODO must include @use@ to specify either enc or sig
+--TODO must include kid
 -- | Client's JSON Web Key Set
 data JwkSet = JwksRef JwksUri --  ^ @jwks_uri@ parameter that specifies a URL for the client's JSON Web Key Set for pass-by-reference
   | JwksVal T.Text -- ^ @jwks@ parameter that specifies client's JSON Web Key Set document (passed by value). It is recommended [OIDC-R] that keys are passed by reference if possible.
@@ -176,7 +278,7 @@ makePrisms ''JwkSet
 data IdTokenEncryption = IdTokenEncryption
   {
     idTokenAlg :: FapiPermittedAlg
-  , idTokenEnc :: Maybe FapiEnc
+  , idTokenEnc :: FapiEnc
   }
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
@@ -197,10 +299,13 @@ data RequestObjectEncryption = RequestObjectEncryption
   }
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
-data TokenEndpointAuthMethod = ClientSecretPost | ClientSecretBasic | ClientSecretJwt FapiPermittedAlg | PrivateKeyJwt FapiPermittedAlg | None
+data TokenEndpointAuthMethod = ClientSecretPost | ClientSecretBasic | ClientSecretJwt FapiPermittedAlg | PrivateKeyJwt FapiPermittedAlg | TlsClientAuth TlsClientAuthSubjectDn | None
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
--- | Only ClientSecretJwt and PrivateKeyJwt are supported by FAPI (Section 5.2.4 of the FAPI RO). @token_endpoint_auth_signing_alg@ may be required to be specified depending on the specified authentication method. All token requests will be rejected by the server if they are not signed by the algorithm specified in @alg@, or if they are signed with @none@.
+newtype TlsClientAuthSubjectDn = TlsClientAuthSubjectDn T.Text
+  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+
+-- | Only PrivateKeyJwt and TlsClientAuth are supported by AU OB. @token_endpoint_auth_signing_alg@ is required if using @PrivateKeyJwt@ @token_endpoint_auth_method@, and @tls_client_auth_subject_dn@ must be supplied if using @tls_client_auth@ (as per <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration §AU OB Registration>). All token requests will be rejected by the server if they are not signed by the algorithm specified in @alg@, or if they are signed with @none@, or if the subject distinguished name of the certificate does not match that of the MTLS certificate.
 newtype FapiTokenEndpointAuthMethod = FapiTokenEndpointAuthMethod TokenEndpointAuthMethod
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 fapiTokenEndpointAuthMethod :: TokenEndpointAuthMethod -> Maybe FapiTokenEndpointAuthMethod
@@ -211,8 +316,9 @@ _FapiTokenEndpointAuthMethod = prism (\case
           FapiTokenEndpointAuthMethod f -> f
       )
       (\case
-          ClientSecretJwt f -> Right . FapiTokenEndpointAuthMethod . ClientSecretJwt $ f
+          -- ClientSecretJwt f -> Right . FapiTokenEndpointAuthMethod . ClientSecretJwt $ f -- Not supported in AU OB.
           PrivateKeyJwt f -> Right . FapiTokenEndpointAuthMethod . PrivateKeyJwt $ f
+          TlsClientAuth f -> Right . FapiTokenEndpointAuthMethod . TlsClientAuth $ f
           e -> Left e
       )
 
@@ -228,7 +334,7 @@ data FapiEnc =
 
 fapiEnc :: Prism' Enc FapiEnc
 fapiEnc =
-   prism (\case
+   prism' (\case
             A128CBC_HS256 -> JWE.A128CBC_HS256 -- Unsure if the CBC ciphers are acceptable
             A192CBC_HS384 -> JWE.A192CBC_HS384
             A256CBC_HS512 -> JWE.A256CBC_HS512
@@ -237,12 +343,12 @@ fapiEnc =
             A256GCM -> JWE.A256GCM
          )
          (\case
-            JWE.A128CBC_HS256 -> Right A128CBC_HS256
-            JWE.A192CBC_HS384->  Right A192CBC_HS384
-            JWE.A256CBC_HS512-> Right  A256CBC_HS512
-            JWE.A128GCM -> Right A128GCM
-            JWE.A192GCM -> Right A192GCM
-            JWE.A256GCM -> Right A256GCM
+            JWE.A128CBC_HS256 -> Just A128CBC_HS256
+            JWE.A192CBC_HS384->  Just A192CBC_HS384
+            JWE.A256CBC_HS512-> Just   A256CBC_HS512
+            JWE.A128GCM -> Just   A128GCM
+            JWE.A192GCM -> Just  A192GCM
+            JWE.A256GCM -> Just  A256GCM
             -- e -> Left e
          )
 
@@ -255,6 +361,17 @@ newtype JTI = JTI {
   getJTI::T.Text
                   }
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
+
+--TODO iso
+-- _KidValue :: Prism' Value FapiKid
+-- _KidValue =
+--    prism (\case
+--              FapiKid v -> A.String v
+--          )
+--          (\case
+--              A.String v -> Right . FapiKid $ v
+--              e -> Left e
+--          )
 
 newtype RequestUris = RequestUris {
   getRequestUris  :: [RequestUri]}
@@ -295,56 +412,83 @@ newtype FapiResponseTypes = FapiResponseTypes [ResponseType]
 newtype FapiScopes = FapiScopes Scopes
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
---TODO: use Auth.Common's values here
+--TODO: use Auth.Common's values here: must contain @urn:cds.au:cdr:3@ at a minimum.
 newtype FapiAcrValues = FapiAcrValues T.Text
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
+newtype MutualTlsSCAT = MutualTlsSCAT Bool
+  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+
+-- | Smart constructor for @mutual_tls_sender_constrained_access_tokens@, which can only have the value of True.
+mutualTlsSCAT :: MutualTlsSCAT
+mutualTlsSCAT = MutualTlsSCAT True
+
+newtype NotificationEndpoint = NotificationEndpoint HttpsUrl
+  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+
 data RegistrationRequest = RegistrationRequest {
-    _regoReqSigningData      :: JwsSigningHeaders
+    _regoReqJwtHeaders       :: JwsHeaders
+  , _regoReqRegClaims        :: JwsRegisteredClaims
   , _regReqClientMetaData    :: ClientMetaData
   , _regReqsoftwareStatement :: RegoReqSoftwareStatement -- ^ A signed JWT containing metadata about the client software. RFC7591 mandates that this is a JWS.
 } deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
--- | These fields are required for the registration request JWS.
-data JwsSigningHeaders = JwsSigningHeaders
+--TODO better type only allowing {YYYY-MM-DD | YYYY-MM-DD.<V>} format.
+-- | This key ID must be the value of the date on which the key was published in the format YYYY-MM-DD and must be unique within the set. If more than one key is published on the same date, the kid must consist of the following format YYYY-MM-DD.<V> where <V> represents an increasing version number and positive integer. See the <https://consumerdatastandardsaustralia.github.io/infosec/#json-web-key-sets §infosec spec> for more info.
+newtype FapiKid = FapiKid {
+  getFapiKid :: T.Text }
+  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+-- makeWrapped ''FapiKid
+
+-- | These claims are JWS registered claims required for the registration requests.
+data JwsRegisteredClaims = JwsRegisteredClaims
   {
-    _iss :: Maybe StringOrURI -- ^ The name of the RP. RFC7591 2.3 mandates issuer claim is present if supplied in a software statement.
+    _iss :: Maybe ClientIss  -- ^ The name of the RP. RFC7591 2.3 mandates issuer claim is present if supplied in a software statement.
   , _aud :: Maybe Audience -- ^ The OP.
   , _iat :: Maybe NumericDate -- ^ Issued at.
   , _exp :: Maybe NumericDate -- ^ Expiration time.
   , _jti :: Maybe JTI -- ^ JWT ID.
 } deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
--- | The following claims are specified in <https://tools.ietf.org/html/rfc7591 §RFC7591: 3.1 Client Registration Request> to be used in both the registration request object and the software statement, all of them as optional. However, some fields are non-optional under FAPI.
+data JwsHeaders = JwsHeaders
+  {
+     _alg     :: FapiPermittedAlg -- ^ The JWK @alg@ to sign the request with.
+    ,_kid     :: FapiKid -- ^ @kid@ is a required header for <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header §AU OB>.
+    , _thumbs :: Maybe X509ThumbPrint -- ^ If present on the JWK, the X509 thumbprint must be included in the header.
+} deriving (Generic, ToJSON, FromJSON, Show, Eq)
+
+-- | The following claims are specified in <https://tools.ietf.org/html/rfc7591 §RFC7591: 3.1 Client Registration Request> to be used in both the registration request object and the software statement, all of them as optional. However, some fields are non-optional under FAPI, and even fewer are optional under <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration §AU OB>
 data ClientMetaData = ClientMetaData {
-    _requestObjectSigningAlg        :: FapiPermittedAlg  -- The `alg` algorithm that must be used for signing request objects sent to the OP.
-  , _applicationType                :: FapiApplicationType -- ^ Kind of the application. AU OB mandates this to be just @web@ (i.e no @native@ apps are allowed).
-  , _tokenEndpointAuthMethod        :: FapiTokenEndpointAuthMethod -- ^ Specifies which token endpoint authentication method the client will use, and also the algorithm (@token_endpoint_auth_signing_alg@) that must be used for signing if a JWT auth method is used. UK OB mandates this field is supplied.
-  , _grantTypes                     :: Maybe FapiGrantTypes -- ^ The set of grant types that a client will restrict itself to using (see <https://openid.net/specs/openid-connect-registration-1_0.html §OIDC-R 2. Client Metadata> and <https://tools.ietf.org/html/rfc7591 §RFC7591 2. Client Metadata>). If omitted, the default is that the client will use only the `authorization_code` grant type.
-  , _clientName                     :: Maybe Script -- ^ Human-readable name of the client to be presented to the end user.
-  , _clientUri                      :: Maybe ScriptUri -- ^ URL of the home page of the client.
-  , _contacts                       :: Maybe RegistrationContacts  -- ^ Array of e-mail addresses of people responsible for the client.
-  , _logoUri                        :: Maybe ScriptUri -- ^ URL that references a logo for the client application.
-  , _policyUri                      :: Maybe ScriptUri -- ^ URL that the client provides to the end user in order to read about the how the user data will be used.
-  , _tosUri                         :: Maybe ScriptUri -- ^ URL that the client provides to the end user to read about the client's terms of service.
-  , _subjectType                    :: Maybe SubjectType -- ^ Requested for responses to this client.
-  , _sectorIdentifierUri            :: Maybe HttpsUrl -- ^ References an HTTPS URL of a remote file containing a single JSON array of @redirect_uri@ values.
-  , _regoReqKeySet                  :: Maybe JwkSet -- ^ Either the @jwks_uri@ or @jwks@ parameter specifying client's JWKS.
-  , _requestUris                    :: Maybe RequestUris -- ^ Array of @request_uri@ values that are pre-registered by the RP for use at the OP, which may cache their contents and not retrieve them at the time they are used in a request.
-  , _redirectUris                   :: RedirectUrls -- ^ Non-empty array of redirection URI values used by the client to match against supplied @redirect_uri@ request parameter. If using @web@ scheme these must all be HTTPS, and must not use 'localhost' as hostname. Mandatory field, according to OIDC-R. FAPI restricts these to all be HTTPS.
-  , _regoReqRequestObjectEncryption :: Maybe RequestObjectEncryption -- ^ The @request_object_encryption_alg@ and @request_object_encryption_enc@ parameters for specifying the JWS `alg` and `enc` algorithms (that might be) used when encrypting request objects. If both signed and encrypted, signing will occur first, and then encryption, with the result being a nested JWT. Warning: a RP can supply unencrypted requests, even if this is present, as this is only a declaration that the RP 'might' encrypt request objects. See 'RequestObjectEncryption' for more info.
-  , _userinfoSignedResponseAlg      :: Maybe FapiPermittedAlg -- ^ The @userinfo_signed_response_alg@ parameter for specifying which JWS `alg` algorithm should be used for signing UserInfo responses.
-  , _regoReqIdTokenEncrypt          :: Maybe IdTokenEncryption -- ^ The @id_token_encrypted_response_alg@ and @id_token_encrypted_response_enc@ values for specifying how the ID token should be encrypted; see 'IdTokenEncryption' for more information.
-  , _responseTypes                  :: Maybe FapiResponseTypes -- ^ JSON array containing a list of OAuth 2.0 @response_type@ values that the client will restrict itself to using; defaults to @code id_token@ if omitted. FAPI restricts these to be either `code id_token` or `code id_token token`.
-  , _defaultMaxAge                  :: Maybe DefaultMaxAge -- ^ Specifies that the end user must be actively authenticated if the end user was authenticated longer than the specified number of seconds ago; the @max_age@ request object parameter overides this.
-  , _requireAuthTime                :: Maybe Bool -- ^ Whether the @auth_time@ claim in the ID token is required, defaults to False.
-  , _defaultAcrValues               :: Maybe FapiAcrValues -- ^ Default 'Authentication Context Class Reference' (ACR) values for requests, values ordered by preference; defaults overridden by supplied values.
-  , _initiateLoginUri               :: Maybe HttpsUrl -- ^ HTTS URL which can be used by a third-party to initiate a login by the RP.
-  , _regoReqUserInfoEncryption      :: Maybe UserInfoEncryption -- ^ The @userinfo_encrypted_response_alg@ and @userinfo_encrypted_response_enc@ values for specifying how UserInfo response should be encrypted; see 'UserInfoEncryption' for more information.
-  , _idTokenSignedResponseAlg       :: FapiPermittedAlg  -- ^ The `alg` for signing the ID token issued to this client. NB: OIDC-R allows this to be optional (see <https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>), but by using FAPI the implication is that it is mandatory (<https://openid.net/specs/openid-financial-api-part-2.html#public-client §FAPI RW - Section 5.2.3 >).
-  , _scope                          :: Maybe FapiScopes -- ^ A set of scopes, containing at least @openid@.
-  , _softwareId                     :: Maybe SoftwareId -- ^ Unique identifier string for the client, which should remain the same across all instances of the client software, and all versions of the client software. This must match the software ID in the SSA if supplied.
-  , _softwareVersion                :: Maybe SoftwareVersion  -- ^  The version number of the software should a TPP choose to register and / or maintain it.
+    _requestObjectSigningAlg                :: FapiPermittedAlg  -- The `alg` algorithm that must be used for signing request objects sent to the OP.
+  , _applicationType                        :: FapiApplicationType -- ^ Kind of the application. AU OB mandates this to be just @web@ (i.e no @native@ apps are allowed).
+  , _tokenEndpointAuthMethod                :: FapiTokenEndpointAuthMethod -- ^ Specifies which token endpoint authentication method the client will use, and also the algorithm (@token_endpoint_auth_signing_alg@) that must be used for signing if a JWT auth method is used. UK OB mandates this field is supplied.
+  , _grantTypes                             :: Maybe FapiGrantTypes -- ^ The set of grant types that a client will restrict itself to using (see <https://openid.net/specs/openid-connect-registration-1_0.html OIDC-R 2. Client Metadata> and <https://tools.ietf.org/html/rfc7591 §RFC7591 2. Client Metadata>). If omitted, the default is that the client will use only the `authorization_code` grant type.
+  , _clientName                             :: Script -- ^ Human-readable name of the client to be presented to the end user. Mandatory field according to AU OB.
+  , _clientUri                              :: Maybe ScriptUri -- ^ URL of the home page of the client.
+  , _contacts                               :: Maybe RegistrationContacts  -- ^ Array of e-mail addresses of people responsible for the client.
+  , _logoUri                                :: Maybe ScriptUri -- ^ URL that references a logo for the client application.
+  , _policyUri                              :: Maybe ScriptUri -- ^ URL that the client provides to the end user in order to read about the how the user data will be used.
+  , _tosUri                                 :: Maybe ScriptUri -- ^ URL that the client provides to the end user to read about the client's terms of service.
+  , _subjectType                            :: SubjectType -- ^ Requested for responses to this client. Mandatory field according to AU OB.
+  , _sectorIdentifierUri                    :: Maybe HttpsUrl -- ^ References an HTTPS URL of a remote file containing a single JSON array of @redirect_uri@ values.
+  , _keySet                                 :: JwkSet -- ^ Either the @jwks_uri@ or @jwks@ parameter specifying client's JWKS.
+  , _requestUris                            :: Maybe RequestUris -- ^ Array of @request_uri@ values that are pre-registered by the RP for use at the OP, which may cache their contents and not retrieve them at the time they are used in a request.
+  , _redirectUris                           :: RedirectUrls -- ^ Non-empty array of redirection URI values used by the client to match against supplied @redirect_uri@ request parameter. If using @web@ scheme these must all be HTTPS, and must not use 'localhost' as hostname. Mandatory field, according to OIDC-R. FAPI restricts these to all be HTTPS.
+  , _requestObjectEncryption                :: Maybe RequestObjectEncryption -- ^ The @request_object_encryption_alg@ and @request_object_encryption_enc@ parameters for specifying the JWS `alg` and `enc` algorithms (that might be) used when encrypting request objects. If both signed and encrypted, signing will occur first, and then encryption, with the result being a nested JWT. Warning: a RP can supply unencrypted requests, even if this is present, as this is only a declaration that the RP 'might' encrypt request objects. See 'RequestObjectEncryption' for more info.
+  , _userinfoSignedResponseAlg              :: Maybe FapiPermittedAlg -- ^ The @userinfo_signed_response_alg@ parameter for specifying which JWS `alg` algorithm should be used for signing UserInfo responses.
+  , _idTokenEncryption                      :: IdTokenEncryption -- ^ The @id_token_encrypted_response_alg@ and @id_token_encrypted_response_enc@ values for specifying how the ID token should be encrypted; see 'IdTokenEncryption' for more information. Mandatory field according to AU OB.
+  , _responseTypes                          :: Maybe FapiResponseTypes -- ^ JSON array containing a list of OAuth 2.0 @response_type@ values that the client will restrict itself to using; defaults to @code id_token@ if omitted. FAPI restricts these to be either `code id_token` or `code id_token token`.
+  , _defaultMaxAge                          :: Maybe DefaultMaxAge -- ^ Specifies that the end user must be actively authenticated if the end user was authenticated longer than the specified number of seconds ago; the @max_age@ request object parameter overides this.
+  , _requireAuthTime                        :: Maybe Bool -- ^ Whether the @auth_time@ claim in the ID token is required, defaults to False.
+  , _defaultAcrValues                       :: Maybe FapiAcrValues -- ^ Default 'Authentication Context Class Reference' (ACR) values for requests, values ordered by preference; defaults overridden by supplied values.
+  , _initiateLoginUri                       :: Maybe HttpsUrl -- ^ HTTS URL which can be used by a third-party to initiate a login by the RP.
+  , _userInfoEncryption                     :: Maybe UserInfoEncryption -- ^ The @userinfo_encrypted_response_alg@ and @userinfo_encrypted_response_enc@ values for specifying how UserInfo response should be encrypted; see 'UserInfoEncryption' for more information.
+  , _idTokenSignedResponseAlg               :: FapiPermittedAlg  -- ^ The `alg` for signing the ID token issued to this client. NB: OIDC-R allows this to be optional (see <https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>), but by using FAPI the implication is that it is mandatory (<https://openid.net/specs/openid-financial-api-part-2.html#public-client §FAPI RW - Section 5.2.3 >). Mandatory field according to AU OB.
+  , _scope                                  :: Maybe FapiScopes -- ^ A set of scopes, containing at least @openid@.
+  , _softwareId                             :: Maybe SoftwareId -- ^ Unique identifier string for the client, which should remain the same across all instances of the client software, and all versions of the client software. This must match the software ID in the SSA if supplied.
+  , _softwareVersion                        :: Maybe SoftwareVersion  -- ^ The version number of the software should a TPP choose to register and / or maintain it.
+  , _mutualTlsSenderConstrainedAccessTokens :: MutualTlsSCAT -- ^ @mutual_tls_sender_constrained_access_tokens@ - AU OB required field that must always be True.
+  , _clientNotificationEndpoint             :: NotificationEndpoint -- ^ @client_notification_endpoint@ - AU OB required URI for CIBA callback.
 } deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 -- TODO: Add smart constructor to only allow supply of encoded SS, depending on the AU OB spec
@@ -352,7 +496,7 @@ data RegoReqSoftwareStatement = EncodedSs T.Text | DecodedSs SoftwareStatement
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 data SoftwareStatement = SoftwareStatement {
-    _ssSigningData :: JwsSigningHeaders
+    _ssSigningData :: JwsRegisteredClaims
   , _ssMetaData    :: ClientMetaData -- ^ All the claims to include in the SSA; RFC7591 allows any/all that are included in the request object, however SSA claims take precedence over request object claims (3.1.1).
 }
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
@@ -443,34 +587,23 @@ data RegistrationErrorType = INVALID_REDIRECT_URI -- ^  The value of one or more
 
 newtype RegistrationErrorDescription = RegistrationErrorDescription T.Text
 
---TODO: impl
--- registrationErrorType ::
---   Prism' T.Text RegistrationErrorType
--- registrationErrorType =
---   prism (\case
---             InvalidRequest -> "invalid_request"
---             UnauthorizedClient -> "unauthorized_client"
---             AccessDenied -> "access_denied"
---             UnsupportedResponseType -> "unsupported_response_type"
---             InvalidScope -> "invalid_scope"
---             ServerError -> "server_error"
---             TemporarilyUnavailable -> "temporarily_unavailable"
---         )
---         (\case
---             "invalid_request" -> Right InvalidRequest
---             "unauthorized_client" -> Right UnauthorizedClient
---             "access_denied" -> Right AccessDenied
---             "unsupported_response_type" -> Right UnsupportedResponseType
---             "invalid_scope" -> Right InvalidScope
---             "server_error" -> Right ServerError
---             "temporarily_unavailable" -> Right TemporarilyUnavailable
---             e -> Left e
---         )
 
--- registrationErrorTypeEncoder ::
---   Encoder' RegistrationErrorType
--- registrationErrorTypeEncoder  =
---   (RegistrationError#) >$< E.text'
+registrationErrorType ::
+  Prism' T.Text RegistrationErrorType
+registrationErrorType =
+  prism (\case
+            INVALID_REDIRECT_URI -> "invalid_redirect_uri"
+            INVALID_CLIENT_METADATA -> "invalid_client_metadata"
+            INVALID_SOFTWARE_STATEMENT -> "invalid_software_statement"
+            UNAPPROVED_SOFTWARE_STATEMENT -> "unapproved_software_statement"
+        )
+        (\case
+            "invalid_redirect_uri" -> Right INVALID_REDIRECT_URI
+            "invalid_client_metadata" -> Right INVALID_CLIENT_METADATA
+            "invalid_software_statement" -> Right INVALID_SOFTWARE_STATEMENT
+            "unapproved_software_statement" -> Right UNAPPROVED_SOFTWARE_STATEMENT
+            e -> Left e
+        )
 
 type AesonClaims = HashMap T.Text Value
 
@@ -480,30 +613,33 @@ metaDataToAesonClaims ::
   -> AesonClaims
 metaDataToAesonClaims ClientMetaData{..} =
   M.empty
-    & at "client_name".~ (toJSON <$> _clientName)
+    & at "client_name"?~ toJSON _clientName
     & at "client_uri".~ (toJSON <$> _clientUri)
     & at "contacts".~ (toJSON <$> _contacts)
     & at "logo_uri".~ (toJSON <$> _logoUri)
     & at "policy_uri".~ (toJSON <$> _policyUri)
     & at "tos_uri".~ (toJSON <$> _tosUri)
-    & at "subject_type".~ (toJSON <$> _subjectType)
+    & at "subject_type"?~ toJSON _subjectType
     & at "sector_identifier_uri".~ (toJSON <$> _sectorIdentifierUri)
-    & at "jwks".~ (toJSON <$> _regoReqKeySet)
-    & at "jwks_uri".~ (toJSON <$> _regoReqKeySet)
+    -- TODO: This is going to change, gonna wait before changing it for a third time ...
+    --Either the jwks or the jwks_uri must be supplied.
+    -- & at "jwks".~ (toJSON <$> _keySet)
+    -- & at "jwks_uri".~ (toJSON <$> _keySet)
     & at "request_uris".~ (toJSON <$> _requestUris)
     & at "redirect_uris" ?~ toJSON _redirectUris
-    & at "request_object_encryption_alg".~ (toJSON  . reqObjAlg <$> _regoReqRequestObjectEncryption)
-    & at "request_object_encryption_enc".~ (toJSON  <$> (reqObjEnc =<< _regoReqRequestObjectEncryption))
+    & at "request_object_encryption_alg".~ (toJSON  . reqObjAlg <$> _requestObjectEncryption)
+    & at "request_object_encryption_enc".~ (toJSON  <$> (reqObjEnc =<< _requestObjectEncryption))
     & at "userinfo_signed_response_alg".~ (toJSON <$> _userinfoSignedResponseAlg)
-    & at "id_token_encrypted_response_alg".~ (toJSON . idTokenAlg <$> _regoReqIdTokenEncrypt)
-    & at "id_token_encrypted_response_enc".~ (toJSON <$> (idTokenEnc =<< _regoReqIdTokenEncrypt))
+    -- TODO: This is going to change, gonna wait before changing it for a third time ...
+    -- & at "id_token_encrypted_response_alg".~ (toJSON . idTokenAlg <$> _idTokenEncryption)
+    -- & at "id_token_encrypted_response_enc".~ (toJSON <$> (idTokenEnc =<< _idTokenEncryption))
     & at "response_types".~ (toJSON <$> _responseTypes)
     & at "default_max_age".~ (toJSON <$> _defaultMaxAge)
     & at "require_auth_time".~ (toJSON <$> _requireAuthTime)
     & at "default_acr_values".~ (toJSON <$> _defaultAcrValues)
     & at "initiate_login_uri".~ (toJSON <$> _initiateLoginUri)
-    & at "user_info_encrypted_response_alg".~ (toJSON . userInfoAlg <$> _regoReqUserInfoEncryption)
-    & at "user_info_encrypted_response_enc".~ (toJSON <$> (userInfoEnc =<< _regoReqUserInfoEncryption))
+    & at "user_info_encrypted_response_alg".~ (toJSON . userInfoAlg <$> _userInfoEncryption)
+    & at "user_info_encrypted_response_enc".~ (toJSON <$> (userInfoEnc =<< _userInfoEncryption))
     & at "id_token_signed_response_alg"?~ toJSON _idTokenSignedResponseAlg
     & at "request_object_signing_alg"?~ toJSON _requestObjectSigningAlg
     & at "grant_types" .~ (toJSON <$> _grantTypes)
@@ -519,7 +655,7 @@ ssToAesonClaims ::
   -> AesonClaims
 ssToAesonClaims = metaDataToAesonClaims . _ssMetaData
 
--- | Sign a registration request for sending to OP, and produce a signed software statement.
+-- | Sign a registration request for sending to OP.
 regoReqToJwt ::
   ( MonadRandom m
   , MonadError e m
@@ -527,27 +663,30 @@ regoReqToJwt ::
   , JE.AsError e
   )
   => JWK
-  -> Alg
   -> RegistrationRequest
   -> m SignedJWT
-regoReqToJwt jwk alg rr =
+regoReqToJwt jwk rr =
   let
-    mkCs h m = emptyClaimsSet & addClaimHeaders h & unregisteredClaims .~ m
+    mkCs h m = emptyClaimsSet & setRegisteredClaims h & unregisteredClaims .~ m
     ssClaims ssreg = mkCs (_ssSigningData ssreg) (ssToAesonClaims ssreg)
     reqAcm = metaDataToAesonClaims . _regReqClientMetaData $ rr
-    reqClaims ssb64 = mkCs (_regoReqSigningData rr) (reqAcm & at "software_statement" ?~ ssb64)
+    reqClaims ssb64 = mkCs (_regoReqRegClaims rr) (reqAcm & at "software_statement" ?~ ssb64)
+    rrh = _regoReqJwtHeaders rr
+    jwsHead = newJWSHeader ((), getFapiPermittedAlg $ _alg rrh)
+              & kid ?~ HeaderParam () (T.unpack . getFapiKid $ _kid rrh)
+              & x5t .~ (HeaderParam () . Base64SHA1 . (^. _X5T) <$> _thumbs rrh)
+              & x5tS256 .~ (HeaderParam () . Base64SHA256 . (^. _X5T256) <$> _thumbs rrh)
   in do
     -- get the b64 SSA as an aeson Value
     ssb64 <- case _regReqsoftwareStatement rr of
                   EncodedSs ss -> return $ toJSON ss
-                  --TODO: If necessary, remove ssb64 and just use the SS in the meta data, if SS creation not reqd and is supplied by the registry
-                  DecodedSs ss -> jwtToJson <$> signClaims jwk (newJWSHeader ((), alg)) (ssClaims ss)
-    -- .. and now sign the rego reuest
-    signClaims jwk (newJWSHeader ((), alg)) (reqClaims ssb64)
+                  DecodedSs ss -> jwtToJson <$> signClaims jwk jwsHead (ssClaims ss)
+    -- .. and now sign the rego request
+    signClaims jwk jwsHead (reqClaims ssb64)
 
-addClaimHeaders :: JwsSigningHeaders -> ClaimsSet -> ClaimsSet
-addClaimHeaders h claims = claims
-      & claimIss .~ _iss h
+setRegisteredClaims :: JwsRegisteredClaims -> ClaimsSet -> ClaimsSet
+setRegisteredClaims h claims = claims
+      & claimIss .~ (getClientIss <$>_iss h)
       & claimAud .~ _aud h
       & claimIat .~ _iat h
       & claimJti .~ (getJTI <$> _jti h)
@@ -568,31 +707,31 @@ jwtToRegoReq  ::
   -> m RegistrationRequest
 jwtToRegoReq audPred issPred jwk jwt = do
   let
-    -- TODO: we need seperate predicates here for the JWT?
+    -- TODO: seperate predicates here for the JWT?
     validationSettings = defaultJWTValidationSettings audPred & issuerPredicate .~ issPred
     c2m c = c ^. unregisteredClaims . to aesonClaimsToMetaData
+    jwsHead = undefined
   claims <- verifyClaims validationSettings jwk jwt
   ssjwt <- decodeCompact =<< BSL.fromStrict . TE.encodeUtf8 <$> claims ^. unregisteredClaims . to (`getClaim` "software_statement")
   ssclaims <- verifyClaims validationSettings jwk ssjwt
   -- Get the `software_statement` (ie a JWT), extract the headers and the claims
-  ss <-  SoftwareStatement <$> getSigningHeaders ssclaims <*> c2m ssclaims
+  ss <-  SoftwareStatement <$> getRegisteredClaims ssclaims <*> c2m ssclaims
   -- ... putting that inside the software statement in the RegistrationRequest
-  RegistrationRequest <$> getSigningHeaders claims <*> c2m claims <*> pure (DecodedSs ss)
+  RegistrationRequest <$> jwsHead <*> getRegisteredClaims claims <*>  c2m claims <*> pure (DecodedSs ss)
 
-getSigningHeaders :: (  MonadError e m
+getRegisteredClaims :: (  MonadError e m
                     , AsError e
                     , AsJWTError e
                     , JE.AsError e
                     , MonadTime m
-                    ) => ClaimsSet -> m JwsSigningHeaders
-getSigningHeaders claims = do
-  iss <- getRegClaim claimIss "issuer" claims
+                    ) => ClaimsSet -> m JwsRegisteredClaims
+getRegisteredClaims claims = do
+  iss <- getRegClaim claimIss "iss" claims
   aud <- getRegClaim claimAud "aud" claims
   iat <- getRegClaim claimIat "iat" claims
   jti <- getRegClaim claimJti "jti" claims
   exp <- getRegClaim claimExp "exp" claims
-  return $ JwsSigningHeaders (Just iss) (Just aud) (Just iat) (Just exp) (Just $ JTI jti)
-    where
+  return $ JwsRegisteredClaims (Just $ ClientIss iss) (Just aud) (Just iat) (Just exp) (Just $ JTI jti) where
     getRegClaim g name cs = cs ^. g & maybeErrors (_MissingClaim # name)
 
 -- convert a signed jwt to base64 then make it a json Value (for a claim)
@@ -625,7 +764,7 @@ fromVal = rToM . fromJSON where
          Error s -> throwError . (_ParseError #) $ s
          Success a -> pure a
 
-maybeErrors :: MonadError e m => e -> Maybe a -> m a
+maybeErrors :: (AsError e, MonadError e m) => e -> Maybe a -> m a
 maybeErrors e = maybe (throwError e) pure
 
 aesonClaimsToMetaData :: forall e m.
@@ -634,27 +773,28 @@ aesonClaimsToMetaData :: forall e m.
   ) =>
  AesonClaims -> m ClientMetaData
 aesonClaimsToMetaData m = do
-  _clientName         <- getmClaim m "client_name"
+  _clientName         <- getClaim m "client_name"
   _clientUri         <- getmClaim m "client_uri"
   _contacts         <- getmClaim m "contacts"
   _logoUri         <- getmClaim m "logo_uri"
   _policyUri         <- getmClaim m "policy_uri"
   _tosUri         <- getmClaim m "tos_uri"
-  _subjectType         <- getmClaim m "subject_type"
+  _subjectType         <- getClaim m "subject_type"
   _sectorIdentifierUri         <- getmClaim m "sector_identifier_uri"
-  mjwks         <- getmClaim m "jwks"
-  mjwksUri       <- getmClaim m "jwks_uri"
-  -- TODO: fail if both supplied
-  let _regoReqKeySet = mjwks <|> mjwksUri
+    -- TODO: This is going to change, gonna wait before changing it for a third time ...
+  -- mjwks         <- getmClaim m "jwks"
+  -- mjwksUri       <- getmClaim m "jwks_uri"
+  -- Fail if neither jwks or jwks_uri are supplied
+  --_keySet <- maybeErrors (_MissingClaim "jwks or jwks_uri required.") (mjwks <|> mjwksUri)
   _requestUris         <- getmClaim m "request_uris"
   _redirectUris         <- getClaim m "redirect_uris"
   ra <- getmClaim m "request_object_encryption_alg"
   re <- getmClaim m "request_object_encryption_enc"
-  let _regoReqRequestObjectEncryption = RequestObjectEncryption <$> ra <*> pure re
+  let _requestObjectEncryption = RequestObjectEncryption <$> ra <*> pure re
   _userinfoSignedResponseAlg         <- getmClaim m "userinfo_signed_response_alg"
-  ia <- getmClaim m "id_token_encrypted_response_alg"
-  ie <- getmClaim m "id_token_encrypted_response_enc"
-  let _regoReqIdTokenEncrypt = IdTokenEncryption <$> ia <*> pure ie
+  ia <- getClaim m "id_token_encrypted_response_alg"
+  ie <- getClaim m "id_token_encrypted_response_enc"
+  let _idTokenEncryption = IdTokenEncryption ia ie
   _responseTypes         <- getmClaim m "response_types"
   _defaultMaxAge         <- getmClaim m "default_max_age"
   _requireAuthTime         <- getmClaim m "require_auth_time"
@@ -662,7 +802,7 @@ aesonClaimsToMetaData m = do
   _initiateLoginUri         <- getmClaim m "initiate_login_uri"
   ua          <- getmClaim m "user_info_encrypted_response_alg"
   ue         <- getmClaim m "user_info_encrypted_response_enc"
-  let _regoReqUserInfoEncryption  = UserInfoEncryption <$> ua <*> pure ue
+  let _userInfoEncryption  = UserInfoEncryption <$> ua <*> pure ue
   _idTokenSignedResponseAlg         <- getClaim m "id_token_signed_response_alg"
   _requestObjectSigningAlg         <- getClaim m "request_object_signing_alg"
   _grantTypes         <- getmClaim m "grant_types"
@@ -671,4 +811,6 @@ aesonClaimsToMetaData m = do
   _scope         <- getmClaim m "scope"
   _softwareId         <- getmClaim m "software_id"
   _softwareVersion         <- getmClaim m "software_version"
+  _mutualTlsSenderConstrainedAccessTokens <- getClaim m "software_version"
+  _clientNotificationEndpoint <- getClaim m "software_version"
   pure ClientMetaData {..}
