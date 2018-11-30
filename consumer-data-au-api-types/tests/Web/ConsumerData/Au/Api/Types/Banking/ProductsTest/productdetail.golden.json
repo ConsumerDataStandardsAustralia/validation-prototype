@@ -39,7 +39,7 @@
         "amount": "120",
         "balanceRate": "0",
         "transactionRate": "1",
-        "currency": "string",
+        "currency": "AUD",
         "additionalInfo": "string",
         "additionalInfoUri": "http://example.com/",
         "discounts": [
