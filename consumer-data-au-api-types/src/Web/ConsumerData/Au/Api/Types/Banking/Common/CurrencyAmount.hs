@@ -20,6 +20,7 @@ import qualified Waargonaut.Decode          as D
 import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
     (AmountString, amountStringDecoder, amountStringEncoder)
 
@@ -31,13 +32,12 @@ data CurrencyAmount = CurrencyAmount
   } deriving (Eq, Show)
 
 currencyAmountDecoder :: Monad f => Decoder f CurrencyAmount
-currencyAmountDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  amount <- D.fromKey "amount" amountStringDecoder o
-  currency <- D.fromKey "currency" (D.maybeOrNull D.text) o
-  pure $ CurrencyAmount amount currency
+currencyAmountDecoder =
+  CurrencyAmount
+    <$> D.atKey "amount" amountStringDecoder
+    <*> atKeyOptional' "currency" D.text
 
 currencyAmountEncoder :: Applicative f => Encoder f CurrencyAmount
 currencyAmountEncoder = E.mapLikeObj $ \ca ->
   E.atKey' "amount" amountStringEncoder (_currencyAmountAmount ca) .
-  E.atKey' "currency" (E.maybeOrNull E.text) (_currencyAmountCurrency ca)
+  maybeOrAbsentE "currency" E.text (_currencyAmountCurrency ca)

@@ -20,7 +20,7 @@ import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types           (Json, MapLikeObj, WS)
 
-
+import           Waargonaut.Helpers         (atKeyOptional', fromKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
     (Account, AccountId, accountDecoder, accountIdDecoder,
     accountIdEncoder, accountFields)
@@ -68,12 +68,12 @@ accountDetailDecoder = D.withCursor $ \c -> do
   o <- D.down c
   AccountDetail
     <$> D.focus (D.maybeOrNull accountDecoder) o
-    <*> D.fromKey "bundleName" (D.maybeOrNull D.text) o
+    <*> fromKeyOptional' "bundleName" D.text o
     <*> D.focus (D.maybeOrNull specificAccountDecoder) o
-    <*> D.fromKey "features" (D.maybeOrNull accountFeaturesDecoder) o
-    <*> D.fromKey "fees" (D.maybeOrNull accountFeesDecoder) o
-    <*> D.fromKey "depositRates" (D.maybeOrNull accountDepositRatesDecoder) o
-    <*> D.fromKey "lendingRates" (D.maybeOrNull accountLendingRatesDecoder) o
+    <*> fromKeyOptional' "features" accountFeaturesDecoder o
+    <*> fromKeyOptional' "fees" accountFeesDecoder o
+    <*> fromKeyOptional' "depositRates" accountDepositRatesDecoder o
+    <*> fromKeyOptional' "lendingRates" accountLendingRatesDecoder o
     <*> D.focus (D.maybeOrNull physicalAddressDecoder) o
 
 instance JsonDecode OB AccountDetail where
@@ -83,12 +83,12 @@ instance JsonDecode OB AccountDetail where
 accountDetailEncoder :: Applicative f => Encoder f AccountDetail
 accountDetailEncoder = E.mapLikeObj $ \p ->
   maybe id accountFields (_accountDetailAccount p) .
-  E.atKey' "bundleName" (E.maybeOrNull E.text) (_accountDetailBundleName p) .
+  maybeOrAbsentE "bundleName" E.text (_accountDetailBundleName p) .
   maybe id specificAccountFields (_accountDetailSpecificAccount p) .
-  E.atKey' "fees" (E.maybeOrNull accountFeesEncoder) (_accountDetailFees p) .
-  E.atKey' "depositRates" (E.maybeOrNull accountDepositRatesEncoder) (_accountDetailDepositRates p) .
-  E.atKey' "lendingRates" (E.maybeOrNull accountLendingRatesEncoder) (_accountDetailLendingRates p) .
-  E.atKey' "address" (E.maybeOrNull physicalAddressEncoder) (_accountDetailAddress p)
+  maybeOrAbsentE "fees" accountFeesEncoder (_accountDetailFees p) .
+  maybeOrAbsentE "depositRates" accountDepositRatesEncoder (_accountDetailDepositRates p) .
+  maybeOrAbsentE "lendingRates" accountLendingRatesEncoder (_accountDetailLendingRates p) .
+  maybeOrAbsentE "address" physicalAddressEncoder (_accountDetailAddress p)
 
 
 instance JsonEncode OB AccountDetail where
@@ -136,14 +136,13 @@ data TermDepositAccountType = TermDepositAccountType
   } deriving (Eq, Show)
 
 termDepositAccountTypeDecoder :: Monad f => Decoder f TermDepositAccountType
-termDepositAccountTypeDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+termDepositAccountTypeDecoder =
   TermDepositAccountType
-    <$> D.fromKey "lodgementDate" dateStringDecoder o
-    <*> D.fromKey "maturityDate" dateStringDecoder o
-    <*> D.fromKey "maturityAmount" (D.maybeOrNull amountStringDecoder) o
-    <*> D.fromKey "maturityCurrency" (D.maybeOrNull currencyStringDecoder) o
-    <*> D.fromKey "maturityInstructions" maturityInstructionsDecoder o
+    <$> D.atKey "lodgementDate" dateStringDecoder
+    <*> D.atKey "maturityDate" dateStringDecoder
+    <*> atKeyOptional' "maturityAmount" amountStringDecoder
+    <*> atKeyOptional' "maturityCurrency" currencyStringDecoder
+    <*> D.atKey "maturityInstructions" maturityInstructionsDecoder
 
 instance JsonDecode OB TermDepositAccountType where
   mkDecoder = tagOb termDepositAccountTypeDecoder
@@ -152,8 +151,8 @@ termDepositAccountTypeEncoder :: Applicative f => Encoder f TermDepositAccountTy
 termDepositAccountTypeEncoder = E.mapLikeObj $ \p ->
     E.atKey' "lodgementDate" dateStringEncoder (_termDepositAccountTypeLodgementDate p) .
     E.atKey' "maturityDate" dateStringEncoder (_termDepositAccountTypeMaturityDate p) .
-    E.atKey' "maturityAmount" (E.maybeOrNull amountStringEncoder) (_termDepositAccountTypeMaturityAmount p) .
-    E.atKey' "maturityCurrency" (E.maybeOrNull currencyStringEncoder) (_termDepositAccountTypeMaturityCurrency p) .
+    maybeOrAbsentE "maturityAmount" amountStringEncoder (_termDepositAccountTypeMaturityAmount p) .
+    maybeOrAbsentE "maturityCurrency" currencyStringEncoder (_termDepositAccountTypeMaturityCurrency p) .
     E.atKey' "maturityInstructions" maturityInstructionsEncoder (_termDepositAccountTypeMaturityInstructions p)
 
 instance JsonEncode OB TermDepositAccountType where
@@ -208,13 +207,12 @@ data CreditCardAccountType = CreditCardAccountType
   } deriving (Eq, Show)
 
 creditCardAccountTypeDecoder :: Monad f => Decoder f CreditCardAccountType
-creditCardAccountTypeDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+creditCardAccountTypeDecoder =
   CreditCardAccountType
-    <$> D.fromKey "minPaymentAmount" amountStringDecoder o
-    <*> D.fromKey "paymentDueAmount" amountStringDecoder o
-    <*> D.fromKey "paymentCurrency" (D.maybeOrNull currencyStringDecoder) o
-    <*> D.fromKey "paymentDueDate" dateStringDecoder o
+    <$> D.atKey "minPaymentAmount" amountStringDecoder
+    <*> D.atKey "paymentDueAmount" amountStringDecoder
+    <*> atKeyOptional' "paymentCurrency" currencyStringDecoder
+    <*> D.atKey "paymentDueDate" dateStringDecoder
 
 instance JsonDecode OB CreditCardAccountType where
   mkDecoder = tagOb creditCardAccountTypeDecoder
@@ -223,7 +221,7 @@ creditCardAccountTypeEncoder :: Applicative f => Encoder f CreditCardAccountType
 creditCardAccountTypeEncoder = E.mapLikeObj $ \p ->
     E.atKey' "minPaymentAmount" amountStringEncoder (_creditCardAccountTypeMinPaymentAmount p) .
     E.atKey' "paymentDueAmount" amountStringEncoder (_creditCardAccountTypePaymentDueAmount p) .
-    E.atKey' "paymentCurrency" (E.maybeOrNull currencyStringEncoder) (_creditCardAccountTypePaymentCurrency p) .
+    maybeOrAbsentE "paymentCurrency" currencyStringEncoder (_creditCardAccountTypePaymentCurrency p) .
     E.atKey' "paymentDueDate" dateStringEncoder (_creditCardAccountTypePaymentDueDate p)
 
 instance JsonEncode OB CreditCardAccountType where
@@ -252,48 +250,43 @@ data LoanAccountType = LoanAccountType
   } deriving (Eq, Show)
 
 loanAccountTypeDecoder :: Monad f => Decoder f LoanAccountType
-loanAccountTypeDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+loanAccountTypeDecoder =
   LoanAccountType
-    <$> D.fromKey "originalStartDate" (D.maybeOrNull dateStringDecoder) o
-    <*> D.fromKey "originalLoanAmount" (D.maybeOrNull amountStringDecoder) o
-    <*> D.fromKey "originalLoanCurrency" (D.maybeOrNull currencyStringDecoder) o
-    <*> D.fromKey "loanEndDate" dateStringDecoder o
-    <*> D.fromKey "nextInstalmentDate" dateStringDecoder o
-    <*> D.fromKey "minInstalmentAmount" amountStringDecoder o
-    <*> D.fromKey "minInstalmentCurrency" (D.maybeOrNull currencyStringDecoder) o
-    <*> D.fromKey "maxRedrawAmount" (D.maybeOrNull amountStringDecoder) o
-    <*> D.fromKey "maxRedrawCurrency" (D.maybeOrNull currencyStringDecoder) o
-    <*> D.fromKey "minRedrawAmount" (D.maybeOrNull amountStringDecoder) o
-    <*> D.fromKey "minRedrawCurrency" (D.maybeOrNull currencyStringDecoder) o
-    <*> D.fromKey "offsetAccountEnabled" (D.maybeOrNull D.bool) o
-    <*> D.fromKey "offsetAccountId" (D.maybeOrNull (D.list accountIdDecoder)) o
-    <*> D.fromKey "repaymentType" (D.maybeOrNull repaymentTypeDecoder) o
-    <*> D.fromKey "repaymentFrequency" durationStringDecoder o
-  -- pure $ LoanAccountType originalStartDate originalLoanAmount originalLoanCurrency
-  --   loanEndDate nextInstalmentDate minInstalmentAmount minInstalmentCurrency
-  --   maxRedrawAmount maxRedrawCurrency minRedrawAmount minRedrawCurrency
-  --   offsetAccountEnabled offsetAccountId repaymentType repaymentFrequency
+    <$> atKeyOptional' "originalStartDate" dateStringDecoder
+    <*> atKeyOptional' "originalLoanAmount" amountStringDecoder
+    <*> atKeyOptional' "originalLoanCurrency" currencyStringDecoder
+    <*> D.atKey "loanEndDate" dateStringDecoder
+    <*> D.atKey "nextInstalmentDate" dateStringDecoder
+    <*> D.atKey "minInstalmentAmount" amountStringDecoder
+    <*> atKeyOptional' "minInstalmentCurrency" currencyStringDecoder
+    <*> atKeyOptional' "maxRedrawAmount" amountStringDecoder
+    <*> atKeyOptional' "maxRedrawCurrency" currencyStringDecoder
+    <*> atKeyOptional' "minRedrawAmount" amountStringDecoder
+    <*> atKeyOptional' "minRedrawCurrency" currencyStringDecoder
+    <*> atKeyOptional' "offsetAccountEnabled" D.bool
+    <*> atKeyOptional' "offsetAccountId" (D.list accountIdDecoder)
+    <*> atKeyOptional' "repaymentType" repaymentTypeDecoder
+    <*> D.atKey "repaymentFrequency" durationStringDecoder
 
 instance JsonDecode OB LoanAccountType where
   mkDecoder = tagOb loanAccountTypeDecoder
 
 loanAccountTypeEncoder :: Applicative f => Encoder f LoanAccountType
 loanAccountTypeEncoder = E.mapLikeObj $ \p ->
-  E.atKey' "originalStartDate" (E.maybeOrNull dateStringEncoder) (_loanAccountTypeOriginalStartDate p) .
-  E.atKey' "originalLoanAmount" (E.maybeOrNull amountStringEncoder) (_loanAccountTypeOriginalLoanAmount p) .
-  E.atKey' "originalLoanCurrency" (E.maybeOrNull currencyStringEncoder) (_loanAccountTypeOriginalLoanCurrency p) .
+  maybeOrAbsentE "originalStartDate" dateStringEncoder (_loanAccountTypeOriginalStartDate p) .
+  maybeOrAbsentE "originalLoanAmount" amountStringEncoder (_loanAccountTypeOriginalLoanAmount p) .
+  maybeOrAbsentE "originalLoanCurrency" currencyStringEncoder (_loanAccountTypeOriginalLoanCurrency p) .
   E.atKey' "loanEndDate" dateStringEncoder (_loanAccountTypeLoanEndDate p) .
   E.atKey' "nextInstalmentDate" dateStringEncoder (_loanAccountTypeNextInstalmentDate p) .
   E.atKey' "minInstalmentAmount" amountStringEncoder (_loanAccountTypeMinInstalmentAmount p) .
-  E.atKey' "minInstalmentCurrency" (E.maybeOrNull currencyStringEncoder) (_loanAccountTypeMinInstalmentCurrency p) .
-  E.atKey' "maxRedrawAmount" (E.maybeOrNull amountStringEncoder) (_loanAccountTypeMaxRedrawAmount p) .
-  E.atKey' "maxRedrawCurrency" (E.maybeOrNull currencyStringEncoder) (_loanAccountTypeMaxRedrawCurrency p) .
-  E.atKey' "minRedrawAmount" (E.maybeOrNull amountStringEncoder) (_loanAccountTypeMinRedrawAmount p) .
-  E.atKey' "minRedrawCurrency" (E.maybeOrNull currencyStringEncoder) (_loanAccountTypeMinRedrawCurrency p) .
-  E.atKey' "loanEndDate" (E.maybeOrNull E.bool) (_loanAccountTypeOffsetAccountEnabled p) .
-  E.atKey' "offsetAccountId" (E.maybeOrNull (E.list accountIdEncoder)) (_loanAccountTypeOffsetAccountId p) .
-  E.atKey' "repaymentType" (E.maybeOrNull repaymentTypeEncoder) (_loanAccountTypeRepaymentType p) .
+  maybeOrAbsentE "minInstalmentCurrency" currencyStringEncoder (_loanAccountTypeMinInstalmentCurrency p) .
+  maybeOrAbsentE "maxRedrawAmount" amountStringEncoder (_loanAccountTypeMaxRedrawAmount p) .
+  maybeOrAbsentE "maxRedrawCurrency" currencyStringEncoder (_loanAccountTypeMaxRedrawCurrency p) .
+  maybeOrAbsentE "minRedrawAmount" amountStringEncoder (_loanAccountTypeMinRedrawAmount p) .
+  maybeOrAbsentE "minRedrawCurrency" currencyStringEncoder (_loanAccountTypeMinRedrawCurrency p) .
+  maybeOrAbsentE "loanEndDate" E.bool (_loanAccountTypeOffsetAccountEnabled p) .
+  maybeOrAbsentE "offsetAccountId" (E.list accountIdEncoder) (_loanAccountTypeOffsetAccountId p) .
+  maybeOrAbsentE "repaymentType" repaymentTypeEncoder (_loanAccountTypeRepaymentType p) .
   E.atKey' "repaymentFrequency" durationStringEncoder (_loanAccountTypeRepaymentFrequency p)
 
 instance JsonEncode OB LoanAccountType where

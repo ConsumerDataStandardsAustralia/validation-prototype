@@ -1,8 +1,9 @@
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE DeriveGeneric   #-}
-{-# LANGUAGE RankNTypes      #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeOperators   #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeOperators     #-}
 module Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
   ( module Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
   ) where
@@ -15,9 +16,11 @@ import           Servant.API
     (FromHttpApiData,ToHttpApiData, parseUrlPiece, toUrlPiece)
 import           Waargonaut.Decode                   (Decoder)
 import qualified Waargonaut.Decode                   as D
+import qualified Waargonaut.Decode.Error             as D
 import           Waargonaut.Encode                   (Encoder)
 import qualified Waargonaut.Encode                   as E
 
+import Web.ConsumerData.Au.Api.Types.Data.Currency   (Currency, currencyText)
 
 -- | All types are from <https://consumerdatastandardsaustralia.github.io/standards/?swagger#common-field-types CDR AU v0.1.0 Common Field Types>
 
@@ -63,14 +66,17 @@ instance FromHttpApiData AsciiString where
 -- “USD”
 -- “GBP”
 data CurrencyString =
-  CurrencyString { unCurrencyString :: Text}
+  CurrencyString { unCurrencyString :: Currency }
   deriving (Show, Eq)
 
 currencyStringDecoder :: Monad f => Decoder f CurrencyString
-currencyStringDecoder = CurrencyString <$> D.text
+currencyStringDecoder = CurrencyString <$> D.prismDOrFail
+  (D.ConversionFailure "Invalid CurrencyString")
+  currencyText
+  D.text
 
 currencyStringEncoder :: Applicative f => Encoder f CurrencyString
-currencyStringEncoder = unCurrencyString >$< E.text
+currencyStringEncoder = unCurrencyString >$< E.prismE currencyText E.text
 
 
 -- | Date string as per RFC-3339 (labelled full-date in the RFC). UTC time should always be used

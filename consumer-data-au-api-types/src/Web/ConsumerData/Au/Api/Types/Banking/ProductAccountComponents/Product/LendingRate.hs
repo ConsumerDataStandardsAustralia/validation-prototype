@@ -22,6 +22,7 @@ import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers         (fromKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.AdditionalValue
     (additionalValueDecoder)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
@@ -67,8 +68,8 @@ productLendingRateDecoder = D.withCursor $ \c -> do
   ProductLendingRate
     <$> D.focus productLendingRateTypeDecoder o
     <*> D.fromKey "rate" rateStringDecoder o
-    <*> D.fromKey "additionalInfo" (D.maybeOrNull D.text) o
-    <*> D.fromKey "additionalInfoUri" (D.maybeOrNull uriDecoder) o
+    <*> fromKeyOptional' "additionalInfo" D.text o
+    <*> fromKeyOptional' "additionalInfoUri" uriDecoder o
 
 instance JsonDecode OB ProductLendingRate where
   mkDecoder = tagOb productLendingRateDecoder
@@ -77,8 +78,8 @@ productLendingRateEncoder :: Applicative f => Encoder f ProductLendingRate
 productLendingRateEncoder = E.mapLikeObj $ \p ->
   productLendingRateTypeFields (_productLendingRateLendingRateType p) .
   E.atKey' "rate" rateStringEncoder (_productLendingRateRate p) .
-  E.atKey' "additionalInfo" (E.maybeOrNull E.text) (_productLendingRateAdditionalInfo p) .
-  E.atKey' "additionalInfoUri" (E.maybeOrNull uriEncoder) (_productLendingRateAdditionalInfoUri p)
+  maybeOrAbsentE "additionalInfo" E.text (_productLendingRateAdditionalInfo p) .
+  maybeOrAbsentE "additionalInfoUri" uriEncoder (_productLendingRateAdditionalInfoUri p)
 
 instance JsonEncode OB ProductLendingRate where
   mkEncoder = tagOb productLendingRateEncoder

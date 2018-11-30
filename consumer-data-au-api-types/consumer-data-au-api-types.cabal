@@ -22,6 +22,7 @@ library
                      , Data.GADT.Aeson.TH
                      , Data.GADT.Tag.TH
                      , Data.Time.Waargonaut
+                     , Waargonaut.Helpers
                      , Web.ConsumerData.Au.Api.Types
                      , Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
                      , Web.ConsumerData.Au.Api.Types.Auth.Common
@@ -74,6 +75,7 @@ library
                      , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.PersonDetail
                      , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.PhoneNumber
                      , Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
+                     , Web.ConsumerData.Au.Api.Types.Data.Currency
                      , Web.ConsumerData.Au.Api.Types.Data.PhysicalAddress
                      , Web.ConsumerData.Au.Api.Types.Response
                      , Web.ConsumerData.Au.Api.Types.Stub
@@ -117,7 +119,7 @@ library
                      , time >= 1.8 && < 1.10
                      , transformers == 0.5.*
                      , unordered-containers == 0.2.*
-                     , waargonaut == 0.4.*
+                     , waargonaut == 0.4.2.*
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -Werror
@@ -162,7 +164,7 @@ test-suite tasty
                      , time >= 1.8 && < 1.10
                      , transformers == 0.5.*
                      , wai == 3.2.*
-                     , waargonaut == 0.4.*
+                     , waargonaut == 0.4.2.*
                      , warp == 3.2.*
   other-modules:
                        Country.Gens

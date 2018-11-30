@@ -15,6 +15,7 @@ import           Waargonaut.Encode (Encoder)
 import qualified Waargonaut.Encode as E
 import           Waargonaut.Generic (JsonDecode (..), JsonEncode (..))
 
+import           Waargonaut.Helpers (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Payees
 import Web.ConsumerData.Au.Api.Types.SumTypeHelpers
 import Web.ConsumerData.Au.Api.Types.Tag
@@ -219,21 +220,20 @@ data BankDetails
   deriving (Eq, Show)
 
 bankDetailsDecoder :: Monad f => Decoder f BankDetails
-bankDetailsDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  let f k = D.fromKey k D.text o
-      fm k = D.fromKey k (D.maybeOrNull D.text) o
-  let bankAddress = D.fromKey "bankAddress" (D.maybeOrNull bankAddressDecoder) o
-  BankDetails <$> f "country" <*> f "accountNumber" <*> bankAddress <*>
+bankDetailsDecoder =
+  let f k = D.atKey k D.text
+      fm k = atKeyOptional' k D.text
+      bankAddress = atKeyOptional' "bankAddress" bankAddressDecoder
+  in  BankDetails <$> f "country" <*> f "accountNumber" <*> bankAddress <*>
     fm "beneficiaryBankBIC" <*> fm "fedWireNumber" <*> fm "sortCode" <*>
     fm "chipNumber" <*> fm "routingNumber"
 
 bankDetailsEncoder :: Applicative f => Encoder f BankDetails
 bankDetailsEncoder = E.mapLikeObj $ \(BankDetails c an ba bic fwn sc cn rn) ->
   let f k x = E.atKey' k E.text x
-      fm k x = E.atKey' k (E.maybeOrNull E.text) x
+      fm k x = maybeOrAbsentE k E.text x
   in
-    f "country" c . f "accountNumber" an . E.atKey' "bankAddress" (E.maybeOrNull bankAddressEncoder) ba .
+    f "country" c . f "accountNumber" an . maybeOrAbsentE "bankAddress" bankAddressEncoder ba .
     fm "beneficiaryBankBIC" bic . fm "fedWireNumber" fwn . fm "sortCode" sc .
     fm "chipNumber" cn . fm "routingNumber" rn
 
@@ -261,15 +261,14 @@ data BillerPayee
   deriving (Eq, Show)
 
 billerPayeeDecoder :: Monad f => Decoder f BillerPayee
-billerPayeeDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  let f k = D.fromKey k D.text o
-  BillerPayee <$> f "billerCode" <*> D.fromKey "crn"(D.maybeOrNull D.text) o <*> f "billerName"
+billerPayeeDecoder =
+  let f k = D.atKey k D.text
+  in BillerPayee <$> f "billerCode" <*> atKeyOptional' "crn" D.text <*> f "billerName"
 
 billerPayeeEncoder :: Applicative f => Encoder f BillerPayee
 billerPayeeEncoder = E.mapLikeObj $ \(BillerPayee bc crn bn) ->
   let f k x = E.atKey' k E.text x
   in
     f "billerCode" bc .
-    E.atKey' "crn" (E.maybeOrNull E.text) crn .
+    maybeOrAbsentE "crn" E.text crn .
     f "billerName" bn
