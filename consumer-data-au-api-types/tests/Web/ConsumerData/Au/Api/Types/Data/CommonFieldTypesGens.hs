@@ -24,7 +24,7 @@ asciiStringGen = AsciiString
 -- currencyStringGen :: Gen CurrencyString
 currencyStringGen :: (MonadGen m) => m CurrencyString
 currencyStringGen = CurrencyString
-  <$> Gen.text (Range.linear 5 20) Gen.unicode
+  <$> Gen.enumBounded
 
 
 -- currencyStringGen :: Gen CurrencyString

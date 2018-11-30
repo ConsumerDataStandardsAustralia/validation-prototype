@@ -11,8 +11,8 @@ let
       "nixexprpath": "${packageName}/ci.nix",
       "checkinterval": 300,
       "schedulingshares": 1,
-      "enableemail": false,
-      "emailoverride": "",
+      "enableemail": true,
+      "emailoverride": "cdr@qfpl.io",
       "keepnr": 5,
       "inputs": {
           "conformance-develop": {

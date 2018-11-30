@@ -15,6 +15,7 @@ import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Tag
 
 
@@ -28,13 +29,12 @@ data AuthorisedEntity = AuthorisedEntity
   } deriving (Eq, Show)
 
 authorisedEntityDecoder :: Monad f => Decoder f AuthorisedEntity
-authorisedEntityDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  name <- D.fromKey "name" D.text o
-  finInst <- D.fromKey "financialInstitution" D.text o -- WARNING
-  abn <- D.fromKey "abn" (D.maybeOrNull abnDecoder) o
-  acn <- D.fromKey "acn" (D.maybeOrNull acnDecoder) o
-  pure $ AuthorisedEntity name finInst abn acn
+authorisedEntityDecoder =
+  AuthorisedEntity
+    <$> D.atKey "name" D.text
+    <*> D.atKey "financialInstitution" D.text -- WARNING
+    <*> atKeyOptional' "abn" abnDecoder
+    <*> atKeyOptional' "acn" acnDecoder
 
 instance JsonDecode OB AuthorisedEntity where
   mkDecoder = tagOb authorisedEntityDecoder
@@ -43,8 +43,8 @@ authorisedEntityEncoder :: Applicative f => Encoder f AuthorisedEntity
 authorisedEntityEncoder = E.mapLikeObj $ \ p ->
   E.atKey' "name" E.text (_authorisedEntityName p) .
   E.atKey' "financialInstitution" E.text (_authorisedEntityFinancialInstitution p) .
-  E.atKey' "abn" (E.maybeOrNull abnEncoder) (_authorisedEntityAbn p) .
-  E.atKey' "acn" (E.maybeOrNull acnEncoder) (_authorisedEntityAcn p)
+  maybeOrAbsentE "abn" abnEncoder (_authorisedEntityAbn p) .
+  maybeOrAbsentE "acn" acnEncoder (_authorisedEntityAcn p)
 
 instance JsonEncode OB AuthorisedEntity where
   mkEncoder = tagOb authorisedEntityEncoder

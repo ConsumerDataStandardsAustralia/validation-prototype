@@ -23,6 +23,7 @@ import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types                    (Json, MapLikeObj, WS)
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
     (AmountString, AsciiString, CurrencyString, DateTimeString,
     amountStringDecoder, amountStringEncoder, asciiStringDecoder,
@@ -45,18 +46,17 @@ data TransactionBasic = TransactionBasic
   } deriving (Eq, Show)
 
 transactionBasicDecoder :: (Monad f) => Decoder f TransactionBasic
-transactionBasicDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  transactId <- D.fromKey "transactionId" (D.maybeOrNull transactionIdDecoder) o
-  isDetailAval <- D.fromKey "isDetailAvailable" D.bool o
-  status <- D.fromKey "status" transactionStatusDecoder o
-  descr <- D.fromKey "description" D.text o
-  postDateTime <- D.fromKey "postDateTime" (D.maybeOrNull dateTimeStringDecoder) o
-  execDateTime <- D.fromKey "executionDateTime" (D.maybeOrNull dateTimeStringDecoder) o
-  amount <- D.fromKey "amount" (D.maybeOrNull amountStringDecoder) o
-  currency <- D.fromKey "currency" (D.maybeOrNull currencyStringDecoder) o
-  reference <- D.fromKey "reference" D.text o
-  pure $ TransactionBasic transactId isDetailAval status descr postDateTime execDateTime amount currency reference
+transactionBasicDecoder =
+  TransactionBasic
+    <$> atKeyOptional' "transactionId" transactionIdDecoder
+    <*> D.atKey "isDetailAvailable" D.bool
+    <*> D.atKey "status" transactionStatusDecoder
+    <*> D.atKey "description" D.text
+    <*> atKeyOptional' "postDateTime" dateTimeStringDecoder
+    <*> atKeyOptional' "executionDateTime" dateTimeStringDecoder
+    <*> atKeyOptional' "amount" amountStringDecoder
+    <*> atKeyOptional' "currency" currencyStringDecoder
+    <*> D.atKey "reference" D.text
 
 instance JsonDecode OB TransactionBasic where
   mkDecoder = tagOb transactionBasicDecoder
@@ -66,14 +66,14 @@ transactionBasicEncoder = E.mapLikeObj transactionBasicMLO
 
 transactionBasicMLO :: TransactionBasic -> MapLikeObj WS Json -> MapLikeObj WS Json
 transactionBasicMLO p =
-  E.atKey' "transactionId" (E.maybeOrNull transactionIdEncoder) (_transactionBasicTransactionId p) .
+  maybeOrAbsentE "transactionId" transactionIdEncoder (_transactionBasicTransactionId p) .
   E.atKey' "isDetailAvailable" E.bool (_transactionBasicIsDetailAvailable p) .
   E.atKey' "status" transactionStatusEncoder (_transactionBasicStatus p) .
   E.atKey' "description" E.text (_transactionBasicDescription p) .
-  E.atKey' "postDateTime" (E.maybeOrNull dateTimeStringEncoder) (_transactionBasicPostDateTime p) .
-  E.atKey' "executionDateTime" (E.maybeOrNull dateTimeStringEncoder) (_transactionBasicExecutionDateTime p) .
-  E.atKey' "amount" (E.maybeOrNull amountStringEncoder) (_transactionBasicAmount p) .
-  E.atKey' "currency" (E.maybeOrNull currencyStringEncoder) (_transactionBasicCurrency p) .
+  maybeOrAbsentE "postDateTime" dateTimeStringEncoder (_transactionBasicPostDateTime p) .
+  maybeOrAbsentE "executionDateTime" dateTimeStringEncoder (_transactionBasicExecutionDateTime p) .
+  maybeOrAbsentE "amount" amountStringEncoder (_transactionBasicAmount p) .
+  maybeOrAbsentE "currency" currencyStringEncoder (_transactionBasicCurrency p) .
   E.atKey' "reference" E.text (_transactionBasicReference p)
 
 instance JsonEncode OB TransactionBasic where

@@ -22,6 +22,7 @@ import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers         (fromKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.AdditionalValue
     (additionalValueDecoder)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
@@ -64,8 +65,8 @@ productEligibilityDecoder = D.withCursor $ \c -> do
   ProductEligibility
     <$> D.fromKey "description" D.text o
     <*> D.focus productEligibilityTypeDecoder o
-    <*> D.fromKey "additionalInfo" (D.maybeOrNull D.text) o
-    <*> D.fromKey "additionalInfoUri" (D.maybeOrNull uriDecoder) o
+    <*> fromKeyOptional' "additionalInfo" D.text o
+    <*> fromKeyOptional' "additionalInfoUri" uriDecoder o
 
 instance JsonDecode OB ProductEligibility where
   mkDecoder = tagOb productEligibilityDecoder
@@ -74,8 +75,8 @@ productEligibilityEncoder :: Applicative f => Encoder f ProductEligibility
 productEligibilityEncoder = E.mapLikeObj $ \p ->
   E.atKey' "description" E.text (_productEligibilityDescription p) .
   productEligibilityTypeFields (_productEligibilityEligibilityType p) .
-  E.atKey' "additionalInfo" (E.maybeOrNull E.text) (_productEligibilityAdditionalInfo p) .
-  E.atKey' "additionalInfoUri" (E.maybeOrNull uriEncoder) (_productEligibilityAdditionalInfoUri p)
+  maybeOrAbsentE "additionalInfo" E.text (_productEligibilityAdditionalInfo p) .
+  maybeOrAbsentE "additionalInfoUri" uriEncoder (_productEligibilityAdditionalInfoUri p)
 
 instance JsonEncode OB ProductEligibility where
   mkEncoder = tagOb productEligibilityEncoder

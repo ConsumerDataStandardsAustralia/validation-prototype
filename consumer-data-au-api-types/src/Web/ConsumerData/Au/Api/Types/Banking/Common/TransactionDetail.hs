@@ -15,6 +15,7 @@ import qualified Waargonaut.Decode as D
 import           Waargonaut.Encode (Encoder')
 import qualified Waargonaut.Encode as E
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.ExtendedTransactionData
     (ExtendedTransactionData, extendedTransactionDataDecoder,
     extendedTransactionDataEncoder)
@@ -41,27 +42,26 @@ data TransactionDetail = TransactionDetail
   } deriving (Generic, Show, Eq)
 
 transactionDetailDecoder :: Monad f => Decoder f TransactionDetail
-transactionDetailDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  tid <- D.fromKey "transactionId" (D.maybeOrNull transactionIdDecoder) o
-  ts <- D.fromKey "status" transactionStatusDecoder o
-  desc <- D.fromKey "description" D.text o
-  pdt <- D.fromKey "postDateTime" (D.maybeOrNull dateTimeStringDecoder) o
-  edt <- D.fromKey "executionDateTime" (D.maybeOrNull dateTimeStringDecoder) o
-  amt <- D.fromKey "amount" (D.maybeOrNull amountStringDecoder) o
-  cur <- D.fromKey "currency" (D.maybeOrNull currencyStringDecoder) o
-  ref <- D.fromKey "reference" D.text o
-  ed <- D.fromKey "extendedData" (D.maybeOrNull extendedTransactionDataDecoder) o
-  pure $ TransactionDetail tid ts desc pdt edt amt cur ref ed
+transactionDetailDecoder =
+  TransactionDetail
+    <$> atKeyOptional' "transactionId" transactionIdDecoder
+    <*> D.atKey "status" transactionStatusDecoder
+    <*> D.atKey "description" D.text
+    <*> atKeyOptional' "postDateTime" dateTimeStringDecoder
+    <*> atKeyOptional' "executionDateTime" dateTimeStringDecoder
+    <*> atKeyOptional' "amount" amountStringDecoder
+    <*> atKeyOptional' "currency" currencyStringDecoder
+    <*> D.atKey "reference" D.text
+    <*> atKeyOptional' "extendedData" extendedTransactionDataDecoder
 
 transactionDetailEncoder :: Encoder' TransactionDetail
 transactionDetailEncoder = E.mapLikeObj $ \(TransactionDetail tid ts desc pdt edt amt cur ref ed) ->
-  E.atKey' "transactionId" (E.maybeOrNull transactionIdEncoder) tid .
+  maybeOrAbsentE "transactionId" transactionIdEncoder tid .
   E.atKey' "status" transactionStatusEncoder ts .
   E.atKey' "description" E.text desc .
-  E.atKey' "postDateTime" (E.maybeOrNull dateTimeStringEncoder) pdt .
-  E.atKey' "executionDateTime" (E.maybeOrNull dateTimeStringEncoder) edt .
-  E.atKey' "amount" (E.maybeOrNull amountStringEncoder) amt .
-  E.atKey' "currency" (E.maybeOrNull currencyStringEncoder) cur .
+  maybeOrAbsentE "postDateTime" dateTimeStringEncoder pdt .
+  maybeOrAbsentE "executionDateTime" dateTimeStringEncoder edt .
+  maybeOrAbsentE "amount" amountStringEncoder amt .
+  maybeOrAbsentE "currency" currencyStringEncoder cur .
   E.atKey' "reference" E.text ref .
-  E.atKey' "extendedData" (E.maybeOrNull extendedTransactionDataEncoder) ed
+  maybeOrAbsentE "extendedData" extendedTransactionDataEncoder ed

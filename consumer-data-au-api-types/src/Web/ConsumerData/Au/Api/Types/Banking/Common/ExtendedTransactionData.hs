@@ -18,6 +18,7 @@ import qualified Waargonaut.Decode.Error             as D
 import           Waargonaut.Encode                   (Encoder')
 import qualified Waargonaut.Encode                   as E
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 
 -- Contains more detailed information specific to transactions originated via NPP. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaextendedtransactiondata CDR AU v0.1.0 ExtendedTransactionData>
 data ExtendedTransactionData = ExtendedTransactionData
@@ -29,22 +30,21 @@ data ExtendedTransactionData = ExtendedTransactionData
   } deriving (Generic, Show, Eq)
 
 extendedTransactionDataDecoder :: Monad f => Decoder f ExtendedTransactionData
-extendedTransactionDataDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  payer <- D.fromKey "payer" (D.maybeOrNull D.text) o
-  payee <- D.fromKey "payee" (D.maybeOrNull D.text) o
-  et <- D.fromKey "extensionType" (D.maybeOrNull extendedTransactionDataExtensionTypeDecoder) o
-  ed <- D.fromKey "extendedDescription"
-    (D.maybeOrNull $ ExtendedTransactionDataExtendedDescription <$> D.text) o
-  serv <- D.fromKey "service" extendedTransactionDataServiceDecoder o
-  pure $ ExtendedTransactionData payer payee et ed serv
+extendedTransactionDataDecoder =
+  ExtendedTransactionData
+    <$> atKeyOptional' "payer" D.text
+    <*> atKeyOptional' "payee" D.text
+    <*> atKeyOptional' "extensionType" extendedTransactionDataExtensionTypeDecoder
+    <*> atKeyOptional' "extendedDescription"
+          (ExtendedTransactionDataExtendedDescription <$> D.text)
+    <*> D.atKey "service" extendedTransactionDataServiceDecoder
 
 extendedTransactionDataEncoder :: Encoder' ExtendedTransactionData
 extendedTransactionDataEncoder = E.mapLikeObj $ \(ExtendedTransactionData payer payee et ed serv) ->
-  E.atKey' "payer" (E.maybeOrNull E.text) payer .
-  E.atKey' "payee" (E.maybeOrNull E.text) payee .
-  E.atKey' "extensionType" (E.maybeOrNull extendedTransactionDataExtensionTypeEncoder) et .
-  E.atKey' "extendedDescription" (E.maybeOrNull (unExtendedTransactionDataExtendedDescription >$< E.text)) ed .
+  maybeOrAbsentE "payer" E.text payer .
+  maybeOrAbsentE "payee" E.text payee .
+  maybeOrAbsentE "extensionType" extendedTransactionDataExtensionTypeEncoder et .
+  maybeOrAbsentE "extendedDescription" (unExtendedTransactionDataExtendedDescription >$< E.text) ed .
   E.atKey' "service" extendedTransactionDataServiceEncoder serv
 
 -- | Optional extended data provided specific to transaction originated via NPP.
