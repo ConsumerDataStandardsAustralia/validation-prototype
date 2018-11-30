@@ -11,7 +11,12 @@ library
                , obelisk-route
                , reflex-dom
                , obelisk-generated-static
-               , consumer-data-au-api-types
+--               , consumer-data-au-api-types
+               , waargonaut
+               , bytestring
+               , attoparsec
+               , bifunctors
+               , lens
                , text
   exposed-modules:
     Frontend

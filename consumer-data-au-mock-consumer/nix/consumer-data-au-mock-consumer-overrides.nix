@@ -6,8 +6,8 @@ let
   };
 
   bankOverrides = pkgs: self: super: {
-    consumer-data-au-api-types = self.callPackage (import ../../consumer-data-au-api-types/consumer-data-au-api-types.nix) {};
-    consumer-data-au-api-client = self.callPackage (import ../../consumer-data-au-api-client/consumer-data-au-api-client.nix) {};
+    consumer-data-au-api-types = pkgs.haskell.lib.dontCheck self.callPackage (import ../../consumer-data-au-api-types/consumer-data-au-api-types.nix) {};
+    consumer-data-au-api-client = pkgs.haskell.lib.dontCheck self.callPackage (import ../../consumer-data-au-api-client/consumer-data-au-api-client.nix) {};
 
     # HPack just won't work in ghcjs atm because of the yaml lib at the moment. Let's cheat.
     hpack = pkgs.haskellPackages.hpack;
@@ -37,6 +37,9 @@ let
     yaml = pkgs.haskell.lib.dontCheck super.yaml;
     wai-extra = pkgs.haskell.lib.dontCheck super.wai-extra;
     wai-app-static = pkgs.haskell.lib.dontCheck super.wai-app-static;
+    servant = pkgs.haskell.lib.dontCheck super.servant;
+    servant-server = pkgs.haskell.lib.dontCheck super.servant-server;
+    servant-client = pkgs.haskell.lib.dontCheck super.servant-client;
     waargonaut = pkgs.haskell.lib.dontCheck super.acme-default;
   };
 
