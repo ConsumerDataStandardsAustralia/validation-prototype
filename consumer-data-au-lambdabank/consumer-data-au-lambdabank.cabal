@@ -18,6 +18,7 @@ library
                    , Web.ConsumerData.Au.LambdaBank.FakeData
                    , Web.ConsumerData.Au.LambdaBank.Model
                    , Web.ConsumerData.Au.LambdaBank.Server
+                   , Web.ConsumerData.Au.LambdaBank.Server.Auth
                    , Web.ConsumerData.Au.LambdaBank.Server.Banking
                    , Web.ConsumerData.Au.LambdaBank.Server.Banking.Accounts
                    , Web.ConsumerData.Au.LambdaBank.Server.Banking.Payees

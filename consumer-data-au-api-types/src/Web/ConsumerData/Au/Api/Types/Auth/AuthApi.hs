@@ -3,7 +3,7 @@
 
 module Web.ConsumerData.Au.Api.Types.Auth.AuthApi where
 
-import Crypto.JWT                          (SignedJWT)
+import Crypto.JWT  (SignedJWT)
 import Servant.API
     ((:>), QueryParam, QueryParam', Required, StdMethod (GET), Strict, Verb)
 import Servant.API.ContentTypes.Waargonaut (WaargJSON)
