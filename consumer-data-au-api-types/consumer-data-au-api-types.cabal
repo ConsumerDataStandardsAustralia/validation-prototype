@@ -24,6 +24,7 @@ library
                      , Data.Time.Waargonaut
                      , Waargonaut.Helpers
                      , Web.ConsumerData.Au.Api.Types
+                     , Web.ConsumerData.Au.Api.Types.Auth.AuthApi
                      , Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
                      , Web.ConsumerData.Au.Api.Types.Auth.Common
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.AccessToken

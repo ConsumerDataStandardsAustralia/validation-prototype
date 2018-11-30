@@ -1,22 +1,22 @@
 {-# LANGUAGE DataKinds     #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Web.ConsumerData.Au.Api.Types.Auth.OpApi where
+module Web.ConsumerData.Au.Api.Types.Auth.AuthApi where
 
 import Crypto.JWT                          (SignedJWT)
 import Servant.API
-    ((:>), FormUrlEncoded, Post, QueryParam, QueryParam', ReqBody, Required,
-    StdMethod (GET), Strict, Verb)
+    ((:>), QueryParam, QueryParam', Required, StdMethod (GET), Strict, Verb)
 import Servant.API.ContentTypes.Waargonaut (WaargJSON)
 import Servant.API.Generic                 ((:-))
 
 import Web.ConsumerData.Au.Api.Types.Auth.Common
-    (ClientId, IdToken, Nonce, RedirectUri, ResponseType, Scopes, State, IdTokenUse (TokenUse))
+    (ClientId, IdToken, IdTokenUse (TokenUse), Nonce, RedirectUri,
+    ResponseType, Scopes, State)
 
 data Foo = Foo
 
-data OpApi route =
-  OpApi
+data AuthApi route =
+  AuthApi
   {
     authorise :: route :- "authorise"
       :> RQP "response_type" ResponseType
