@@ -148,7 +148,7 @@ newtype GrantTypes = GrantTypes (Set GrantType)
 
 -- | Determines the set of credentials that will be used by a client when accessing /token endpoint. OIDC requires a restricted subset of the allowed OAuth values (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>). Also, because OZ OB only supports `code id_token` and `code id_token token` (i.e. the `hybrid` flow), this means `grant_types` must contain at least `authorization_code` and `implicit`, as per the OIDC Registration spec (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>).
 -- NB: For UK OB, `client_credentials` is required as a grant type, as is it needed for the client to submit a JWT to the /token endpoint to obtain a consent ID / payment ID before sending the request to /payments.
-data GrantType = Implicit | AuthorizationCode | RefreshToken -- | ClientCredentials
+data GrantType = Implicit | AuthorizationCode | RefreshToken -- ClientCredentials
   deriving (Generic, ToJSON, FromJSON, Show, Eq, Ord)
 
 newtype FapiGrantTypes = FapiGrantTypes GrantTypes

@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wwarn #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest where
 
