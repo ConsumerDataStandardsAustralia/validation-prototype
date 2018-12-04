@@ -34,12 +34,12 @@ data TokenResponseR =
   TokenResponseR
   { -- TODO: need confirmation from the oauth specs for these fields
     -- TODO: Some fields are only Maybe because this could be an error; need to change this type
-      _access_token  :: Maybe AccessToken
-    , _token_type    :: Maybe TokenTypeDescription
-    , _expires_in    :: Maybe TokenMaxAgeSeconds
-    , _scope         :: Maybe Scopes
-    , _refresh_token :: Maybe RefreshToken
-    , _id_token      :: Maybe (IdToken 'TokenUse)
+      _tokenResponseAccessToken  :: Maybe AccessToken
+    , _tokenResponseTokenType    :: Maybe TokenTypeDescription
+    , _tokenResponseExpiresIn    :: Maybe TokenMaxAgeSeconds
+    , _tokenResponseScope        :: Maybe Scopes
+    , _tokenResponseRefreshToken :: Maybe RefreshToken
+    , _tokenResponseIdToken      :: Maybe (IdToken 'TokenUse)
   }
 
 data TokenResponseErrorR =
