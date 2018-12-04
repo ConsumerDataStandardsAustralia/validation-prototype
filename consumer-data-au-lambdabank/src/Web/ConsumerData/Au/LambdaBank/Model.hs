@@ -14,6 +14,7 @@ import Control.Monad.Free.Church (F, iterM)
 import Web.ConsumerData.Au.LambdaBank.FakeData
 
 data ModelF next where
+  Authorise                                 :: AuthorisationRequest -> (AuthorisationResponse -> next) -> ModelF next
   GetCustomer                               :: (CustomerResponse           -> next) -> ModelF next
   GetCustomerDetail                         :: (CustomerDetailResponse     -> next) -> ModelF next
   GetAccounts                               :: (Accounts  -> next) -> ModelF next
@@ -92,6 +93,7 @@ type ModelM = F ModelF
 -- enough for now.
 runModelM :: Monad m => ModelM a -> m a
 runModelM = iterM $ \case
+  (Authorise _rq next) -> next AuthorisationResponse
   (GetCustomer next) -> next (CustomerPerson testPerson)
   (GetCustomerDetail next) -> next (CustomerDetailPerson testPersonDetail)
   (GetAccounts next) -> next testAccounts
