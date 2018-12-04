@@ -3,7 +3,7 @@
 {-# LANGUAGE GADTs              #-}
 {-# LANGUAGE LambdaCase         #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell    #-}
+
 module Web.ConsumerData.Au.LambdaBank.Model where
 
 import Web.ConsumerData.Au.Api.Types
