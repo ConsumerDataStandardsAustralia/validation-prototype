@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE RankNTypes      #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators   #-}
 module Web.ConsumerData.Au.Api.Types.Banking
   ( module Web.ConsumerData.Au.Api.Types.Banking
