@@ -36,6 +36,7 @@ library
                      , consumer-data-au-api-client
                      , country == 0.1.*
                      , free == 5.0.*
+                     , jose == 0.7.*
                      , lens == 4.16.*
                      , modern-uri == 0.2.*
                      , mtl == 2.2.*

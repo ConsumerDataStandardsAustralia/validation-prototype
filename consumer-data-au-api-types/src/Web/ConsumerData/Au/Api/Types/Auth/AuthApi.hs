@@ -1,9 +1,11 @@
 {-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.AuthApi where
 
-import Crypto.JWT  (SignedJWT)
+import Crypto.JWT                          (SignedJWT)
+import GHC.Generics                        (Generic)
 import Servant.API
     ((:>), QueryParam, QueryParam', Required, StdMethod (GET), Strict, Verb)
 import Servant.API.ContentTypes.Waargonaut (WaargJSON)
@@ -31,7 +33,7 @@ data AuthApi route =
   -- , token :: route :- "token"
   --     :> ReqBody '[FormUrlEncoded] TokenRequest
   --     :> Post '[WaargJSON] TokenResponse
-  }
+  } deriving Generic
 
 -- | Query paramter is required and a failed parse causes an error.
 type RQP = QueryParam' '[Required, Strict]
