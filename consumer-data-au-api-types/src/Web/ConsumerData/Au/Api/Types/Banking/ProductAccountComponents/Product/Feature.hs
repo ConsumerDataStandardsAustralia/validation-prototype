@@ -93,7 +93,7 @@ productFeatureTypeDecoder = do
     "NPP_ENABLED" -> pure PFeatureNppEnabled
     "DONATE_INTEREST" -> pure PFeatureDonateInterest
     "BILL_PAYMENT" -> PFeatureBillPayment <$> (additionalValueDecoder D.text)
-    _ -> throwError $ D.ParseFailed featureType  --D.KeyDecodeFailed
+    _ -> throwError D.KeyDecodeFailed
   pure additionalValue
 
 productFeatureType'ToText :: ProductFeatureType' -> Text
