@@ -207,6 +207,6 @@ productCategoryEncoder = E.prismE productCategoryText E.text
 
 productCategoryDecoder :: Monad f => Decoder f ProductCategory
 productCategoryDecoder = D.prismDOrFail
-  (D._ConversionFailure # "Not a product category")
+  (D._ConversionFailure # "Not a valid ProductCategory")
   productCategoryText
   D.text

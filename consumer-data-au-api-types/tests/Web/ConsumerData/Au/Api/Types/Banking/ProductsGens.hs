@@ -19,7 +19,6 @@ import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Le
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypesGens
 
 
--- productGen :: Gen Product
 productGen :: forall m. (MonadGen m, MonadThrow m) => m Product
 productGen  = Product
   <$> asciiStringGen
@@ -35,7 +34,6 @@ productGen  = Product
   <*> Gen.bool_
   <*> Gen.maybe productAdditionalInformationGen
 
--- productAdditionalInformationGen :: Gen ProductAdditionalInformation
 productAdditionalInformationGen :: (MonadGen m, MonadThrow m) => m ProductAdditionalInformation
 productAdditionalInformationGen = ProductAdditionalInformation
   <$> Gen.maybe genURI
@@ -44,7 +42,6 @@ productAdditionalInformationGen = ProductAdditionalInformation
   <*> Gen.maybe genURI
   <*> Gen.maybe genURI
 
--- productCategoryGen :: Gen ProductCategory
 productCategoryGen :: (MonadGen m) => m ProductCategory
 productCategoryGen = Gen.element
   [ PCPersAtCallDeposits
@@ -68,7 +65,6 @@ productCategoryGen = Gen.element
   ]
 
 
--- productDetailGen :: Gen ProductDetail
 productDetailGen :: (MonadGen m, MonadThrow m) => m ProductDetail
 productDetailGen = ProductDetail
   <$> productGen
@@ -81,12 +77,10 @@ productDetailGen = ProductDetail
   <*> Gen.maybe productLendingRatesGen
   <*> Gen.maybe productRepaymentTypeGen
 
--- productBundlesGen :: Gen ProductBundles
 productBundlesGen :: (MonadGen m, MonadThrow m) => m ProductBundles
 productBundlesGen = ProductBundles
   <$> Gen.list (Range.linear 0 10) productBundleGen
 
--- productBundleGen :: Gen ProductBundle
 productBundleGen :: (MonadGen m, MonadThrow m) => m ProductBundle
 productBundleGen = ProductBundle
   <$> textGen
@@ -94,7 +88,6 @@ productBundleGen = ProductBundle
   <*> Gen.maybe genURI
   <*> Gen.list (Range.linear 0 10) textGen
 
--- productRepaymentTypeGen :: Gen ProductRepaymentType
 productRepaymentTypeGen :: (MonadGen m) => m ProductRepaymentType
 productRepaymentTypeGen = Gen.element
   [ PRepaymentTypeInterestOnly
@@ -103,12 +96,10 @@ productRepaymentTypeGen = Gen.element
   ]
 
 
--- productConstraintsGen :: Gen ProductConstraints
 productConstraintsGen :: (MonadGen m) => m ProductConstraints
 productConstraintsGen = ProductConstraints
   <$> Gen.list (Range.linear 0 10) productConstraintGen
 
--- productConstraintGen :: Gen ProductConstraint
 productConstraintGen :: (MonadGen m) => m ProductConstraint
 productConstraintGen = Gen.lift $ Gen.choice
   [ PConstraintMinBalance <$> amountStringGen
@@ -118,12 +109,10 @@ productConstraintGen = Gen.lift $ Gen.choice
   ]
 
 
--- productDepositRatesGen :: Gen ProductDepositRates
 productDepositRatesGen :: (MonadGen m, MonadThrow m) => m ProductDepositRates
 productDepositRatesGen = ProductDepositRates
   <$> Gen.list (Range.linear 0 10) productDepositRateGen
 
--- productDepositRateGen :: Gen ProductDepositRate
 productDepositRateGen :: (MonadGen m, MonadThrow m) => m ProductDepositRate
 productDepositRateGen = ProductDepositRate
   <$> productDepositRateTypeGen
@@ -132,7 +121,6 @@ productDepositRateGen = ProductDepositRate
   <*> Gen.maybe textGen
   <*> Gen.maybe genURI
 
--- productDepositRateTypeGen :: Gen ProductDepositRateType
 productDepositRateTypeGen :: (MonadGen m) => m ProductDepositRateType
 productDepositRateTypeGen = Gen.lift $ Gen.choice
   [ PDepositRateTypeFixed <$> durationStringGen
@@ -143,12 +131,10 @@ productDepositRateTypeGen = Gen.lift $ Gen.choice
   ]
 
 
--- productDiscountsGen :: Gen ProductDiscounts
 productDiscountsGen :: (MonadGen m) => m ProductDiscounts
 productDiscountsGen = ProductDiscounts
   <$> Gen.list (Range.linear 0 10) productDiscountGen
 
--- productDiscountGen :: Gen ProductDiscount
 productDiscountGen :: (MonadGen m) => m ProductDiscount
 productDiscountGen = ProductDiscount
   <$> textGen
@@ -156,7 +142,6 @@ productDiscountGen = ProductDiscount
 -- WARNING
   <*> amountStringGen
 
--- productDiscountTypeGen :: Gen ProductDiscountType
 productDiscountTypeGen :: (MonadGen m) => m ProductDiscountType
 productDiscountTypeGen = Gen.lift $ Gen.choice
   [ PDiscountBalance <$> amountStringGen
@@ -166,12 +151,10 @@ productDiscountTypeGen = Gen.lift $ Gen.choice
   ]
 
 
--- productEligibilitiesGen :: Gen ProductEligibilities
 productEligibilitiesGen :: (MonadGen m, MonadThrow m) => m ProductEligibilities
 productEligibilitiesGen = ProductEligibilities
   <$> Gen.list (Range.linear 0 10) productEligibilityGen
 
--- productEligibilityGen :: Gen ProductEligibility
 productEligibilityGen :: (MonadGen m, MonadThrow m) => m ProductEligibility
 productEligibilityGen = ProductEligibility
   <$> textGen
@@ -180,7 +163,6 @@ productEligibilityGen = ProductEligibility
   <*> Gen.maybe textGen
   <*> Gen.maybe genURI
 
--- productEligibilityTypeGen :: Gen ProductEligibilityType
 productEligibilityTypeGen :: (MonadGen m) => m ProductEligibilityType
 productEligibilityTypeGen = Gen.lift $ Gen.choice
   [ pure PEligibilityBusiness
@@ -197,12 +179,10 @@ productEligibilityTypeGen = Gen.lift $ Gen.choice
   ]
 
 
--- productFeaturesGen :: Gen ProductFeatures
 productFeaturesGen :: (MonadGen m) => m ProductFeatures
 productFeaturesGen = ProductFeatures
   <$> Gen.list (Range.linear 0 10) productFeatureTypeGen
 
--- productFeatureTypeGen :: Gen ProductFeatureType
 productFeatureTypeGen :: (MonadGen m) => m ProductFeatureType
 productFeatureTypeGen = Gen.lift $ Gen.choice
   [ pure PFeatureCardAcess
@@ -227,12 +207,10 @@ productFeatureTypeGen = Gen.lift $ Gen.choice
   ]
 
 
--- productFeesGen :: Gen ProductFees
 productFeesGen :: (MonadGen m, MonadThrow m) => m ProductFees
 productFeesGen = ProductFees
   <$> Gen.list (Range.linear 0 10) productFeeGen
 
--- productFeeGen :: Gen ProductFee
 productFeeGen :: (MonadGen m, MonadThrow m) => m ProductFee
 productFeeGen = ProductFee
   <$> textGen
@@ -246,7 +224,6 @@ productFeeGen = ProductFee
   <*> Gen.maybe genURI
   <*> Gen.maybe productDiscountsGen
 
--- productFeeTypeGen :: Gen ProductFeeType
 productFeeTypeGen :: (MonadGen m) => m ProductFeeType
 productFeeTypeGen = Gen.lift $ Gen.choice
   [ PFeePeriodicPeriodic <$> durationStringGen
@@ -265,12 +242,10 @@ productFeeTypeGen = Gen.lift $ Gen.choice
   ]
 
 
--- productLendingRatesGen :: Gen ProductLendingRates
 productLendingRatesGen :: (MonadGen m, MonadThrow m) => m ProductLendingRates
 productLendingRatesGen = ProductLendingRates
   <$> Gen.list (Range.linear 0 10) productLendingRateGen
 
--- productLendingRateGen :: Gen ProductLendingRate
 productLendingRateGen :: (MonadGen m, MonadThrow m) => m ProductLendingRate
 productLendingRateGen = ProductLendingRate
   <$> productLendingRateTypeGen
@@ -279,7 +254,6 @@ productLendingRateGen = ProductLendingRate
   <*> Gen.maybe textGen
   <*> Gen.maybe genURI
 
--- productLendingRateTypeGen :: Gen ProductLendingRateType
 productLendingRateTypeGen :: (MonadGen m) => m ProductLendingRateType
 productLendingRateTypeGen = Gen.lift $ Gen.choice
   [ PLendingRateFixed <$> durationStringGen
