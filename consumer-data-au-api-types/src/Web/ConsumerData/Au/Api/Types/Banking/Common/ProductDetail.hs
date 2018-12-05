@@ -17,7 +17,7 @@ import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 
-import           Waargonaut.Helpers         (atKeyOptional', fromKeyOptional', maybeOrAbsentE)
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Response
     (uriDecoder, uriEncoder)
 import Web.ConsumerData.Au.Api.Types.Tag
@@ -43,7 +43,8 @@ import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Le
 
 -- | ProductDetail <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocBankingCommonSchemas CDR AU v0.1.0 ProductDetail>
 data ProductDetail = ProductDetail
-  { _productDetailProduct       :: Maybe Product
+  { _productDetailProduct       :: Product
+-- WARNING in 0.1.0 it is Maybe Product in the swagger
   , _productDetailBundles       :: Maybe ProductBundles -- ^ An array of bundles that this product participates in. Each bundle is described by free form information but also by a list of product IDs of the other products that are included in the bundle. It is assumed that the current product is included in the bundle also
   , _productDetailFeatures      :: Maybe ProductFeatures -- ^ Array of features available for the product
   , _productDetailConstraints   :: Maybe ProductConstraints -- ^ Constraints on the application for or operation of the product such as minimum balances or limit thresholds
@@ -55,18 +56,17 @@ data ProductDetail = ProductDetail
   } deriving (Eq, Show)
 
 productDetailDecoder :: Monad f => Decoder f ProductDetail
-productDetailDecoder = D.withCursor $ \o -> do
-  p1 <- D.focus (D.maybeOrNull productDecoder) o
-  c <- D.down o
-  p2 <- fromKeyOptional' "bundles" productBundlesDecoder c
-  p3 <- fromKeyOptional' "features" productFeaturesDecoder c
-  p4 <- fromKeyOptional' "constraints" productConstraintsDecoder c
-  p5 <- fromKeyOptional' "eligibility" productEligibilitiesDecoder c
-  p6 <- fromKeyOptional' "fees" productFeesDecoder c
-  p7 <- fromKeyOptional' "depositRates" productDepositRatesDecoder c
-  p8 <- fromKeyOptional' "lendingRates" productLendingRatesDecoder c
-  p9 <- fromKeyOptional' "repaymentType" productRepaymentTypeDecoder c
-  pure $ ProductDetail p1 p2 p3 p4 p5 p6 p7 p8 p9
+productDetailDecoder =
+  ProductDetail
+    <$> productDecoder
+    <*> atKeyOptional' "bundles" productBundlesDecoder
+    <*> atKeyOptional' "features" productFeaturesDecoder
+    <*> atKeyOptional' "constraints" productConstraintsDecoder
+    <*> atKeyOptional' "eligibility" productEligibilitiesDecoder
+    <*> atKeyOptional' "fees" productFeesDecoder
+    <*> atKeyOptional' "depositRates" productDepositRatesDecoder
+    <*> atKeyOptional' "lendingRates" productLendingRatesDecoder
+    <*> atKeyOptional' "repaymentType" productRepaymentTypeDecoder
 
 instance JsonDecode OB ProductDetail where
   mkDecoder = tagOb productDetailDecoder
@@ -76,7 +76,7 @@ instance JsonEncode OB ProductDetail where
 
 productDetailEncoder :: Applicative f => Encoder f ProductDetail
 productDetailEncoder = E.mapLikeObj $ \pd ->
-  maybe id productFields (_productDetailProduct pd) .
+  productFields (_productDetailProduct pd) .
   maybeOrAbsentE "bundles" productBundlesEncoder (_productDetailBundles pd) .
   maybeOrAbsentE "features" productFeaturesEncoder (_productDetailFeatures pd) .
   maybeOrAbsentE "constraints" productConstraintsEncoder (_productDetailConstraints pd) .
@@ -112,8 +112,7 @@ data ProductBundle = ProductBundle
   } deriving (Eq, Show)
 
 productBundleDecoder :: Monad f => Decoder f ProductBundle
-productBundleDecoder = --D.withCursor $ \c -> do
-  --o <- D.down c
+productBundleDecoder =
   ProductBundle
     <$> D.atKey "name" D.text
     <*> D.atKey "description" D.text

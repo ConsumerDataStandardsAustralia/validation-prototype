@@ -155,4 +155,4 @@ testProducts :: Products
 testProducts = Products [testProduct]
 
 testProductDetail :: ProductDetail
-testProductDetail = ProductDetail (Just testProduct) Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+testProductDetail = ProductDetail testProduct Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing

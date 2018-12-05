@@ -31,10 +31,9 @@ data Products = Products { getProducts :: [Product] }
   deriving (Eq, Show)
 
 productsDecoder :: Monad f => Decoder f Products
-productsDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  ps <- D.fromKey "products" (D.list productDecoder) o
-  pure $ Products ps
+productsDecoder =
+  Products
+    <$> D.atKey "products" (D.list productDecoder)
 
 instance JsonDecode OB Products where
   mkDecoder = tagOb productsDecoder

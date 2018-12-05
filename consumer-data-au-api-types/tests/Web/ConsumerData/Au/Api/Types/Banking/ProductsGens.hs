@@ -71,7 +71,7 @@ productCategoryGen = Gen.element
 -- productDetailGen :: Gen ProductDetail
 productDetailGen :: (MonadGen m, MonadThrow m) => m ProductDetail
 productDetailGen = ProductDetail
-  <$> Gen.maybe productGen
+  <$> productGen
   <*> Gen.maybe productBundlesGen
   <*> Gen.maybe productFeaturesGen
   <*> Gen.maybe productConstraintsGen
