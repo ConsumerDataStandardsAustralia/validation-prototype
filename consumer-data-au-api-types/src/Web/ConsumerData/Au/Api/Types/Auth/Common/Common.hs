@@ -23,6 +23,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , FapiPermittedAlg(..)
   , Hash
   , Nonce (..)
+  , Prompt (..)
   , SHash
   , TokenAddressText
   , TokenAuthTime
@@ -36,11 +37,10 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , ClientId (..)
   , RedirectUri (..)
   , ResponseType (..)
-  -- Not exporting constructor for Scopes --- use the smart constructor
   , Scopes
   , mkScopes
   , Scope (..)
-  , State
+  , State (..)
   ) where
 
 import           Control.Lens
@@ -292,6 +292,25 @@ instance ToJSON Scope where
 
 instance FromJSON Scope where
   parseJSON = parseJSONWithPrism scopeText "Scope"
+
+data Prompt =
+  SelectAccount
+  deriving (Eq, Show)
+
+prompt ::
+  Prism' Text Prompt
+prompt = prism
+  (\SelectAccount -> "select_account")
+  (\case
+      "select_account" -> Right SelectAccount
+      t -> Left t
+  )
+
+instance ToJSON Prompt where
+  toJSON = toJSON . (prompt #)
+
+instance FromJSON Prompt where
+  parseJSON = parseJSONWithPrism prompt "Prompt"
 
 newtype TokenHeaders = TokenHeaders [Header]
 data Header = Header {key::Text, value::Text}

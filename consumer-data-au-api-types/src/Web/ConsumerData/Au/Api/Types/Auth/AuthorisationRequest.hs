@@ -25,7 +25,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
   where
 
 import Web.ConsumerData.Au.Api.Types.Auth.Common
-    (ClientId, Nonce, RedirectUri, ResponseType, Scopes, State)
+    (ClientId, Nonce, RedirectUri, ResponseType, Scopes, State, Prompt)
 import Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken (IdTokenClaims)
 import Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, _MissingClaim, _ParseError)
@@ -102,6 +102,7 @@ data AuthorisationRequest =
   -- | @nonce@ is required given <https://openid.net/specs/openid-financial-api-part-1.html#public-client FAPI RO §5.2.3.8>.
   -- We currently assume that a persistent identifier is required.
   , _authReqNonce        :: Nonce
+  , _authReqPrompt       :: Prompt
   , _authReqIssuer       :: StringOrURI
   , _authReqAudience     :: Audience
   -- | @claims@ required, as <https://openid.net/specs/openid-financial-api-part-2.html#public-client FAPI R+W §5.2.3.3>
@@ -123,6 +124,7 @@ authRequestToAesonMap ar =
   & at "scope" ?~ toJSON (ar ^. authReqScope)
   & at "state" ?~ toJSON (ar ^. authReqState)
   & at "nonce" ?~ toJSON (ar ^. authReqNonce)
+  & at "prompt" ?~ toJSON (ar ^. authReqPrompt)
   & at "claims" ?~ toJSON (ar ^. authReqClaims)
 
 aesonMapToAuthRequest ::
@@ -152,6 +154,7 @@ aesonMapToAuthRequest m iss aud = do
     <*> get "scope"
     <*> get "state"
     <*> get "nonce"
+    <*> get "prompt"
     <*> pure iss
     <*> pure aud
     <*> get "claims"

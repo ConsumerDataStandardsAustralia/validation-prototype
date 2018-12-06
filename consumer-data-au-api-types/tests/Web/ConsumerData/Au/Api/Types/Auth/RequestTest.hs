@@ -49,7 +49,7 @@ import Web.ConsumerData.Au.Api.Types.Auth.Common
     (Acr (Acr), Claim (Claim), ClientId (ClientId), IdToken (IdToken),
     IdTokenClaims, IdTokenKey (IdTokenSub), Nonce (Nonce),
     RedirectUri (RedirectUri), ResponseType (CodeIdToken), Scope (..),
-    TokenSubject (..), mkScopes)
+    TokenSubject (..), mkScopes, Prompt (SelectAccount), State (..))
 import Web.ConsumerData.Au.Api.Types.Auth.Error
     (Error (ParseError))
 
@@ -142,8 +142,9 @@ genAuthRequest =
     <*> (ClientId <$> genUnicodeText 1 15)
     <*> (RedirectUri <$> genURI)
     <*> (mkScopes <$> genAdditionalScopes)
-    <*> pure Nothing
+    <*> (State <$> genUnicodeText 10 10)
     <*> (Nonce <$> genUnicodeText 10 10)
+    <*> (pure SelectAccount)
     <*> pure (string # "qfpl.io")
     <*> genAud
     <*> genClaims
@@ -156,8 +157,9 @@ goldenAuthRequest =
     (ClientId "functionalfinance.io")
     (RedirectUri . fromJust . mkURI $ "https://functionalfinance.io/auth")
     (mkScopes Set.empty)
-    Nothing
+    (State "r4nd0m")
     (Nonce "fhqwgad")
+    SelectAccount
     (string # "functionalfinance.io")
     (Audience [uri # fromJust (parseURI "https://lambdabank.io")])
     (Claims Nothing goldenIdToken)
