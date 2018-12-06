@@ -158,7 +158,7 @@ goldenAuthRequest =
     (mkScopes Set.empty)
     Nothing
     (Nonce "fhqwgad")
-    (string # "lambdabank.io")
+    (string # "functionalfinance.io")
     (Audience [uri # fromJust (parseURI "https://lambdabank.io")])
     (Claims Nothing goldenIdToken)
 
