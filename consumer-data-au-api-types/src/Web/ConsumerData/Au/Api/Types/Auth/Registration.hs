@@ -22,10 +22,9 @@ import qualified Crypto.JOSE.Error                               as JE
 import           Crypto.JOSE.JWA.JWE                             (Enc)
 import qualified Crypto.JOSE.JWA.JWE                             as JWE
 import           Crypto.JOSE.JWK                                 (JWK)
-import           Crypto.JOSE.JWS
-    (Alg, JWSHeader, newJWSHeader)
+import           Crypto.JOSE.JWS                           (Alg, newJWSHeader)
 import           Crypto.JWT
-    (AsJWTError, Audience, ClaimsSet, JWT, NumericDate, SignedJWT, StringOrURI,
+    (AsJWTError, Audience, ClaimsSet, NumericDate, SignedJWT, StringOrURI,
     claimAud, claimIss, decodeCompact, defaultJWTValidationSettings,
     emptyClaimsSet, issuerPredicate, signClaims, unregisteredClaims,
     verifyClaims)
@@ -577,9 +576,6 @@ getSigningHeaders claims = do
 -- convert a signed jwt to JSON, encode it, then back to a json Value
 jwtToJson :: (AsError e, MonadError e f, ToJSON a) => a -> f Value
 jwtToJson j = toJSON . TE.decodeUtf8 . B64.encode . TE.encodeUtf8 <$> valText (toJSON j)
-
-instance ToJSON (JWT (a JWSHeader)) where
-  toJSON = toJSON
 
 --TODO: consolidate these ...
 claimText :: forall e m.
