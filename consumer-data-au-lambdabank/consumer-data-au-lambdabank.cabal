@@ -89,6 +89,7 @@ test-suite tasty
                      , text == 1.2.*
   other-modules:  Web.ConsumerData.Au.LambdaBank.Banking.AccountsTest
                   Web.ConsumerData.Au.LambdaBank.Banking.PayeesTest
+                  Web.ConsumerData.Au.LambdaBank.Banking.ProductsTest
                   Web.ConsumerData.Au.LambdaBank.Common.CustomerTest
                   Web.ConsumerData.Au.LambdaBank.WithServer
 

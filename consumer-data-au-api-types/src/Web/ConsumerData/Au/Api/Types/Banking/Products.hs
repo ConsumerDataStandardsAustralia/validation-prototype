@@ -19,8 +19,9 @@ import Web.ConsumerData.Au.Api.Types.Banking.Common.ProductDetail
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Products
 import Web.ConsumerData.Au.Api.Types.Response
 import Web.ConsumerData.Au.Api.Types.Tag
+import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
 
-newtype ProductId = ProductId { unProductId :: Integer } deriving (Eq, Show)
+newtype ProductId = ProductId { unProductId :: AsciiString } deriving (Eq, Show)
 instance ToHttpApiData ProductId where
   toUrlPiece = toUrlPiece . unProductId
 instance FromHttpApiData ProductId where
@@ -40,5 +41,5 @@ productsGet = to _productsGet
 productsByIdGet :: Getter (ProductsApi r) (ProductsByIdGetRoute r)
 productsByIdGet = to _productsByIdGet
 
-type ProductsGetResponse = PaginatedResponse [Product]
+type ProductsGetResponse = PaginatedResponse Products
 type ProductByIdResponse = StandardResponse ProductDetail
