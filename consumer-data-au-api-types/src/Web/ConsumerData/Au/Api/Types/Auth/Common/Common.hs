@@ -10,10 +10,11 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# OPTIONS_GHC -Wwarn #-}
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   ( ErrorCode (ErrorCode)
+  , ErrorDescription
   , GrantErrorResponseType (..)
   , grantErrorResponseTypeText
   , Acr (..)
@@ -26,8 +27,10 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , TokenAddressText
   , TokenAuthTime
   , TokenCHash
+  , TokenErrorResponseType
   , TokenHeaders
   , TokenKeyId
+  , TokenMaxAgeSeconds
   , TokenPhoneText
   , TokenSubject (..)
   , ClientId (..)
@@ -103,6 +106,7 @@ newtype ErrorCode = ErrorCode Text
 newtype ErrorDescription =
   ErrorDescription {getErrorDescription :: Text}
   deriving (Generic, ToJSON)
+
 -- | The @error_uri@ returned as parameter of the query component of the part of the redirection URI using the "application/x-www-form-urlencoded" format. A URI identifying a human-readable web page with information about the error, used to provide the client developer with additional information about the error. Values for the @error_uri@ parameter MUST conform to the URI-reference syntax and thus MUST NOT include characters outside the set %x21 / %x23-5B / %x5D-7E.
 newtype AuthUri =
   AuthUri {getAuthUri :: URI}

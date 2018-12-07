@@ -1,10 +1,10 @@
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE RankNTypes      #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators   #-}
 module Web.ConsumerData.Au.Api.Types
   ( module Web.ConsumerData.Au.Api.Types
+  , module Auth
   , module Banking
   , module Common
   , module CommonFieldTypes
@@ -20,6 +20,7 @@ import Servant.API.Generic
     ((:-), AsApi, ToServant, ToServantApi, fromServant, genericApi)
 import Servant.Links       (AsLink, allFieldLinks)
 
+import Web.ConsumerData.Au.Api.Types.Auth                  as Auth
 import Web.ConsumerData.Au.Api.Types.Banking               as Banking
 import Web.ConsumerData.Au.Api.Types.Common                as Common
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes as CommonFieldTypes

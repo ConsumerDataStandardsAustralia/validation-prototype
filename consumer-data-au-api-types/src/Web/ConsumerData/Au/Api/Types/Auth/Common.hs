@@ -1,9 +1,9 @@
-module Web.ConsumerData.Au.Api.Types.Auth.Common ( module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
-                                                , module Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
-                                                , module Web.ConsumerData.Au.Api.Types.Auth.Common.AccessToken
-                                                , module Web.ConsumerData.Au.Api.Types.Auth.Common.RefreshToken
-                                                )
-                                                  where
+module Web.ConsumerData.Au.Api.Types.Auth.Common
+  ( module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
+  , module Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
+  , module Web.ConsumerData.Au.Api.Types.Auth.Common.AccessToken
+  , module Web.ConsumerData.Au.Api.Types.Auth.Common.RefreshToken
+  ) where
 
 import Web.ConsumerData.Au.Api.Types.Auth.Common.AccessToken
 import Web.ConsumerData.Au.Api.Types.Auth.Common.Common
