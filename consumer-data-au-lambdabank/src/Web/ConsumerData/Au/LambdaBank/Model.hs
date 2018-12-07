@@ -3,7 +3,7 @@
 {-# LANGUAGE GADTs              #-}
 {-# LANGUAGE LambdaCase         #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell    #-}
+
 module Web.ConsumerData.Au.LambdaBank.Model where
 
 import Web.ConsumerData.Au.Api.Types
@@ -29,7 +29,7 @@ data ModelF next where
   GetDirectDebitsForAccount                 :: AccountId -> (DirectDebitAuthorisations -> next) -> ModelF next
   GetPayeesAll                              :: (Payees -> next) -> ModelF next
   GetPayeeDetail                            :: PayeeId -> (PayeeDetail -> next) -> ModelF next
-  GetProductsAll                            :: ([Product] -> next) -> ModelF next
+  GetProductsAll                            :: (Products -> next) -> ModelF next
   GetProductDetail                          :: ProductId -> (ProductDetail -> next) -> ModelF next
 
 deriving instance Functor ModelF
@@ -79,7 +79,7 @@ getPayeesAll = liftF $ GetPayeesAll id
 getPayeeDetail :: MonadFree ModelF m => PayeeId -> m PayeeDetail
 getPayeeDetail pId = liftF $ GetPayeeDetail pId id
 
-getProductsAll :: MonadFree ModelF m => m [Product]
+getProductsAll :: MonadFree ModelF m => m Products
 getProductsAll = liftF $ GetProductsAll id
 
 getProductDetail :: MonadFree ModelF m => ProductId -> m ProductDetail
@@ -107,5 +107,5 @@ runModelM = iterM $ \case
   (GetDirectDebitsForAccount _ next) -> next testDirectDebitAuthorisations
   (GetPayeesAll next) -> next testPayees
   (GetPayeeDetail _ next) -> next testPayeeDetail
-  (GetProductsAll next) -> next [testProduct]
+  (GetProductsAll next) -> next testProducts
   (GetProductDetail _ next) -> next testProductDetail

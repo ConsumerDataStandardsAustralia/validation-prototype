@@ -9,8 +9,7 @@ module Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionBasic
   ( module Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionBasic
   ) where
 
-import           Control.Lens               (Prism', prism, (^?))
-import           Control.Monad.Error.Lens   (throwing)
+import           Control.Lens               (Prism', prism, (#))
 import           Data.Functor.Contravariant ((>$<))
 import           Data.Text                  (Text)
 import           Servant.API
@@ -121,17 +120,9 @@ transactionStatusEncoder ::
 transactionStatusEncoder =
   E.prismE transactionStatusText E.text'
 
---transactionStatusDecoder :: (MonadError D.DecodeError m, Monad m) =>
 transactionStatusDecoder :: Monad m =>
   D.Decoder m TransactionStatus
-transactionStatusDecoder = do
-  tsMay <- (^? transactionStatusText) <$> D.text
-  D.withCursor . const $ maybe
-    (throwing D._ConversionFailure $ "is not a valid Transaction Status")
-    pure
-    tsMay
-  -- Replace it with this later once Decoder gets a monadfail.
-  --D.prismDOrFail
-  --(D._ConversionFailure # "Not a valid TransactionStatus")
-  --transactionStatusText
-  --D.text
+transactionStatusDecoder = D.prismDOrFail
+  (D._ConversionFailure # "Not a valid TransactionStatus")
+  transactionStatusText
+  D.text

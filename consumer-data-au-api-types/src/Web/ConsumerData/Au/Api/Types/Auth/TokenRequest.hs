@@ -1,1 +1,1 @@
-module Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest where
+module Web.ConsumerData.Au.Api.Types.Auth.TokenRequest where

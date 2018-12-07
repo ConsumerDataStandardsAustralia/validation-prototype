@@ -9,8 +9,7 @@ module Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDetail
   ( module Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDetail
   ) where
 
-import           Control.Lens               (Prism', prism, (^?))
-import           Control.Monad.Error.Lens   (throwing)
+import           Control.Lens               (Prism', prism, (#))
 import           Data.Text                  (Text)
 import           Waargonaut.Decode          (Decoder)
 import qualified Waargonaut.Decode          as D
@@ -177,20 +176,12 @@ maturityInstructionsText =
           t -> Left t
       )
 
---maturityInstructionsDecoder :: (MonadError D.DecodeError m, Monad m) =>
 maturityInstructionsDecoder :: Monad m =>
   D.Decoder m MaturityInstructions
-maturityInstructionsDecoder = do
-  tsMay <- (^? maturityInstructionsText) <$> D.text
-  D.withCursor . const $ maybe
-    (throwing D._ConversionFailure $ "is not a valid Maturity Instructions")
-    pure
-    tsMay
-  -- Replace it with this later once Decoder gets a monadfail.
-  --D.prismDOrFail
-  --(D._ConversionFailure # "Not a valid MaturityInstructions")
-  --maturityInstructionsText
-  --D.text
+maturityInstructionsDecoder = D.prismDOrFail
+  (D._ConversionFailure # "Not a valid MaturityInstructions")
+  maturityInstructionsText
+  D.text
 
 maturityInstructionsEncoder ::
   E.Encoder' MaturityInstructions
@@ -293,11 +284,6 @@ instance JsonEncode OB LoanAccountType where
   mkEncoder = tagOb loanAccountTypeEncoder
 
 
-
-
-
-
-
 data RepaymentType =
     RepaymentTypeInterestOnly -- ^ "INTEREST_ONLY"
   | RepaymentTypePrincipalAndInterest -- ^ "PRINCIPAL_AND_INTEREST"
@@ -316,20 +302,12 @@ repaymentTypeText =
           t -> Left t
       )
 
---repaymentTypeDecoder :: (MonadError D.DecodeError m, Monad m) =>
 repaymentTypeDecoder :: Monad m =>
   D.Decoder m RepaymentType
-repaymentTypeDecoder = do
-  tsMay <- (^? repaymentTypeText) <$> D.text
-  D.withCursor . const $ maybe
-    (throwing D._ConversionFailure $ "is not a valid Repayment Type")
-    pure
-    tsMay
-  -- Replace it with this later once Decoder gets a monadfail.
-  --D.prismDOrFail
-  --(D._ConversionFailure # "Not a valid RepaymentType")
-  --repaymentTypeText
-  --D.text
+repaymentTypeDecoder = D.prismDOrFail
+  (D._ConversionFailure # "Not a valid RepaymentType")
+  repaymentTypeText
+  D.text
 
 repaymentTypeEncoder ::
   E.Encoder' RepaymentType

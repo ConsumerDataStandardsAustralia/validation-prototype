@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeOperators   #-}
 module Web.ConsumerData.Au.Api.Types
   ( module Web.ConsumerData.Au.Api.Types
+  , module Auth
   , module Banking
   , module Common
   , module CommonFieldTypes
@@ -24,6 +25,7 @@ import Servant.API.Generic
 import Servant.Links       (AsLink, allFieldLinks)
 
 import Data.Vector.V6
+import Web.ConsumerData.Au.Api.Types.Auth                  as Auth
 import Web.ConsumerData.Au.Api.Types.Banking               as Banking
 import Web.ConsumerData.Au.Api.Types.Common                as Common
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes as CommonFieldTypes

@@ -1,0 +1,37 @@
+{
+  "data": {
+    "products": [
+      {
+        "productId": "string",
+        "effectiveFrom": "2018-11-01T05:33:52Z",
+        "effectiveTo": "2018-11-01T05:33:52Z",
+        "lastUpdated": "2018-11-01T05:33:52Z",
+        "productCategory": "PERS_AT_CALL_DEPOSITS",
+        "name": "string",
+        "description": "string",
+        "brand": "string",
+        "brandName": "string",
+        "applicationUri": "http://example.com/",
+        "isNegotiable": true,
+        "additionalInformation": {
+          "overviewUri": "http://example.com/",
+          "termsUri": "http://example.com/",
+          "eligibilityUri": "http://example.com/",
+          "feesAndPricingUri": "http://example.com/",
+          "bundleUri": "http://example.com/"
+        }
+      }
+    ]
+  },
+  "links": {
+    "self": "http://example.com/",
+    "first": "http://example.com/",
+    "prev": "http://example.com/",
+    "next": "http://example.com/",
+    "last": "http://example.com/"
+  },
+  "meta": {
+    "totalRecords": 6,
+    "totalPages": 2
+  }
+}
