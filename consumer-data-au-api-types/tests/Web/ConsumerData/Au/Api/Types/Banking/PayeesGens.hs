@@ -1,4 +1,4 @@
-module Web.ConsumerData.Au.Api.Types.Banking.Gens where
+module Web.ConsumerData.Au.Api.Types.Banking.PayeesGens where
 
 import Control.Applicative (liftA2)
 import Control.Monad (replicateM)
