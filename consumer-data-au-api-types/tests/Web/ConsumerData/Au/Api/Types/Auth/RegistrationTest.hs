@@ -77,10 +77,10 @@ genStringOrUri::
   , MonadThrow n
   )
   => n StringOrURI
-genStringOrUri = Gen.choice [(uri #) <$> uri', (string #) <$> str]
+genStringOrUri = Gen.choice [(uri #) <$> uri', (string #) <$> txt]
   where m2e = maybe (throwM BadUri) pure
         uri'= m2e =<< parseURI.renderStr <$> genURI
-        str = Gen.string (Range.linear 10 10) Gen.unicode
+        txt = Gen.text (Range.linear 10 10) Gen.unicode
 
 -- Might actually want a relevant time here
 genNumDate ::
