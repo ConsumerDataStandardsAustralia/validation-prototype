@@ -1,5 +1,6 @@
 { system ? builtins.currentSystem # TODO: Get rid of this system cruft
 , iosSdkVersion ? "10.2"
+, hie ? false
 }:
 let
   #overrides = import ./nix/consumer-data-au-mock-consumer-overrides.nix;
@@ -10,6 +11,7 @@ let
       sha256 = "1d1lzyz36w4p0x6k538fgzfmf9fzwgcxldk8xqr2slkghgk778vn";
   };
   w-deps = pkgs: (import "${wsrc pkgs}/waargonaut-deps.nix") pkgs;
+  hie-nix = (import ../nix/hie-nix.nix { ghc843 = true; inherit hie; });
 in
 with import ./.obelisk/impl { inherit system iosSdkVersion; };
 project ./. ({ pkgs, ... }: {
@@ -18,6 +20,7 @@ project ./. ({ pkgs, ... }: {
   ios.bundleIdentifier = "systems.obsidian.obelisk.examples.minimal";
   ios.bundleName = "Obelisk Minimal Example";
   withHoogle = true;
+  tools = _: hie-nix.hie-tools;
   overrides = self: super: (w-deps pkgs self super) // {
     waargonaut = pkgs.haskell.lib.dontCheck (self.callPackage (import "${wsrc pkgs}/waargonaut.nix") {});
     # Tries to call stdlib.h calloc. That's not JS, silly!

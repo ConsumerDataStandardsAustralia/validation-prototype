@@ -12,6 +12,7 @@ library
                , frontend
                , obelisk-backend
                , obelisk-route
+               , snap-core
   exposed-modules:
     Backend
   ghc-options: -Wall
