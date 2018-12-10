@@ -17,7 +17,7 @@ import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Crypto.JOSE
     (Alg (ES256, PS256), decodeCompact, encodeCompact)
 import qualified Crypto.JOSE.JWK        as JWK
-import           Crypto.JWT             (Audience (Audience), string, uri)
+import           Crypto.JWT             (Audience (Audience), uri)
 import           Data.Aeson             (eitherDecode')
 import           Data.Bifunctor         (first)
 import           Data.ByteString.Lazy   (ByteString)
@@ -144,8 +144,7 @@ genAuthRequest =
     <*> (mkScopes <$> genAdditionalScopes)
     <*> (State <$> genUnicodeText 10 10)
     <*> (Nonce <$> genUnicodeText 10 10)
-    <*> (pure SelectAccount)
-    <*> pure (string # "qfpl.io")
+    <*> pure SelectAccount
     <*> genAud
     <*> genClaims
 
@@ -160,7 +159,6 @@ goldenAuthRequest =
     (State "r4nd0m")
     (Nonce "fhqwgad")
     SelectAccount
-    (string # "functionalfinance.io")
     (Audience [uri # fromJust (parseURI "https://lambdabank.io")])
     (Claims Nothing goldenIdToken)
 
