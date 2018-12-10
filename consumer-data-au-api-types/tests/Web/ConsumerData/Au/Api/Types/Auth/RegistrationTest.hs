@@ -7,7 +7,7 @@
 
 module Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest where
 
-import           Control.Lens                             (( # ))
+import           Control.Lens                             (( # ), (^?))
 import           Control.Monad                            ((<=<))
 import           Control.Monad.Catch
     (Exception, MonadThrow, throwM)
@@ -43,7 +43,7 @@ import           Test.Tasty                                      (TestTree)
 import           Test.Tasty.Hedgehog                             (testProperty)
 import           Web.ConsumerData.Au.Api.Types.Auth.Common
     (ClientIss (..), FapiPermittedAlg (..), RedirectUri (RedirectUri),
-    ResponseType (..), Scope (..), fapiPermittedAlg, mkScopes)
+    ResponseType (..), Scope (..), mkScopes, _FapiPermittedAlg)
 import           Web.ConsumerData.Au.Api.Types.Auth.Gens
 import           Web.ConsumerData.Au.Api.Types.Auth.Registration
 
@@ -228,7 +228,7 @@ genSs::
 genSs = SoftwareStatement <$> genRegClaims <*> genMeta
 
 genAlg :: ( MonadGen n, MonadThrow n ) => n FapiPermittedAlg
-genAlg = m2e BadAlgType =<< (fapiPermittedAlg <$> Gen.element [PS256,ES256])
+genAlg = m2e BadAlgType =<< ((^? _FapiPermittedAlg) <$> Gen.element [PS256,ES256])
 
 genKid :: ( MonadGen n ) => n FapiKid
 genKid  = FapiKid <$> genText

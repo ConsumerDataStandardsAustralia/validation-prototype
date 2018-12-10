@@ -17,7 +17,8 @@ tested-with:         GHC == 8.4.4
 
 library
   exposed-modules:
-                       Country.Waargonaut
+                       Aeson.Helpers
+                     , Country.Waargonaut
                      , Data.GADT.Aeson
                      , Data.GADT.Aeson.TH
                      , Data.GADT.Tag.TH
@@ -175,6 +176,7 @@ test-suite tasty
                      , Data.Text.Gens
                      , Data.Time.Gens
                      , Text.URI.Gens
+                     , Hedgehog.Helpers
                      , WaargoRoundTrip
                      , Web.ConsumerData.Au.Api.Types.Auth.Gens
                      , Web.ConsumerData.Au.Api.Types.Auth.RequestTest
