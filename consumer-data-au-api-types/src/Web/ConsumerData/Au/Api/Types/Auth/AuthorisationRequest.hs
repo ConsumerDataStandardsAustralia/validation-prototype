@@ -80,6 +80,8 @@ newtype UserInfoClaim =
 -- | Represents an OIDC authorisation request. In response to a request from an end user, an RP
 -- will redirect an end user to the OP with a request that includes this information.
 --
+--   * <https://consumerdatastandardsaustralia.github.io/infosec/#oidc-hybrid-flow INFOSEC>
+--     is the authoritative source on these parameters.
 --   * Request params using the OAuth 2.0 syntax are superseded by those in the request object
 --     (@request@ or @request_uri@ fields)
 --     <https://openid.net/specs/openid-connect-core-1_0.html#RequestObject 6.1. Passing a Request Object by Value>
@@ -97,7 +99,6 @@ data AuthorisationRequest =
   , _authReqClientId     :: ClientId
   , _authReqRedirectUri  :: RedirectUri
   , _authReqScope        :: Scopes
-  -- | @state@ is required per <https://consumerdatastandardsaustralia.github.io/infosec/#oidc-hybrid-flow INFOSEC>.
   , _authReqState        :: State
   -- | @nonce@ is required given <https://openid.net/specs/openid-financial-api-part-1.html#public-client FAPI RO §5.2.3.8>.
   -- We currently assume that a persistent identifier is required.
