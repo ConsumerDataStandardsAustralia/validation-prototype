@@ -141,9 +141,8 @@ genStringOrUri::
   , MonadThrow n
   )
   => n StringOrURI
-genStringOrUri = Gen.choice [(uri #) <$> uri', (string #) <$> str]
+genStringOrUri = Gen.choice [(uri #) <$> uri', (string #) <$> genText]
   where uri'= m2e BadUri =<< parseURI.renderStr <$> genURI
-        str = Gen.string (Range.linear 10 10) Gen.unicode
 
 m2e :: forall m e a.
      (MonadThrow m, Exception e) =>
