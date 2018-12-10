@@ -270,9 +270,14 @@ instance FromJSON Scopes where
         fail ("'" <> show t <> "' is not a known scope.")
       tToScope t =
         t ^? scopeText & maybe (parseFail t) pure
-      splitT = fmap (T.split (== ' '))
+      scopeSet =
+        fmap Set.fromList . (>>= traverse tToScope) . fmap (T.split (== ' ')) . parseJSON
+      missingOpenId =
+        fail "'scope' claim does not include 'openid'"
+      validate s =
+         bool missingOpenId (pure (Scopes s)) $ Set.member OpenIdScope s
     in
-      fmap (Scopes . Set.fromList) . (>>= traverse tToScope) . splitT . parseJSON
+      (>>= validate) . scopeSet
 
 mkScopes ::
   Set Scope
