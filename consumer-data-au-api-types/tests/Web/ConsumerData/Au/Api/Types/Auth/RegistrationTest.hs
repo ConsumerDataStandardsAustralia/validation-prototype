@@ -7,7 +7,7 @@
 
 module Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest where
 
-import           Control.Lens                             (( # ))
+import           Control.Lens                             (( # ), (^?))
 import           Control.Monad                            ((<=<))
 import           Control.Monad.Catch
     (Exception, MonadThrow, throwM)
@@ -26,6 +26,7 @@ import           Hedgehog
     (MonadGen, Property, PropertyT, assert, evalEither, evalExceptT, property,
     (===))
 import qualified Hedgehog.Gen                             as Gen
+import           Hedgehog.Helpers                         (sampleT)
 import           Network.URI                              (parseURI)
 import           Prelude                                  hiding (exp)
 import           Text.URI
@@ -43,7 +44,7 @@ import           Test.Tasty                                      (TestTree)
 import           Test.Tasty.Hedgehog                             (testProperty)
 import           Web.ConsumerData.Au.Api.Types.Auth.Common
     (ClientIss (..), FapiPermittedAlg (..), RedirectUri (RedirectUri),
-    ResponseType (..), Scope (..), fapiPermittedAlg, mkScopes)
+    ResponseType (..), Scope (..), mkScopes, _FapiPermittedAlg)
 import           Web.ConsumerData.Au.Api.Types.Auth.Gens
 import           Web.ConsumerData.Au.Api.Types.Auth.Registration
 
@@ -141,9 +142,8 @@ genStringOrUri::
   , MonadThrow n
   )
   => n StringOrURI
-genStringOrUri = Gen.choice [(uri #) <$> uri', (string #) <$> str]
+genStringOrUri = Gen.choice [(uri #) <$> uri', (string #) <$> genText]
   where uri'= m2e BadUri =<< parseURI.renderStr <$> genURI
-        str = Gen.string (Range.linear 10 10) Gen.unicode
 
 m2e :: forall m e a.
      (MonadThrow m, Exception e) =>
@@ -228,7 +228,7 @@ genSs::
 genSs = SoftwareStatement <$> genRegClaims <*> genMeta
 
 genAlg :: ( MonadGen n, MonadThrow n ) => n FapiPermittedAlg
-genAlg = m2e BadAlgType =<< (fapiPermittedAlg <$> Gen.element [PS256,ES256])
+genAlg = m2e BadAlgType =<< ((^? _FapiPermittedAlg) <$> Gen.element [PS256,ES256])
 
 genKid :: ( MonadGen n ) => n FapiKid
 genKid  = FapiKid <$> genText

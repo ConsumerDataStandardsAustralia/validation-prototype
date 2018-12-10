@@ -46,16 +46,16 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , State
   ) where
 
-import           Control.Lens
-    (Prism', prism, ( # ), (<&>), (^.), (^?))
+import           Aeson.Helpers              (parseJSONWithPrism)
+import           Control.Lens               (Prism', prism, ( # ), (<&>), (^.))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
 import           Crypto.Hash                (HashAlgorithm, hashWith)
 import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
 import           Data.Aeson.Types
-    (FromJSON (..), FromJSON1 (..), Parser, ToJSON (..), ToJSON1 (..), Value,
-    object, toJSON1, withObject, (.:), (.=))
+    (FromJSON (..), FromJSON1 (..), ToJSON (..), ToJSON1 (..), object, toJSON1,
+    withObject, (.:), (.=))
 import           Data.Bool                  (bool)
 import qualified Data.ByteArray             as BA
 import           Data.ByteString            (ByteString)
@@ -441,6 +441,7 @@ newtype TokenPhoneText =
   TokenPhoneText Text
   deriving (Eq, Show, FromJSON, ToJSON)
 
+-- TODO: confirm what LoA we'll be using, and how it is represented.
 -- | The minimum ACR for AU OB is LoA3, represented by URI @urn:cds.au:cdr:3@.
 newtype Acr =
   Acr Text
@@ -482,18 +483,6 @@ mkHash a (Ascii t) =
     h = BS.take (BA.length d `div` 2) . BA.convert $ d
   in
     Hash . encode $ h
-
-parseJSONWithPrism ::
-  ( FromJSON s
-  , Show s
-  )
-  => Prism' s a
-  -> String
-  -> Value
-  -> Parser a
-parseJSONWithPrism p name v = do
-    t <- parseJSON v
-    maybe (fail $ show t <> " is not a " <> name) pure (t ^? p)
 
 data Claim a =
   Claim
