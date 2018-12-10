@@ -14,9 +14,7 @@ import           Control.Monad.Catch
 import           Crypto.JWT
     (Alg (..), Audience (Audience), NumericDate (..), StringOrURI,
     decodeCompact, encodeCompact, string, uri)
-import           Data.Aeson
-    (FromJSON (..), Result (..), ToJSON (..), Value, eitherDecode, encode,
-    fromJSON)
+import           Data.Aeson                               (eitherDecode, encode)
 import           Data.ByteString                          (ByteString)
 import qualified Data.ByteString.Lazy                     as LBS
 import           Data.Maybe                               (isNothing)
@@ -29,13 +27,13 @@ import           Hedgehog
     (===))
 import qualified Hedgehog.Gen                             as Gen
 import           Network.URI                              (parseURI)
+import           Prelude                                  hiding (exp)
 import           Text.URI
     (Authority (Authority), RText, RTextLabel (Scheme), URI (URI), mkHost,
     mkScheme, renderStr)
 import           Text.URI.Gens
     (genAuthority, genPathPieces, genScheme, genURI)
-import           Web.ConsumerData.Au.Api.Types.Auth.Error
-    (AsError, Error, _MissingClaim, _ParseError)
+import           Web.ConsumerData.Au.Api.Types.Auth.Error (Error)
 -- `forAllT` should probs be public: https://github.com/hedgehogqa/haskell-hedgehog/issues/203
 import           Control.Monad.Except
     (ExceptT, MonadIO, liftIO, runExceptT)
@@ -55,9 +53,10 @@ test_request =
   [
   testProperty "The 'redirect_urls' smart constructor only accepts https  && !localhost hosts." redirectUrlsValid
   , testProperty "The 'redirect_urls' smart constructor rejects any non-https or localhost hosts." redirectUrlsInvalid
-  , testProperty "Claims round-trips to/from ClaimsMap." claimsRoundTrips
-  , testProperty "Redirect request round-trips to/from JSON." regoJsonRoundTrips
-  , testProperty "Redirect request round-trips to/from JWT." regoJwtRoundTrips
+  -- Until registration has been clarified in infosec, these properties won't be testable.
+  -- , testProperty "Claims round-trips to/from ClaimsMap." claimsRoundTrips
+  -- , testProperty "Redirect request round-trips to/from JSON." regoJsonRoundTrips
+  -- , testProperty "Redirect request round-trips to/from JWT." regoJwtRoundTrips
   ]
 
 redirectUrlsValid ::
@@ -95,7 +94,7 @@ regoJwtRoundTrips::
 regoJwtRoundTrips =
   property $ do
     rr <- forAllT genRegReq
-    (jwk,alg) <- forAllT genJWK
+    (jwk,_) <- forAllT genJWK
     let
       ar2jwt :: RegistrationRequest -> ExceptT Error (PropertyT IO) LBS.ByteString
       ar2jwt = fmap encodeCompact . regoReqToJwt jwk
@@ -105,7 +104,7 @@ regoJwtRoundTrips =
 showround :: IO (Either Error RegistrationRequest)
 showround = do
   rr <- sampleT genRegReq
-  (jwk,alg) <- sampleT genJWK
+  (jwk,_) <- sampleT genJWK
   let ar2jwt = fmap encodeCompact . regoReqToJwt jwk
       jwt2ar =  jwtToRegoReq (const True) (const True) jwk <=< decodeCompact
   runExceptT $ (jwt2ar <=< ar2jwt) rr
@@ -134,8 +133,8 @@ genRegClaims::
   )
   => n JwsRegisteredClaims
 genRegClaims = do
-  (iat,exp) <- genIatExp
-  JwsRegisteredClaims <$> (Just . ClientIss <$> genStringOrUri) <*> (Just <$> genAud) <*> pure (Just iat) <*> pure (Just exp) <*> (Just <$> genJti)
+  (i,exp) <- genIatExp
+  JwsRegisteredClaims <$> (Just . ClientIss <$> genStringOrUri) <*> (Just <$> genAud) <*> pure (Just i) <*> pure (Just exp) <*> (Just <$> genJti)
 
 genStringOrUri::
   ( MonadGen n

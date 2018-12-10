@@ -217,7 +217,7 @@ tokenErrorResponseTypeEncoder =
 -- <https://openid.net/specs/openid-financial-api-part-2.html#authorization-server FAPI R+W §5.2.2.2>
 -- mandates the use of @code id_token@ or @code id_token token@ to be supplied in @response_type@.
 -- Furthermore, <https://consumerdatastandardsaustralia.github.io/standards/#additional-constraints the standards>
--- mandate that only the hybrid flow is supported.
+-- mandate that only the hybrid flow is supported, and only @code id_token@ as per the <https://consumerdatastandardsaustralia.github.io/infosec/#oidc-hybrid-flow §infosec> spec.
 data ResponseType =
   CodeIdToken
   -- ^ @code id_token@ response type, implying a Hybrid flow
@@ -319,7 +319,6 @@ fapiPermittedAlg :: Alg -> Maybe FapiPermittedAlg
 fapiPermittedAlg alg = if alg `elem` validAlgs then Just $ FapiPermittedAlg alg else Nothing where
   validAlgs = [PS256,ES256]
 
--- TODO: this doesn't look right
 fapiPermittedAlgText ::
   Prism' Text FapiPermittedAlg
 fapiPermittedAlgText =

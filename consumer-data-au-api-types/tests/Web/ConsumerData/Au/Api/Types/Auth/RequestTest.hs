@@ -5,7 +5,7 @@
 
 module Web.ConsumerData.Au.Api.Types.Auth.RequestTest where
 
-import           Control.Lens         (( # ), (^.))
+import           Control.Lens         (( # ))
 import           Control.Monad        ((<=<))
 import           Control.Monad.Catch  (Exception, MonadThrow, throwM)
 import           Control.Monad.Except (ExceptT)
@@ -72,8 +72,7 @@ genAuthRequest =
   let
     genUnicodeText a b =
       Gen.text (Range.linear a b) Gen.unicode
-    genAdditionalScopes =
-      Gen.set (Range.linear 0 2) (Gen.element [ProfileScope, EmailScope])
+    genAdditionalScopes = Gen.set (Range.linear 0 2) (Gen.element [ProfileScope])
     mUri = parseURI "https://lambdabank.io"
     throwParse :: n a
     throwParse = throwM BadAudParse
