@@ -71,30 +71,28 @@ data ProductFeatureType =
   deriving (Show, Eq)
 
 productFeatureTypeDecoder :: Monad f => Decoder f ProductFeatureType
-productFeatureTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
-  featureType <- D.fromKey "featureType" D.text o
+productFeatureTypeDecoder = do
+  featureType <- D.atKey "featureType" D.text
   additionalValue <- case featureType of
     "CARD_ACCESS" -> pure PFeatureCardAcess
-    "ADDITIONAL_CARDS" -> PFeatureAdditionalCards <$> (additionalValueDecoder D.int o)
+    "ADDITIONAL_CARDS" -> PFeatureAdditionalCards <$> (additionalValueDecoder D.int)
     "UNLIMITED_TXNS" -> pure PFeatureUnlimitedTxns
-    "FREE_TXNS" -> PFeatureFreeTxns <$> (additionalValueDecoder D.int o)
-    "FREE_TXNS_ALLOWANCE" -> PFeatureFreeTxnsAllowance <$> (additionalValueDecoder amountStringDecoder o)
-    "LOYALTY_PROGRAM" -> PFeatureLoyaltyProgram <$> (additionalValueDecoder D.text o)
+    "FREE_TXNS" -> PFeatureFreeTxns <$> (additionalValueDecoder D.int)
+    "FREE_TXNS_ALLOWANCE" -> PFeatureFreeTxnsAllowance <$> (additionalValueDecoder amountStringDecoder)
+    "LOYALTY_PROGRAM" -> PFeatureLoyaltyProgram <$> (additionalValueDecoder D.text)
     "OFFSET" -> pure PFeatureOffset
     "OVERDRAFT" -> pure PFeatureOverdraft
     "REDRAW" -> pure PFeatureRedraw
-    "INSURANCE" -> PFeatureInsurance <$> (additionalValueDecoder D.text o)
+    "INSURANCE" -> PFeatureInsurance <$> (additionalValueDecoder D.text)
     "BALANCE_TRANSFERS" -> pure PFeatureBalanceTransfers
-    "INTEREST_FREE" -> PFeatureInterestFree <$> (additionalValueDecoder durationStringDecoder o)
-    "INTEREST_FREE_TRANSFERS" -> PFeatureInterestFreeTransfers <$> (additionalValueDecoder durationStringDecoder o)
-    "DIGITAL_WALLET" -> PFeatureDigitalWallet <$> (additionalValueDecoder D.text o)
+    "INTEREST_FREE" -> PFeatureInterestFree <$> (additionalValueDecoder durationStringDecoder)
+    "INTEREST_FREE_TRANSFERS" -> PFeatureInterestFreeTransfers <$> (additionalValueDecoder durationStringDecoder)
+    "DIGITAL_WALLET" -> PFeatureDigitalWallet <$> (additionalValueDecoder D.text)
     "DIGITAL_BANKING" -> pure PFeatureDigitalBanking
     "NPP_PAYID" -> pure PFeatureNppPayid
     "NPP_ENABLED" -> pure PFeatureNppEnabled
     "DONATE_INTEREST" -> pure PFeatureDonateInterest
-    "BILL_PAYMENT" -> PFeatureBillPayment <$> (additionalValueDecoder D.text o)
+    "BILL_PAYMENT" -> PFeatureBillPayment <$> (additionalValueDecoder D.text)
     _ -> throwError D.KeyDecodeFailed
   pure additionalValue
 

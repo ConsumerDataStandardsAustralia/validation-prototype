@@ -57,12 +57,11 @@ data AccountDiscount = AccountDiscount
   } deriving (Show, Eq)
 
 accountDiscountDecoder :: Monad f => Decoder f AccountDiscount
-accountDiscountDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+accountDiscountDecoder =
   AccountDiscount
-    <$> (D.fromKey "description" D.text o)
-    <*> (D.focus accountDiscountTypeDecoder o)
-    <*> (D.fromKey "amount" amountStringDecoder o)
+    <$> (D.atKey "description" D.text)
+    <*> (accountDiscountTypeDecoder)
+    <*> (D.atKey "amount" amountStringDecoder)
 
 instance JsonDecode OB AccountDiscount where
   mkDecoder = tagOb accountDiscountDecoder
@@ -87,15 +86,13 @@ data AccountDiscountType =
   deriving (Show, Eq)
 
 accountDiscountTypeDecoder :: Monad f => Decoder f AccountDiscountType
-accountDiscountTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
-  depositRateType <- D.fromKey "discountType" D.text o
+accountDiscountTypeDecoder = do
+  depositRateType <- D.atKey "discountType" D.text
   additionalValue <- case depositRateType of
-    "BALANCE" -> ADiscountBalance <$> (additionalValueDecoder amountStringDecoder o)
-    "DEPOSITS" -> ADiscountDeposits <$> (additionalValueDecoder amountStringDecoder o)
-    "PAYMENTS" -> ADiscountPayments <$> (additionalValueDecoder amountStringDecoder o)
-    "BUNDLE" -> ADiscountBundle <$> (additionalValueDecoder D.text o)
+    "BALANCE" -> ADiscountBalance <$> (additionalValueDecoder amountStringDecoder)
+    "DEPOSITS" -> ADiscountDeposits <$> (additionalValueDecoder amountStringDecoder)
+    "PAYMENTS" -> ADiscountPayments <$> (additionalValueDecoder amountStringDecoder)
+    "BUNDLE" -> ADiscountBundle <$> (additionalValueDecoder D.text)
     _ -> throwError D.KeyDecodeFailed
   pure additionalValue
 
@@ -124,8 +121,6 @@ accountDiscountTypeToType' (ADiscountBundle {})   = ADiscountBundle'
 
 accountDiscountTypeFields :: (Monoid ws, Semigroup ws) => AccountDiscountType -> MapLikeObj ws Json -> MapLikeObj ws Json
 accountDiscountTypeFields pc =
--- accountDiscountTypeEncoder :: Applicative f => Encoder f AccountDiscountType
--- accountDiscountTypeEncoder = E.mapLikeObj $ \pc -> do
   case pc of
     ADiscountBalance v ->
       E.atKey' "discountType" accountDiscountType'Encoder (accountDiscountTypeToType' pc) .

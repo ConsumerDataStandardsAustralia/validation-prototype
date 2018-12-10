@@ -9,12 +9,7 @@ module Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount
   ( module Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount
   ) where
 
--- import           Control.Lens               (Prism', prism, ( # ))
---import           Control.Monad.Except       (throwError)
---import           Data.Functor.Contravariant (contramap, (>$<))
 import           Data.Text                  (Text)
---import           Servant.API
---    (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece)
 import           Waargonaut.Decode          (Decoder)
 import qualified Waargonaut.Decode          as D
 import           Waargonaut.Encode          (Encoder)

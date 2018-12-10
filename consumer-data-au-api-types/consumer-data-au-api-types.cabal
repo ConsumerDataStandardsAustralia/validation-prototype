@@ -24,14 +24,18 @@ library
                      , Data.Time.Waargonaut
                      , Waargonaut.Helpers
                      , Web.ConsumerData.Au.Api.Types
+                     , Web.ConsumerData.Au.Api.Types.Auth
+                     , Web.ConsumerData.Au.Api.Types.Auth.AuthApi
                      , Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
                      , Web.ConsumerData.Au.Api.Types.Auth.Common
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.AccessToken
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.Common
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.RefreshToken
-                     , Web.ConsumerData.Au.Api.Types.Auth.Registration
                      , Web.ConsumerData.Au.Api.Types.Auth.Error
+                     , Web.ConsumerData.Au.Api.Types.Auth.Registration
+                     , Web.ConsumerData.Au.Api.Types.Auth.Response
+                     , Web.ConsumerData.Au.Api.Types.Auth.TokenRequest
                      , Web.ConsumerData.Au.Api.Types.Banking
                      , Web.ConsumerData.Au.Api.Types.Banking.Accounts
                      , Web.ConsumerData.Au.Api.Types.Banking.Common
@@ -178,8 +182,11 @@ test-suite tasty
                      , Web.ConsumerData.Au.Api.Types.Banking.AccountsTest
                      , Web.ConsumerData.Au.Api.Types.Banking.Gens
                      , Web.ConsumerData.Au.Api.Types.Banking.PayeesTest
+                     , Web.ConsumerData.Au.Api.Types.Banking.ProductsGens
+                     , Web.ConsumerData.Au.Api.Types.Banking.ProductsTest
                      , Web.ConsumerData.Au.Api.Types.Common.CustomerTest
                      , Web.ConsumerData.Au.Api.Types.Common.Gens
+                     , Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypesGens
                      , Web.ConsumerData.Au.Api.Types.Data.Gens
                      , Web.ConsumerData.Au.Api.Types.ResponseTest
                      , WaaaargonautTest

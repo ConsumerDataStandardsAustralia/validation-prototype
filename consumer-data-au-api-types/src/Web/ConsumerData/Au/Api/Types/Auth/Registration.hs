@@ -123,7 +123,7 @@ import           Text.URI.Lens
     (authHost, uriAuthority, uriScheme)
 import           Web.ConsumerData.Au.Api.Types.Auth.Common
     (ClientId, ClientIss (..), FapiPermittedAlg, RedirectUri, ResponseType,
-    Scopes, getFapiPermittedAlg, getRedirectUri)
+    Scopes, getRedirectUri, _FapiPermittedAlg)
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, _MissingClaim, _ParseError)
 
@@ -679,7 +679,7 @@ regoReqToJwt jwk rr =
     reqAcm = metaDataToAesonClaims . _regReqClientMetaData $ rr
     reqClaims ssb64 = mkCs (_regoReqRegClaims rr) (reqAcm & at "software_statement" ?~ ssb64)
     rrh = _regoReqJwtHeaders rr
-    jwsHead = newJWSHeader ((), getFapiPermittedAlg $ _alg rrh)
+    jwsHead = newJWSHeader ((), _FapiPermittedAlg # _alg rrh)
               & kid ?~ HeaderParam () (T.unpack . getFapiKid $ _kid rrh)
               & x5t .~ (HeaderParam () . Base64SHA1 . (^. _X5T) <$> _thumbs rrh)
               & x5tS256 .~ (HeaderParam () . Base64SHA256 . (^. _X5T256) <$> _thumbs rrh)

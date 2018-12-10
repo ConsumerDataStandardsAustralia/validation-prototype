@@ -3,8 +3,6 @@
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
--- {-# LANGUAGE RankNTypes        #-}
--- {-# LANGUAGE TypeOperators     #-}
 module Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
   ( module Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
   ) where

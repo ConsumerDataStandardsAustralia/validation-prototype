@@ -54,15 +54,13 @@ data ProductConstraint =
   deriving (Eq, Show)
 
 productConstraintDecoder :: Monad f => Decoder f ProductConstraint
-productConstraintDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
-  constraintType <- D.fromKey "constraintType" D.text o
+productConstraintDecoder = do
+  constraintType <- D.atKey "constraintType" D.text
   additionalValue <- case constraintType of
-    "MIN_BALANCE" -> PConstraintMinBalance <$> (additionalValueDecoder amountStringDecoder o)
-    "OPENING_BALANCE" -> PConstraintOpeningBalance <$> (additionalValueDecoder amountStringDecoder o)
-    "MAX_LIMIT" -> PConstraintMaxLimit <$> (additionalValueDecoder amountStringDecoder o)
-    "MIN_LIMIT" -> PConstraintMinLimit <$> (additionalValueDecoder amountStringDecoder o)
+    "MIN_BALANCE" -> PConstraintMinBalance <$> (additionalValueDecoder amountStringDecoder)
+    "OPENING_BALANCE" -> PConstraintOpeningBalance <$> (additionalValueDecoder amountStringDecoder)
+    "MAX_LIMIT" -> PConstraintMaxLimit <$> (additionalValueDecoder amountStringDecoder)
+    "MIN_LIMIT" -> PConstraintMinLimit <$> (additionalValueDecoder amountStringDecoder)
     _ -> throwError D.KeyDecodeFailed
   pure additionalValue
 

@@ -2,6 +2,7 @@ pkgs: self: super:
 let
   upstreamSources = {
     servant-waargonaut = (import ./servant-waargonaut.nix) {nixpkgs = pkgs;};
+    jose = (import ./jose.nix) {nixpkgs = pkgs;};
   };
 
   upstreamOverrides = {
@@ -10,6 +11,7 @@ let
 
   obOverrides = pkgs: (self: super: {
     servant-waargonaut = self.callPackage (import "${upstreamSources.servant-waargonaut}/servant-waargonaut.nix") {};
+    jose = self.callCabal2nix "jose" upstreamSources.jose {};
   });
 
   composedOverrides =

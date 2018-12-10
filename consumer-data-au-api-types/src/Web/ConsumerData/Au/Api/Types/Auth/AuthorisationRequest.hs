@@ -112,18 +112,6 @@ data AuthorisationRequest =
 
 makeClassy ''AuthorisationRequest
 
--- Intent ID must be included in the IdTokenClaim claim
--- ACR must be included in the IdTokenClaim claim
--- data IdTokenClaim =
---   IdTokenClaim ClaimAcrValues [Claim]
-
--- makeClassyFor
---   "HasAuthorisationRequest'"
---   "authorisationRequest'"
---   [ ("_authReqResponseType'", "responseType")
---   ]
---   ''AuthorisationRequest'
-
 authRequestToAesonMap ::
   AuthorisationRequest
   -> HashMap Text Value

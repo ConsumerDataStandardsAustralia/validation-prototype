@@ -151,5 +151,8 @@ testProduct :: Product
 testProduct = Product (AsciiString "product-id-5") Nothing Nothing (DateTimeString (UTCTime (fromGregorian 2018 1 1) 0))
   PCTermDeposits "product name" "description" "fancy" Nothing Nothing True Nothing
 
+testProducts :: Products
+testProducts = Products [testProduct]
+
 testProductDetail :: ProductDetail
-testProductDetail = ProductDetail (Just testProduct) Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+testProductDetail = ProductDetail testProduct Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing

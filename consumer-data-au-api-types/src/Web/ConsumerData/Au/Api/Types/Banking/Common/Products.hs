@@ -27,6 +27,24 @@ import Web.ConsumerData.Au.Api.Types.Response
 import Web.ConsumerData.Au.Api.Types.Tag
 
 
+data Products = Products { getProducts :: [Product] }
+  deriving (Eq, Show)
+
+productsDecoder :: Monad f => Decoder f Products
+productsDecoder =
+  Products
+    <$> D.atKey "products" (D.list productDecoder)
+
+instance JsonDecode OB Products where
+  mkDecoder = tagOb productsDecoder
+
+productsEncoder :: Applicative f => Encoder f Products
+productsEncoder = E.mapLikeObj $ \(Products ps) ->
+  E.atKey' "products" (E.list productEncoder) ps
+
+instance JsonEncode OB Products where
+  mkEncoder = tagOb productsEncoder
+
 -- | Product <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocBankingCommonSchemas CDR AU v0.1.0 Product>
 data Product = Product
   { _productProductId             :: AsciiString -- ^ A provider specific unique identifier for this product. This identifier must be unique to a product but does not otherwise need to adhere to ID permanence guidelines.
@@ -189,6 +207,6 @@ productCategoryEncoder = E.prismE productCategoryText E.text
 
 productCategoryDecoder :: Monad f => Decoder f ProductCategory
 productCategoryDecoder = D.prismDOrFail
-  (D._ConversionFailure # "Not a product category")
+  (D._ConversionFailure # "Not a valid ProductCategory")
   productCategoryText
   D.text

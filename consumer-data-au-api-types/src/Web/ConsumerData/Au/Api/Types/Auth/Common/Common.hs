@@ -10,10 +10,11 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# OPTIONS_GHC -Wwarn #-}
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   ( ErrorCode (ErrorCode)
+  , ErrorDescription
   , GrantErrorResponseType (..)
   , grantErrorResponseTypeText
   , Acr (..)
@@ -21,15 +22,17 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , Claim (..)
   , FapiPermittedAlg
   , getFapiPermittedAlg
-  , fapiPermittedAlg
+  , _FapiPermittedAlg
   , Hash
   , Nonce (..)
   , SHash
   , TokenAddressText
   , TokenAuthTime
   , TokenCHash
+  , TokenErrorResponseType
   , TokenHeaders
   , TokenKeyId
+  , TokenMaxAgeSeconds
   , TokenPhoneText
   , TokenSubject (..)
   , ClientId (..)
@@ -108,6 +111,7 @@ newtype ErrorCode = ErrorCode Text
 newtype ErrorDescription =
   ErrorDescription {getErrorDescription :: Text}
   deriving (Generic, ToJSON)
+
 -- | The @error_uri@ returned as parameter of the query component of the part of the redirection URI using the "application/x-www-form-urlencoded" format. A URI identifying a human-readable web page with information about the error, used to provide the client developer with additional information about the error. Values for the @error_uri@ parameter MUST conform to the URI-reference syntax and thus MUST NOT include characters outside the set %x21 / %x23-5B / %x5D-7E.
 newtype AuthUri =
   AuthUri {getAuthUri :: URI}
@@ -315,28 +319,24 @@ data Header = Header {key::Text, value::Text}
 newtype FapiPermittedAlg = FapiPermittedAlg {
   getFapiPermittedAlg :: Alg }
   deriving (Eq, Ord, Show)
-fapiPermittedAlg :: Alg -> Maybe FapiPermittedAlg
-fapiPermittedAlg alg = if alg `elem` validAlgs then Just $ FapiPermittedAlg alg else Nothing where
-  validAlgs = [PS256,ES256]
 
-fapiPermittedAlgText ::
-  Prism' Text FapiPermittedAlg
-fapiPermittedAlgText =
+_FapiPermittedAlg ::
+  Prism' Alg FapiPermittedAlg
+_FapiPermittedAlg =
   prism (\case
-            FapiPermittedAlg PS256 -> "PS256"
-            FapiPermittedAlg ES256 -> "ES256"
+            FapiPermittedAlg a -> a
         )
         (\case
-            "PS256" -> Right $ FapiPermittedAlg PS256
-            "ES256" -> Right $ FapiPermittedAlg ES256
+            PS256 -> Right $ FapiPermittedAlg PS256
+            ES256 -> Right $ FapiPermittedAlg ES256
             t -> Left t
         )
 
 instance ToJSON FapiPermittedAlg where
-  toJSON = toJSON . (fapiPermittedAlgText #)
+  toJSON = toJSON . (_FapiPermittedAlg #)
 
 instance FromJSON FapiPermittedAlg where
-  parseJSON = parseJSONWithPrism fapiPermittedAlgText "FapiPermittedAlg"
+  parseJSON = parseJSONWithPrism _FapiPermittedAlg "FapiPermittedAlg"
 
 -- | The @aud@ for the auth request. It must include (but is not limited to) the OP's Issuer Identifier URL. See < https://openid.net/specs/openid-connect-core-1_0.html#RequestObject §6.1. Passing a Request Object by Value>
 newtype AuthRequestAudience = AuthRequestAudience Text --TODO is really text?
