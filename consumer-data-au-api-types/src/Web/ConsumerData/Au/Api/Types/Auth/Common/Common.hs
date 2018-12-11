@@ -44,7 +44,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   ) where
 
 import           Control.Lens
-    (Prism', prism, ( # ), (<&>), (^.), (^?))
+    (Prism', prism, ( # ), (<&>), (^.), (^?), (&))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
@@ -60,18 +60,17 @@ import           Data.ByteString.Base64.URL (encode)
 import           Data.Char                  (isAscii)
 import           Data.Functor.Classes       (Eq1 (liftEq), Show1 (..))
 import           Data.Functor.Contravariant ((>$<))
-import           Data.Set           (Set)
-import qualified Data.Set           as Set
-import           Data.Text          (Text)
-import qualified Data.Text          as T
-import           Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import           GHC.Generics       (Generic, Generic1)
---import           Network.URI                (URI, parseURI, uriToString)
-import           Text.URI          (URI, mkURI)
-import qualified Text.URI          as URI
-import           Text.URI.Lens     (unRText, uriScheme)
-import           Waargonaut.Encode (Encoder')
-import qualified Waargonaut.Encode as E
+import           Data.Set                   (Set)
+import qualified Data.Set                   as Set
+import           Data.Text                  (Text)
+import qualified Data.Text                  as T
+import           Data.Text.Encoding         (decodeUtf8, encodeUtf8)
+import           GHC.Generics               (Generic, Generic1)
+import           Text.URI                   (URI, mkURI)
+import qualified Text.URI                   as URI
+import           Text.URI.Lens              (unRText, uriScheme)
+import           Waargonaut.Encode          (Encoder')
+import qualified Waargonaut.Encode          as E
 
 import Web.ConsumerData.Au.Api.Types.Auth.Error (AsHttpsUriError (..))
 
@@ -258,7 +257,27 @@ instance FromJSON ResponseType where
 -- suggests that FAPI R+W should only be the hybrid flow, which would mandate @openid@ as a scope.
 newtype Scopes =
   Scopes (Set Scope)
-  deriving (Eq, Show, FromJSON, ToJSON)
+  deriving (Eq, Show)
+
+instance ToJSON Scopes where
+  toJSON (Scopes s) =
+    toJSON . T.intercalate " " . fmap (scopeText #) . Set.toList $ s
+
+instance FromJSON Scopes where
+  parseJSON =
+    let
+      parseFail t =
+        fail ("'" <> show t <> "' is not a known scope.")
+      tToScope t =
+        t ^? scopeText & maybe (parseFail t) pure
+      scopeSet =
+        fmap Set.fromList . (>>= traverse tToScope) . fmap (T.split (== ' ')) . parseJSON
+      missingOpenId =
+        fail "'scope' claim does not include 'openid'"
+      validate s =
+         bool missingOpenId (pure (Scopes s)) $ Set.member OpenIdScope s
+    in
+      (>>= validate) . scopeSet
 
 mkScopes ::
   Set Scope
