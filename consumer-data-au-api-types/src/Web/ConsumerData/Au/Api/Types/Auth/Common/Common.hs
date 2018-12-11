@@ -49,12 +49,13 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
 
 import           Aeson.Helpers              (parseJSONWithPrism)
 import           Control.Lens
-    (Prism', prism, ( # ), (<&>), (^.), (^?), (&))
+    (Prism', prism, ( # ), (&), (<&>), (^.), (^?))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
 import           Crypto.Hash                (HashAlgorithm, hashWith)
 import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
+import           Crypto.JWT                 (StringOrURI)
 import           Data.Aeson.Types
     (FromJSON (..), FromJSON1 (..), ToJSON (..), ToJSON1 (..), object, toJSON1,
     withObject, (.:), (.=))
