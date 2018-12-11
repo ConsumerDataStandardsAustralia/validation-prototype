@@ -7,7 +7,7 @@
                 "nickname": "nick name",
                 "maskedNumber": "12345abcde",
                 "productCategory": "PERS_AT_CALL_DEPOSITS",
-                "productType": "prod type",
+                "providerType": "prod type",
                 "balance$type": "deposits",
                 "deposits": {
                     "currentBalance": {

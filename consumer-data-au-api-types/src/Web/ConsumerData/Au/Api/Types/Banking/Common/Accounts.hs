@@ -47,7 +47,7 @@ accountDecoder = do
     <*> atKeyOptional' "nickname" D.text
     <*> D.atKey "maskedNumber" maskedAccountNumberDecoder
     <*> atKeyOptional' "productCategory" productCategoryDecoder
-    <*> D.atKey "productType" D.text
+    <*> D.atKey "providerType" D.text
     <*> D.atKey (balanceTypeToText balType) (balanceDecoder balType)
 
 instance JsonDecode OB Account where
@@ -64,7 +64,8 @@ accountFields a =
   maybeOrAbsentE "nickname" E.text (_accountNickname a) .
   E.atKey' "maskedNumber" maskedAccountNumberEncoder (_accountMaskedNumber a) .
   maybeOrAbsentE "productCategory" productCategoryEncoder (_accountProductCategory a) .
-  E.atKey' "productType" E.text (_accountProductType a) .
+  E.atKey' "providerType" E.text (_accountProductType a) .
+-- WARNING -^ providerType (in swagger/online) vs productType (in pdf)
   E.atKey' "balance$type" (balanceToType >$< balanceTypeEncode) (_accountBalance a) .
   E.atKey' (balanceTypeToText $ balanceToType (_accountBalance a)) balanceEncoder (_accountBalance a)
 
@@ -124,7 +125,7 @@ balanceTypeDecoder = D.withCursor $ \c -> D.focus D.text c >>= \case
   "deposits" -> pure BTDeposits
   "lending" -> pure BTLending
   "purses" -> pure BTPurses
-  _ -> throwError D.KeyDecodeFailed
+  other -> throwError (D.ParseFailed other) -- D.KeyDecodeFailed
 
 balanceTypeEncode :: Applicative f => Encoder f BalanceType
 balanceTypeEncode = flip contramap E.text balanceTypeToText
