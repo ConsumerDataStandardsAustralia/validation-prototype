@@ -1,1 +1,0 @@
-cabal2nix . > consumer-data-au-api-types.nix && nix-shell --run 'rm -f .ghc* && cabal new-test test:tasty'
