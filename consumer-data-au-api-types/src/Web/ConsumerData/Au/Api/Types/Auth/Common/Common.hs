@@ -20,7 +20,9 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , Acr (..)
   , AuthUri
   , Claim (..)
-  , FapiPermittedAlg(..)
+  , FapiPermittedAlg
+  , getFapiPermittedAlg
+  , _FapiPermittedAlg
   , Hash
   , Nonce (..)
   , Prompt (..)
@@ -37,21 +39,26 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , ClientId (..)
   , RedirectUri (..)
   , ResponseType (..)
+  , ClientIss (..)
+  -- Not exporting constructor for Scopes --- use the smart constructor
   , Scopes
   , mkScopes
   , Scope (..)
   , State (..)
   ) where
 
+import           Aeson.Helpers              (parseJSONWithPrism)
 import           Control.Lens
-    (Prism', prism, ( # ), (<&>), (^.), (^?), (&))
+    (Prism', prism, ( # ), (&), (<&>), (^.), (^?))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
 import           Crypto.Hash                (HashAlgorithm, hashWith)
+import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
+import           Crypto.JWT                 (StringOrURI)
 import           Data.Aeson.Types
-    (FromJSON (..), FromJSON1 (..), Parser, ToJSON (..), ToJSON1 (..), Value,
-    object, toJSON1, withObject, (.:), (.=))
+    (FromJSON (..), FromJSON1 (..), ToJSON (..), ToJSON1 (..), object, toJSON1,
+    withObject, (.:), (.=))
 import           Data.Bool                  (bool)
 import qualified Data.ByteArray             as BA
 import           Data.ByteString            (ByteString)
@@ -215,12 +222,12 @@ tokenErrorResponseTypeEncoder =
 -- <https://openid.net/specs/openid-financial-api-part-2.html#authorization-server FAPI R+W §5.2.2.2>
 -- mandates the use of @code id_token@ or @code id_token token@ to be supplied in @response_type@.
 -- Furthermore, <https://consumerdatastandardsaustralia.github.io/standards/#additional-constraints the standards>
--- mandate that only the hybrid flow is supported.
+-- mandate that only the hybrid flow is supported, and only @code id_token@ as per the <https://consumerdatastandardsaustralia.github.io/infosec/#oidc-hybrid-flow §infosec> spec.
 data ResponseType =
   CodeIdToken
   -- ^ @code id_token@ response type, implying a Hybrid flow
-  | CodeIdTokenToken
-  -- ^ @code id_token token@ response type, implying a Hybrid flow
+  --  | CodeIdTokenToken
+  -- ^ @code id_token token@ response type are not supported in AU OB.
   deriving (Show, Eq)
 
 responseTypeText ::
@@ -228,11 +235,11 @@ responseTypeText ::
 responseTypeText =
   prism (\case
             CodeIdToken -> "code id_token"
-            CodeIdTokenToken -> "code id_token token"
+            -- CodeIdTokenToken -> "code id_token token"
         )
         (\case
             "code id_token" -> Right CodeIdToken
-            "code id_token token" -> Right CodeIdTokenToken
+            -- "code id_token token" -> Right CodeIdTokenToken
             t -> Left t
         )
 
@@ -285,10 +292,16 @@ mkScopes ::
 mkScopes =
   Scopes . Set.insert OpenIdScope
 
+-- | Authorisation scopes, as defined in <https://consumerdatastandardsaustralia.github.io/standards/?swagger#authorisation-scopes §AU OB Security>
 data Scope =
   OpenIdScope -- ^ Include @openid@ in @scope@ JSON value
-  | ProfileScope -- ^ Include @profile@ in @scope@ JSON value
-  | EmailScope -- ^ Include @email@ in @scope@ JSON value
+  | ProfileScope -- ^ Include @profile@ in @scope@ JSON value, for the following claims: name, family_name, given_name
+  | BasicBankAccount -- ^ Include @bank_basic_accounts@ in @scope@ JSON value
+  | BankDetailedAccounts -- ^ Include @bank_detailed_accounts@ in @scope@ JSON value
+  | BankTransactions -- ^ Include @bank_transactions@ in @scope@ JSON value
+  | CommonBasicCustomer -- ^ Include @common_basic_customer@ in @scope@ JSON value
+  | CommonDetailedCustomer -- ^ Include @common_detailed_customer@ in @scope@ JSON value
+
   deriving (Eq, Ord, Show)
 
 scopeText ::
@@ -297,12 +310,20 @@ scopeText =
   prism (\case
             OpenIdScope -> "openid"
             ProfileScope -> "profile"
-            EmailScope -> "email"
+            BasicBankAccount -> "bank_basic_accounts"
+            BankDetailedAccounts  -> "bank_detailed_accounts"
+            BankTransactions -> "bank_transactions"
+            CommonBasicCustomer -> "common_basic_customer"
+            CommonDetailedCustomer -> "common_detailed_customer"
         )
         (\case
             "openid" -> Right OpenIdScope
             "profile" -> Right ProfileScope
-            "email" -> Right EmailScope
+            "bank_basic_accounts" -> Right BasicBankAccount
+            "bank_detailed_accounts" -> Right BankDetailedAccounts
+            "bank_transactions" -> Right BankTransactions
+            "common_basic_customer" -> Right CommonBasicCustomer
+            "common_detailed_customer" -> Right CommonDetailedCustomer
             t -> Left t
         )
 
@@ -335,31 +356,36 @@ newtype TokenHeaders = TokenHeaders [Header]
 data Header = Header {key::Text, value::Text}
 
 -- | Use @PS256@ or @ES256@ in @alg@ for a JWT
-data FapiPermittedAlg = PS256 | ES256 deriving (Eq, Ord, Show)
+newtype FapiPermittedAlg = FapiPermittedAlg {
+  getFapiPermittedAlg :: Alg }
+  deriving (Eq, Ord, Show)
 
-fapiPermittedAlgText ::
-  Prism' Text FapiPermittedAlg
-fapiPermittedAlgText =
+_FapiPermittedAlg ::
+  Prism' Alg FapiPermittedAlg
+_FapiPermittedAlg =
   prism (\case
-            PS256 -> "PS256"
-            ES256 -> "ES256"
+            FapiPermittedAlg a -> a
         )
         (\case
-            "PS256" -> Right PS256
-            "ES256" -> Right ES256
+            PS256 -> Right $ FapiPermittedAlg PS256
+            ES256 -> Right $ FapiPermittedAlg ES256
             t -> Left t
         )
 
 instance ToJSON FapiPermittedAlg where
-  toJSON = toJSON . (fapiPermittedAlgText #)
+  toJSON = toJSON . (_FapiPermittedAlg #)
 
 instance FromJSON FapiPermittedAlg where
-  parseJSON = parseJSONWithPrism fapiPermittedAlgText "FapiPermittedAlg"
+  parseJSON = parseJSONWithPrism _FapiPermittedAlg "FapiPermittedAlg"
 
 -- | The @aud@ for the auth request. It must include (but is not limited to) the OP's Issuer Identifier URL. See < https://openid.net/specs/openid-connect-core-1_0.html#RequestObject §6.1. Passing a Request Object by Value>
 newtype AuthRequestAudience = AuthRequestAudience Text --TODO is really text?
 -- | The @iss@ value for the auth request, which must be the @client_id@, unless it was signed by a different party than the RP. See <https://openid.net/specs/openid-connect-core-1_0.html#RequestObject §6.1. Passing a Request Object by Value>
+-- todo: need to clarify these types, whether we need a
 newtype AuthIss = AuthIss Text
+newtype ClientIss = ClientIss
+  { getClientIss :: StringOrURI}
+  deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 -- TODO: these are not really URIs ... URNs?
 newtype RedirectUri =
@@ -455,6 +481,8 @@ newtype TokenPhoneText =
   TokenPhoneText Text
   deriving (Eq, Show, FromJSON, ToJSON)
 
+-- TODO: confirm what LoA we'll be using, and how it is represented.
+-- | The minimum ACR for AU OB is LoA3, represented by URI @urn:cds.au:cdr:3@.
 newtype Acr =
   Acr Text
   deriving (Eq, Show, FromJSON, ToJSON)
@@ -495,24 +523,6 @@ mkHash a (Ascii t) =
     h = BS.take (BA.length d `div` 2) . BA.convert $ d
   in
     Hash . encode $ h
-
--- Possible ACR claim values
--- acrPSD2_RTS = [AcrPSD2_RTS]
--- noSCA = [NoSCA]
--- acrPSD2_RTS_Then_NoSCA = [AcrPSD2_RTS,NoSCA]
--- noSCA_Then_AcrPSD2_RTS = [NoSCA,AcrPSD2_RTS]
-
-parseJSONWithPrism ::
-  ( FromJSON s
-  , Show s
-  )
-  => Prism' s a
-  -> String
-  -> Value
-  -> Parser a
-parseJSONWithPrism p name v = do
-    t <- parseJSON v
-    maybe (fail $ show t <> " is not a " <> name) pure (t ^? p)
 
 data Claim a =
   Claim

@@ -7,7 +7,7 @@ synopsis:            Api Types for the Australian Consumer Data Rights Specifica
 description:         See https://github.com/ConsumerDataStandardsAustralia/standards for more details.
 license:             MIT
 license-file:        LICENSE
-author:              Queensland Functional Programming Lab, Data 61, CSIRO
+author:              Queensland Functional Programming Lab, Data61, CSIRO
 maintainer:          contact@qfpl.io
 copyright:           Commonwealth Science and Industrial Research Organisation, 2018
 category:            Web
@@ -17,7 +17,8 @@ tested-with:         GHC == 8.4.4
 
 library
   exposed-modules:
-                       Country.Waargonaut
+                       Aeson.Helpers
+                     , Country.Waargonaut
                      , Data.GADT.Aeson
                      , Data.GADT.Aeson.TH
                      , Data.GADT.Tag.TH
@@ -175,6 +176,7 @@ test-suite tasty
                      , Data.Text.Gens
                      , Data.Time.Gens
                      , Text.URI.Gens
+                     , Hedgehog.Helpers
                      , WaargoRoundTrip
                      , Web.ConsumerData.Au.Api.Types.Auth.Gens
                      , Web.ConsumerData.Au.Api.Types.Auth.RequestTest
