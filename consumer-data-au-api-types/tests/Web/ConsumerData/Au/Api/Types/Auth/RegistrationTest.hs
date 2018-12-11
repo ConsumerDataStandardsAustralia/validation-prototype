@@ -30,10 +30,9 @@ import           Hedgehog.Helpers                         (sampleT)
 import           Network.URI                              (parseURI)
 import           Prelude                                  hiding (exp)
 import           Text.URI
-    (Authority (Authority), RText, RTextLabel (Scheme), URI (URI), mkHost,
-    mkScheme, renderStr)
+    (Authority (Authority), mkHost, mkScheme, renderStr)
 import           Text.URI.Gens
-    (genAuthority, genPathPieces, genScheme, genURI)
+    (genAuthority, genScheme, genUri)
 import           Web.ConsumerData.Au.Api.Types.Auth.Error (Error)
 -- `forAllT` should probs be public: https://github.com/hedgehogqa/haskell-hedgehog/issues/203
 import           Control.Monad.Except
@@ -143,7 +142,7 @@ genStringOrUri::
   )
   => n StringOrURI
 genStringOrUri = Gen.choice [(uri #) <$> uri', (string #) <$> genText]
-  where uri'= m2e BadUri =<< parseURI.renderStr <$> genURI
+  where uri'= m2e BadUri =<< parseURI.renderStr <$> genUri
 
 m2e :: forall m e a.
      (MonadThrow m, Exception e) =>
@@ -249,7 +248,7 @@ genScript :: ( MonadGen n ) => n Script
 genScript = Script DefaultLang <$> genText
 
 genScriptUri :: ( MonadGen n , MonadThrow n ) => n ScriptUri
-genScriptUri = ScriptUri DefaultLang <$> genURI
+genScriptUri = ScriptUri DefaultLang <$> genUri
 
 genContacts :: ( MonadGen n ) => n RegistrationContacts
 genContacts = RegistrationContacts <$> Gen.list (Range.linear 10 10) (EmailAddress <$> genText)
@@ -258,10 +257,10 @@ genSubjectType :: ( MonadGen n ) => n SubjectType
 genSubjectType = Gen.element [Pairwise]
 
 genJwks :: ( MonadGen n , MonadThrow n ) => n JwkSet
-genJwks = Gen.choice [JwksRef . JwksUri <$> genURI , JwksVal <$> genText]
+genJwks = Gen.choice [JwksRef . JwksUri <$> genUri , JwksVal <$> genText]
 
 genRequestUris :: ( MonadGen n , MonadThrow n ) => n RequestUris
-genRequestUris = RequestUris <$> (map RequestUri <$> Gen.list (Range.linear 10 10) genURI)
+genRequestUris = RequestUris <$> (map RequestUri <$> Gen.list (Range.linear 10 10) genUri)
 
 genEnc :: ( MonadGen n ) => n FapiEnc
 genEnc = Gen.element [A128CBC_HS256 , A192CBC_HS384 , A256CBC_HS512 , A128GCM , A192GCM , A256GCM]
@@ -283,16 +282,6 @@ genText = Gen.text (Range.linear 10 10) Gen.unicode
 
 genBytes :: ( MonadGen n ) => n ByteString
 genBytes = Gen.bytes (Range.linear 10 10)
-
-genUrlHttps::
-  ( MonadGen n
-  , MonadThrow n
-  )
-  => n HttpsUrl
-genUrlHttps = do
-  https <- mkScheme "https"
-  autho <- genAuthority
-  HttpsUrl <$> genUrl https autho
 
 genRedirectUrls::
   ( MonadGen n
@@ -347,22 +336,3 @@ instance Exception BadAlgType
 
 data BadAuthMeth = BadAuthMeth  deriving (Show)
 instance Exception BadAuthMeth
-
-genUrls ::
-  ( MonadGen n
-  , MonadThrow n
-  )
-  => RText 'Scheme -> Authority -> n [URI]
-genUrls scheme auth = Gen.list (Range.linear 1 10) $ genUrl scheme auth
-
-genUrl ::
-  ( MonadGen n
-  , MonadThrow n
-  )
-  => RText 'Scheme -> Authority -> n URI
-genUrl scheme auth = URI
-    <$> pure (Just scheme)
-    <*> pure (Right auth)
-    <*> genPathPieces
-    <*> pure []
-    <*> pure Nothing

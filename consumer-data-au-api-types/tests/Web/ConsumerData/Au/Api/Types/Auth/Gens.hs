@@ -1,29 +1,37 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.Gens where
 
-import qualified Data.Dependent.Map as DM
-import           Data.Dependent.Sum (DSum ((:=>)))
-
 import           Control.Lens                                            ((^.))
-import           Control.Monad.IO.Class
-    (MonadIO, liftIO)
+import           Control.Monad.Catch
+    (MonadThrow, throwM)
+import           Control.Monad.Except
+    (MonadIO, liftIO, runExceptT)
 import           Crypto.JOSE
     (Alg (..))
 import qualified Crypto.JOSE.JWK                                         as JWK
+import qualified Data.Dependent.Map                                      as DM
+import           Data.Dependent.Sum
+    (DSum ((:=>)))
 import           Hedgehog
     (MonadGen)
 import qualified Hedgehog.Gen                                            as Gen
 import qualified Hedgehog.Range                                          as Range
+import           Text.URI
+    (Authority, RText, RTextLabel (Scheme), URI (URI), mkScheme)
+import           Text.URI.Gens
+    (genAuthority, genPathPieces)
 import           Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
     (Claims (Claims))
 import           Web.ConsumerData.Au.Api.Types.Auth.Common.Common
-    (Acr (Acr), Claim (Claim), TokenSubject (..))
+    (Acr (Acr), Claim (Claim), HttpsUrl, TokenSubject (..), mkHttpsUrl)
 import           Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
     (IdToken (IdToken), IdTokenClaims, IdTokenKey (..))
+import           Web.ConsumerData.Au.Api.Types.Auth.Error
 
 genIdTokenClaims ::
   forall n.
@@ -82,3 +90,34 @@ genKeyMaterial =
     [ pure (JWK.ECGenParam JWK.P_256)
     , JWK.RSAGenParam <$> Gen.int (Range.linear (2048 `div` 8) (4096 `div` 8))
     ]
+
+genUrls ::
+  ( MonadGen n
+  , MonadThrow n
+  )
+  => RText 'Scheme -> Authority -> n [URI]
+genUrls scheme auth = Gen.list (Range.linear 1 10) $ genUrl scheme auth
+
+genUrl ::
+  ( MonadGen n
+  , MonadThrow n
+  )
+  => RText 'Scheme -> Authority -> n URI
+genUrl scheme auth = URI
+    <$> pure (Just scheme)
+    <*> pure (Right auth)
+    <*> genPathPieces
+    <*> pure []
+    <*> pure Nothing
+
+genUrlHttps::
+  ( MonadGen n
+  , MonadThrow n
+  )
+  => n HttpsUrl
+genUrlHttps = do
+  https <- mkScheme "https"
+  autho <- genAuthority
+  uri <- genUrl https autho
+  h :: Either HttpsUrlError HttpsUrl <- runExceptT $ mkHttpsUrl uri
+  either throwM pure h

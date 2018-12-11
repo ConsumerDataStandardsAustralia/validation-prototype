@@ -37,7 +37,6 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
     , FapiScopes (..)
     , FapiKid (..)
     , X509ThumbPrint (..)
-    , HttpsUrl (..)
     , RedirectUrls (..)
     , RequestObjectEncryption (..)
     , IdTokenEncryption (..)
@@ -122,8 +121,8 @@ import qualified Text.URI                                  as URI
 import           Text.URI.Lens
     (authHost, uriAuthority, uriScheme)
 import           Web.ConsumerData.Au.Api.Types.Auth.Common
-    (ClientId, ClientIss (..), FapiPermittedAlg, RedirectUri, ResponseType,
-    Scopes, getRedirectUri, _FapiPermittedAlg)
+    (ClientId, ClientIss (..), FapiPermittedAlg, HttpsUrl, RedirectUri,
+    ResponseType, Scopes, getRedirectUri, _FapiPermittedAlg)
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, _MissingClaim, _ParseError)
 
@@ -232,21 +231,6 @@ instance ToJSON ScriptUri where
 instance FromJSON ScriptUri where
   parseJSON =
     fmap (ScriptUri DefaultLang) . (>>= toParser) . fmap mkURI . parseJSON
-    where
-      toParser =
-        either (fail . show) pure
-
--- TODO: create smart constructor
-newtype HttpsUrl = HttpsUrl URI
-  deriving (Generic, Show, Eq)
-
-instance ToJSON HttpsUrl where
-  toJSON (HttpsUrl uri) =
-    toJSON $ URI.render uri
-
-instance FromJSON HttpsUrl where
-  parseJSON =
-    fmap HttpsUrl . (>>= toParser) . fmap mkURI . parseJSON
     where
       toParser =
         either (fail . show) pure
