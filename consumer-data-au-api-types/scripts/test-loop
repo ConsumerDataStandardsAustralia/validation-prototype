@@ -2,7 +2,7 @@
 #! nix-shell -p inotify-tools -i bash
 cabal2nix . > consumer-data-au-api-types.nix
 nix-shell --run "
-rm -f .ghc*
+rm -f .ghc.environment*
 cabal new-test
 inotifywait -e close_write,moved_to,create -m -r src tests |
 while read -r directory events filename; do
