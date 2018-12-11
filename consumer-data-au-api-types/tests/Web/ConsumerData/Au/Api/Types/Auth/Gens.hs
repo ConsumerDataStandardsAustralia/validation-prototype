@@ -25,11 +25,6 @@ import           Web.ConsumerData.Au.Api.Types.Auth.Common.Common
 import           Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
     (IdToken (IdToken), IdTokenClaims, IdTokenKey (..))
 
-import           Control.Monad.Trans.Maybe
-import qualified Hedgehog.Internal.Gen     as Gen
-import qualified Hedgehog.Internal.Seed    as Seed
-import qualified Hedgehog.Internal.Tree    as Tree
-
 genIdTokenClaims ::
   forall n.
   MonadGen n
@@ -87,20 +82,3 @@ genKeyMaterial =
     [ pure (JWK.ECGenParam JWK.P_256)
     , JWK.RSAGenParam <$> Gen.int (Range.linear (2048 `div` 8) (4096 `div` 8))
     ]
-
-sampleT :: (MonadIO m) => Gen.GenT m a  -> m a
-sampleT gen =
-    let
-      loop n =
-        if n <= 0 then
-          error "CouldBe.Hedgehog.Gen.sampleT: too many discards, could not generate a sample"
-        else do
-          seed <- Seed.random
-          mX <- runMaybeT . Tree.runTree $ Gen.runGenT 30 seed gen
-          case mX of
-            Nothing ->
-              loop (n - 1)
-            Just x ->
-              pure $ Tree.nodeValue x
-    in
-      loop (100 :: Int)
