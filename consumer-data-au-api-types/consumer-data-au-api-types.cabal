@@ -179,7 +179,9 @@ test-suite tasty
                      , Web.ConsumerData.Au.Api.Types.Auth.Gens
                      , Web.ConsumerData.Au.Api.Types.Auth.RequestTest
                      , Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest
+                     , Web.ConsumerData.Au.Api.Types.Banking.AccountsGens
                      , Web.ConsumerData.Au.Api.Types.Banking.AccountsTest
+                     , Web.ConsumerData.Au.Api.Types.Banking.DirectDebitsGens
                      , Web.ConsumerData.Au.Api.Types.Banking.PayeesGens
                      , Web.ConsumerData.Au.Api.Types.Banking.PayeesTest
                      , Web.ConsumerData.Au.Api.Types.Banking.ProductsGens
