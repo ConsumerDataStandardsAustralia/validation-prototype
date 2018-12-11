@@ -441,6 +441,7 @@ newtype TokenPhoneText =
   TokenPhoneText Text
   deriving (Eq, Show, FromJSON, ToJSON)
 
+-- TODO: confirm what LoA we'll be using, and how it is represented.
 -- | The minimum ACR for AU OB is LoA3, represented by URI @urn:cds.au:cdr:3@.
 newtype Acr =
   Acr Text
