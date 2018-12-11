@@ -26,7 +26,7 @@ import           Hedgehog
     (MonadGen, Property, PropertyT, assert, evalEither, evalExceptT, property,
     (===))
 import qualified Hedgehog.Gen                             as Gen
-import           Hedgehog.Helper                          (sampleT)
+import           Hedgehog.Helpers                         (sampleT)
 import           Network.URI                              (parseURI)
 import           Prelude                                  hiding (exp)
 import           Text.URI
