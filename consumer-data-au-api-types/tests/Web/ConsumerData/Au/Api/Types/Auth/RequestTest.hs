@@ -22,7 +22,6 @@ import           Data.Aeson             (eitherDecode')
 import           Data.Bifunctor         (first)
 import           Data.ByteString.Lazy   (ByteString)
 import qualified Data.ByteString.Lazy   as BS
-import           Data.Char              (ord)
 import qualified Data.Dependent.Map     as DM
 import           Data.Dependent.Sum     (DSum ((:=>)))
 import           Data.Maybe             (fromJust)
@@ -36,10 +35,10 @@ import qualified Hedgehog.Gen as Gen
 import           Hedgehog.Internal.Property (forAllT)
 import qualified Hedgehog.Range             as Range
 import           Test.Tasty                 (TestTree)
-import           Test.Tasty.Golden          (goldenVsString)
 import           Test.Tasty.Hedgehog        (testProperty)
 
-import Text.URI.Gens                           (genUri)
+import AesonGolden (aesonGolden)
+import Text.URI.Gens                           (genURI)
 import Web.ConsumerData.Au.Api.Types.Auth.Gens (genClaims,genJWK)
 
 import Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
@@ -80,14 +79,13 @@ golden =
     keyFile = authTestPath <> "/jwk.json"
     mJwt = do
       jwk <- ExceptT . fmap (first ParseError . eitherDecode') . BS.readFile $ keyFile
-      mkJwt jwk ES256 goldenAuthRequest
-    dot = fromIntegral (ord '.')
+      authRequestToJwt jwk ES256 goldenAuthRequest
     ioJwt = (>>= either (throw . JwtFailure . show) pure) . runExceptT $ mJwt
     -- The signing process uses random inputs, so just verify the header and payload hasn't changed.
     -- Round tripping ensures that the signatures are valid.
-    ioHeaderPayload = BS.intercalate "." . take 2 . BS.split dot <$> ioJwt
+    -- ioHeaderPayload = BS.intercalate "." . take 2 . BS.split dot <$> ioJwt
   in
-    goldenVsString name gf ioHeaderPayload
+    aesonGolden name gf ioJwt
 
 authTestPath ::
   FilePath

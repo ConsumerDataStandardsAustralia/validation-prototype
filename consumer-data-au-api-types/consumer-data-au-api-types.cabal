@@ -172,7 +172,8 @@ test-suite tasty
                      , waargonaut == 0.4.2.*
                      , warp == 3.2.*
   other-modules:
-                       Country.Gens
+                       AesonGolden
+                     , Country.Gens
                      , Data.Text.Gens
                      , Data.Time.Gens
                      , Text.URI.Gens
