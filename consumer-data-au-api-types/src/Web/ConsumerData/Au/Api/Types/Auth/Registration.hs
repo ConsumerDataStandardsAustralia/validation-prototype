@@ -236,6 +236,7 @@ instance FromJSON ScriptUri where
       toParser =
         either (fail . show) pure
 
+-- TODO: create smart constructor
 newtype HttpsUrl = HttpsUrl URI
   deriving (Generic, Show, Eq)
 
@@ -314,6 +315,7 @@ newtype TlsClientAuthSubjectDn = TlsClientAuthSubjectDn T.Text
 -- | Only PrivateKeyJwt and TlsClientAuth are supported by CDR. @token_endpoint_auth_signing_alg@ is required if using @PrivateKeyJwt@ @token_endpoint_auth_method@, and @tls_client_auth_subject_dn@ must be supplied if using @tls_client_auth@ (as per <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration §CDR Registration>). All token requests will be rejected by the server if they are not signed by the algorithm specified in @alg@, or if they are signed with @none@, or if the subject distinguished name of the certificate does not match that of the MTLS certificate.
 newtype FapiTokenEndpointAuthMethod = FapiTokenEndpointAuthMethod TokenEndpointAuthMethod
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
+
 fapiTokenEndpointAuthMethod :: TokenEndpointAuthMethod -> Maybe FapiTokenEndpointAuthMethod
 fapiTokenEndpointAuthMethod = (^?_FapiTokenEndpointAuthMethod)
 
