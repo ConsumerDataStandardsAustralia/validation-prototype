@@ -25,14 +25,13 @@ module Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
   where
 
 import Web.ConsumerData.Au.Api.Types.Auth.Common
-    (ClientId, Nonce, RedirectUri, ResponseType, Scopes, State)
+    (ClientId (getClientId), Nonce, RedirectUri, ResponseType, Scopes, State, Prompt)
 import Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken (IdTokenClaims)
 import Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, _MissingClaim, _ParseError)
 
 import           Control.Lens
-    (at, makeClassy, to, ( # ), (&), (.~), (?~), (^.))
-import           Control.Monad             (join)
+    (at, makeClassy, to, ( # ), (&), (.~), (?~), (^.), (^?))
 import           Control.Monad.Error.Class (MonadError, throwError)
 import           Control.Monad.Time        (MonadTime)
 import qualified Crypto.JOSE.Error         as JE
@@ -41,7 +40,7 @@ import           Crypto.JOSE.JWS           (Alg, newJWSHeader)
 import           Crypto.JWT
     (AsJWTError, Audience, SignedJWT, StringOrURI, claimAud, claimIss,
     defaultJWTValidationSettings, emptyClaimsSet, issuerPredicate, signClaims,
-    unregisteredClaims, verifyClaims)
+    unregisteredClaims, verifyClaims, stringOrUri)
 import           Crypto.Random.Types       (MonadRandom)
 import           Data.Aeson
     (FromJSON (..), Result (..), ToJSON (..), Value, fromJSON, object,
@@ -81,6 +80,8 @@ newtype UserInfoClaim =
 -- | Represents an OIDC authorisation request. In response to a request from an end user, an RP
 -- will redirect an end user to the OP with a request that includes this information.
 --
+--   * <https://consumerdatastandardsaustralia.github.io/infosec/#oidc-hybrid-flow INFOSEC>
+--     is the authoritative source on these parameters.
 --   * Request params using the OAuth 2.0 syntax are superseded by those in the request object
 --     (@request@ or @request_uri@ fields)
 --     <https://openid.net/specs/openid-connect-core-1_0.html#RequestObject 6.1. Passing a Request Object by Value>
@@ -98,11 +99,11 @@ data AuthorisationRequest =
   , _authReqClientId     :: ClientId
   , _authReqRedirectUri  :: RedirectUri
   , _authReqScope        :: Scopes
-  , _authReqState        :: Maybe State
+  , _authReqState        :: State
   -- | @nonce@ is required given <https://openid.net/specs/openid-financial-api-part-1.html#public-client FAPI RO §5.2.3.8>.
   -- We currently assume that a persistent identifier is required.
   , _authReqNonce        :: Nonce
-  , _authReqIssuer       :: StringOrURI
+  , _authReqPrompt       :: Prompt
   , _authReqAudience     :: Audience
   -- | @claims@ required, as <https://openid.net/specs/openid-financial-api-part-2.html#public-client FAPI R+W §5.2.3.3>
   -- requires the @acr@ claim is requested, which is a part of the @id_token@ claim
@@ -121,8 +122,9 @@ authRequestToAesonMap ar =
   & at "client_id" ?~ toJSON (ar ^. authReqClientId)
   & at "redirect_uri" ?~ toJSON (ar ^. authReqRedirectUri)
   & at "scope" ?~ toJSON (ar ^. authReqScope)
-  & at "state" .~ (toJSON <$> (ar ^. authReqState))
+  & at "state" ?~ toJSON (ar ^. authReqState)
   & at "nonce" ?~ toJSON (ar ^. authReqNonce)
+  & at "prompt" ?~ toJSON (ar ^. authReqPrompt)
   & at "claims" ?~ toJSON (ar ^. authReqClaims)
 
 aesonMapToAuthRequest ::
@@ -131,19 +133,16 @@ aesonMapToAuthRequest ::
   , MonadError e m
   )
   => HashMap Text Value
-  -> StringOrURI
   -> Audience
   -> m AuthorisationRequest
-aesonMapToAuthRequest m iss aud = do
+aesonMapToAuthRequest m aud = do
   let
     get name =
       let
-        -- Please don't say you love me. You don't even know me.
         m2m = maybe (throwError $ _MissingClaim # name) pure
+        mma = m ^. at name & traverse (rToM . fromJSON)
       in
-        join . fmap m2m $ get' name
-    get' name = --undefined --do
-      m ^. at name & traverse (rToM . fromJSON)
+        m2m =<< mma
     rToM = \case
       Error s -> throwError $ _ParseError # s
       Success a -> pure a
@@ -152,9 +151,9 @@ aesonMapToAuthRequest m iss aud = do
     <*> get "client_id"
     <*> get "redirect_uri"
     <*> get "scope"
-    <*> get' "state"
+    <*> get "state"
     <*> get "nonce"
-    <*> pure iss
+    <*> get "prompt"
     <*> pure aud
     <*> get "claims"
 
@@ -168,15 +167,17 @@ authRequestToJwt ::
   -> Alg
   -> AuthorisationRequest
   -> m SignedJWT
-authRequestToJwt jwk alg ar =
+authRequestToJwt jwk alg ar@AuthorisationRequest{..} = do
   let
     arMap = authRequestToAesonMap ar
+    mIss = getClientId _authReqClientId ^? stringOrUri
+    badIss = "'" <> getClientId _authReqClientId <> "' is not a valid client_id/iss"
     cs = emptyClaimsSet
-      & claimIss ?~ _authReqIssuer ar
-      & claimAud ?~ _authReqAudience ar
+      & claimAud ?~ _authReqAudience
       & unregisteredClaims .~ arMap
-  in
-    signClaims jwk (newJWSHeader ((), alg)) cs
+  iss <- maybe (throwError $ _ParseError # show badIss) pure mIss
+  let cs' = cs & claimIss ?~ iss
+  signClaims jwk (newJWSHeader ((), alg)) cs'
 
 jwtToAuthRequest ::
   ( MonadError e m
@@ -198,6 +199,5 @@ jwtToAuthRequest audPred issPred jwk jwt = do
     getRegClaim g name cs =
       cs ^. g & maybe (throwError $ _MissingClaim # name) pure
   claims <- verifyClaims validationSettings jwk jwt
-  iss <- getRegClaim claimIss "issuer" claims
   aud <- getRegClaim claimAud "aud" claims
-  claims ^. unregisteredClaims . to (\m -> aesonMapToAuthRequest m iss aud)
+  claims ^. unregisteredClaims . to (`aesonMapToAuthRequest` aud)

@@ -25,6 +25,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , _FapiPermittedAlg
   , Hash
   , Nonce (..)
+  , Prompt (..)
   , SHash
   , TokenAddressText
   , TokenAuthTime
@@ -43,11 +44,12 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , Scopes
   , mkScopes
   , Scope (..)
-  , State
+  , State (..)
   ) where
 
 import           Aeson.Helpers              (parseJSONWithPrism)
-import           Control.Lens               (Prism', prism, ( # ), (<&>), (^.))
+import           Control.Lens
+    (Prism', prism, ( # ), (<&>), (^.), (^?), (&))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
@@ -70,13 +72,11 @@ import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import           Data.Text.Encoding         (decodeUtf8, encodeUtf8)
 import           GHC.Generics               (Generic, Generic1)
---import           Network.URI                (URI, parseURI, uriToString)
-import           Crypto.JWT        (StringOrURI)
-import           Text.URI          (URI, mkURI)
-import qualified Text.URI          as URI
-import           Text.URI.Lens     (unRText, uriScheme)
-import           Waargonaut.Encode (Encoder')
-import qualified Waargonaut.Encode as E
+import           Text.URI                   (URI, mkURI)
+import qualified Text.URI                   as URI
+import           Text.URI.Lens              (unRText, uriScheme)
+import           Waargonaut.Encode          (Encoder')
+import qualified Waargonaut.Encode          as E
 
 import Web.ConsumerData.Au.Api.Types.Auth.Error (AsHttpsUriError (..))
 
@@ -263,7 +263,27 @@ instance FromJSON ResponseType where
 -- suggests that FAPI R+W should only be the hybrid flow, which would mandate @openid@ as a scope.
 newtype Scopes =
   Scopes (Set Scope)
-  deriving (Eq, Show, FromJSON, ToJSON)
+  deriving (Eq, Show)
+
+instance ToJSON Scopes where
+  toJSON (Scopes s) =
+    toJSON . T.intercalate " " . fmap (scopeText #) . Set.toList $ s
+
+instance FromJSON Scopes where
+  parseJSON =
+    let
+      parseFail t =
+        fail ("'" <> show t <> "' is not a known scope.")
+      tToScope t =
+        t ^? scopeText & maybe (parseFail t) pure
+      scopeSet =
+        fmap Set.fromList . (>>= traverse tToScope) . fmap (T.split (== ' ')) . parseJSON
+      missingOpenId =
+        fail "'scope' claim does not include 'openid'"
+      validate s =
+         bool missingOpenId (pure (Scopes s)) $ Set.member OpenIdScope s
+    in
+      (>>= validate) . scopeSet
 
 mkScopes ::
   Set Scope
@@ -311,6 +331,25 @@ instance ToJSON Scope where
 
 instance FromJSON Scope where
   parseJSON = parseJSONWithPrism scopeText "Scope"
+
+data Prompt =
+  SelectAccount
+  deriving (Eq, Show)
+
+prompt ::
+  Prism' Text Prompt
+prompt = prism
+  (\SelectAccount -> "select_account")
+  (\case
+      "select_account" -> Right SelectAccount
+      t -> Left t
+  )
+
+instance ToJSON Prompt where
+  toJSON = toJSON . (prompt #)
+
+instance FromJSON Prompt where
+  parseJSON = parseJSONWithPrism prompt "Prompt"
 
 newtype TokenHeaders = TokenHeaders [Header]
 data Header = Header {key::Text, value::Text}
