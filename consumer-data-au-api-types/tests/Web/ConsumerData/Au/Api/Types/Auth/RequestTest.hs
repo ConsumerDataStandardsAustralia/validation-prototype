@@ -17,7 +17,8 @@ import           Control.Monad.IO.Class (MonadIO)
 import           Crypto.JOSE
     (Alg (ES256), decodeCompact, encodeCompact)
 import qualified Crypto.JOSE.JWK        as JWK
-import           Crypto.JWT             (Audience (Audience), uri)
+import           Crypto.JWT
+    (Audience (Audience), defaultJWTValidationSettings, uri, verifyClaims)
 import           Data.Aeson             (eitherDecode')
 import           Data.Bifunctor         (first)
 import           Data.ByteString.Lazy   (ByteString)
@@ -47,8 +48,9 @@ import Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
 import Web.ConsumerData.Au.Api.Types.Auth.Common
     (Acr (Acr), Claim (Claim), ClientId (ClientId), IdToken (IdToken),
     IdTokenClaims, IdTokenKey (IdTokenSub), Nonce (Nonce),
-    RedirectUri (RedirectUri), ResponseType (CodeIdToken), Scope (..),
-    TokenSubject (..), mkScopes, Prompt (SelectAccount), State (..))
+    Prompt (SelectAccount), RedirectUri (RedirectUri),
+    ResponseType (CodeIdToken), Scope (..), State (..), TokenSubject (..),
+    mkScopes)
 import Web.ConsumerData.Au.Api.Types.Auth.Error
     (Error (ParseError))
 
@@ -77,15 +79,18 @@ golden =
     name = "Golden AuthorisationRequest JWT"
     gf = authTestPath <> "/compact-authorisation-request.golden"
     keyFile = authTestPath <> "/jwk.json"
-    mJwt = do
+    alg = ES256
+    jwtValidationSettings = defaultJWTValidationSettings (const True)
+    mClaims = do
       jwk <- ExceptT . fmap (first ParseError . eitherDecode') . BS.readFile $ keyFile
-      authRequestToJwt jwk ES256 goldenAuthRequest
-    ioJwt = (>>= either (throw . JwtFailure . show) pure) . runExceptT $ mJwt
+      jwt <- authRequestToJwt jwk alg goldenAuthRequest
+      verifyClaims  jwtValidationSettings jwk jwt
+    ioClaims = (>>= either (throw . JwtFailure . show) pure) . runExceptT $ mClaims
     -- The signing process uses random inputs, so just verify the header and payload hasn't changed.
     -- Round tripping ensures that the signatures are valid.
     -- ioHeaderPayload = BS.intercalate "." . take 2 . BS.split dot <$> ioJwt
   in
-    aesonGolden name gf ioJwt
+    aesonGolden name gf ioClaims
 
 authTestPath ::
   FilePath
