@@ -179,6 +179,7 @@ test-suite tasty
                      , Hedgehog.Helpers
                      , WaargoRoundTrip
                      , Web.ConsumerData.Au.Api.Types.Auth.Gens
+                     , Web.ConsumerData.Au.Api.Types.Auth.CommonTest
                      , Web.ConsumerData.Au.Api.Types.Auth.RequestTest
                      , Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest
                      , Web.ConsumerData.Au.Api.Types.Banking.AccountsTest

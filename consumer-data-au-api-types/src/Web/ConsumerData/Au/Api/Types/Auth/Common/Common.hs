@@ -60,8 +60,8 @@ import           Crypto.Hash                (HashAlgorithm, hashWith)
 import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
 import           Crypto.JWT                 (StringOrURI)
 import           Data.Aeson.Types
-    (FromJSON (..), FromJSON1 (..), ToJSON (..), ToJSON1 (..), object, toJSON1,
-    withObject, (.:), (.=))
+    (FromJSON (..), FromJSON1 (..), Parser, ToJSON (..), ToJSON1 (..), object,
+    toJSON1, withObject, (.:), (.=))
 import           Data.Bool                  (bool)
 import qualified Data.ByteArray             as BA
 import           Data.ByteString            (ByteString)
@@ -82,7 +82,8 @@ import           Text.URI.Lens              (unRText, uriScheme)
 import           Waargonaut.Encode          (Encoder')
 import qualified Waargonaut.Encode          as E
 
-import Web.ConsumerData.Au.Api.Types.Auth.Error (AsHttpsUrlError (..))
+import Web.ConsumerData.Au.Api.Types.Auth.Error
+    (AsHttpsUrlError (..), HttpsUrlError)
 
 {-|
 
@@ -440,9 +441,9 @@ instance ToJSON HttpsUrl where
     toJSON $ URI.render uri
 
 instance FromJSON HttpsUrl where
-  parseJSON =
-    fmap HttpsUrl . (>>= toParser) . fmap mkURI . parseJSON
+  parseJSON v =  toParser =<< mkHttpsUrlText <$> parseJSON v
     where
+      toParser :: Either HttpsUrlError HttpsUrl -> Parser HttpsUrl
       toParser =
         either (fail . show) pure
 

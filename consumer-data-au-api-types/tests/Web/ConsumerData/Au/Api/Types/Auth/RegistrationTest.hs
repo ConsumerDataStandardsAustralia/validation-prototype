@@ -198,7 +198,7 @@ genMeta =
     Gen.maybe genScriptUri <*>
     Gen.maybe genScriptUri <*>
     genSubjectType<*>
-    Gen.maybe genUrlHttps <*>
+    Gen.maybe genHttpsUrl <*>
     genJwks <*>
     Gen.maybe genRequestUris <*>
     genRedirectUrls <*>
@@ -209,7 +209,7 @@ genMeta =
     Gen.maybe (DefaultMaxAge <$> Gen.int (Range.linear 1 10000)) <*>
     Gen.maybe Gen.bool <*>
     Gen.maybe genAcr <*>
-    Gen.maybe genUrlHttps <*>
+    Gen.maybe genHttpsUrl <*>
     Gen.maybe (UserInfoEncryption <$> genAlg <*> Gen.maybe genEnc)     <*>
     genAlg <*>
     Gen.maybe genScopes <*>
@@ -317,7 +317,7 @@ genTlsScat  :: ( MonadGen n ) => n MutualTlsSCAT
 genTlsScat   = pure $ MutualTlsSCAT True
 
 genNoteEndpoint :: ( MonadGen n, MonadThrow n) => n NotificationEndpoint
-genNoteEndpoint = NotificationEndpoint <$> genUrlHttps
+genNoteEndpoint = NotificationEndpoint <$> genHttpsUrl
 
 data BadRedirectUri = BadRedirectUri deriving (Show)
 instance Exception BadRedirectUri

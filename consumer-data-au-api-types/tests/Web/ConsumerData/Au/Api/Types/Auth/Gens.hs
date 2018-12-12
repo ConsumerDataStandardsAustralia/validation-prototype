@@ -110,12 +110,12 @@ genUrl scheme auth = URI
     <*> pure []
     <*> pure Nothing
 
-genUrlHttps::
+genHttpsUrl ::
   ( MonadGen n
   , MonadThrow n
   )
   => n HttpsUrl
-genUrlHttps = do
+genHttpsUrl = do
   https <- mkScheme "https"
   autho <- genAuthority
   uri <- genUrl https autho
