@@ -1,13 +1,15 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.RequestTest where
 
 import           Control.Exception      (throw)
-import           Control.Lens           (( # ))
+import           Control.Lens           (makeClassyPrisms, ( # ))
 import           Control.Monad          ((<=<))
 import           Control.Monad.Catch    (Exception, MonadThrow, throwM)
 import           Control.Monad.Except
@@ -15,9 +17,12 @@ import           Control.Monad.Except
 import           Control.Monad.IO.Class (MonadIO)
 import           Crypto.JOSE
     (Alg (ES256), decodeCompact, encodeCompact)
+import qualified Crypto.JOSE.Error      as JE
 import qualified Crypto.JOSE.JWK        as JWK
 import           Crypto.JWT             (Audience (Audience), uri)
-import           Crypto.JWT.Pretty      (mkPrettyJwt)
+import           Crypto.JWT.Pretty
+    (AsPrettyJwtError (_PrettyJwtError), PrettyJwt, PrettyJwtError,
+    mkPrettyJwt)
 import           Data.Aeson             (eitherDecode')
 import           Data.Bifunctor         (first)
 import           Data.ByteString.Lazy   (ByteString)
@@ -39,7 +44,7 @@ import           Test.Tasty.Hedgehog        (testProperty)
 
 import AesonGolden (aesonGolden)
 import Text.URI.Gens                           (genURI)
-import Web.ConsumerData.Au.Api.Types.Auth.Gens (genClaims,genJWK)
+import Web.ConsumerData.Au.Api.Types.Auth.Gens (genClaims, genJWK)
 
 import Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
     (AuthorisationRequest (AuthorisationRequest), Claims (Claims),
@@ -51,7 +56,23 @@ import Web.ConsumerData.Au.Api.Types.Auth.Common
     ResponseType (CodeIdToken), Scope (..), State (..), TokenSubject (..),
     mkScopes)
 import Web.ConsumerData.Au.Api.Types.Auth.Error
-    (Error (ParseError))
+    (AsError (..), Error)
+
+data GoldenError =
+  AuthE Error
+  | PrettyJwtE PrettyJwtError
+  deriving (Eq, Show)
+
+makeClassyPrisms ''GoldenError
+
+instance AsPrettyJwtError GoldenError where
+  _PrettyJwtError = _PrettyJwtE . _PrettyJwtError
+
+instance AsError GoldenError where
+  _Error = _AuthE . _Error
+
+instance JE.AsError GoldenError where
+  _Error = _Error . _JoseError
 
 test_request ::
   [TestTree]
@@ -79,12 +100,14 @@ golden =
     gf = authTestPath <> "/compact-authorisation-request.golden"
     keyFile = authTestPath <> "/jwk.json"
     alg = ES256
+    mJwt :: ExceptT GoldenError IO PrettyJwt
     mJwt = do
-      jwk <- ExceptT . fmap (first ParseError . eitherDecode') . BS.readFile $ keyFile
-      authRequestToJwt jwk alg goldenAuthRequest
-    ioPrettyJwt = do
-      eJwt <- runExceptT mJwt
-      either (throw . JwtFailure . show) (pure . mkPrettyJwt) eJwt
+      jwk <- ExceptT . fmap (first (_ParseError #) . eitherDecode') . BS.readFile $ keyFile
+      jwt <- authRequestToJwt jwk alg goldenAuthRequest
+      mkPrettyJwt jwt
+    ioPrettyJwt :: IO PrettyJwt
+    ioPrettyJwt =
+      either (throw . JwtFailure . show) pure =<< runExceptT mJwt
   in
     aesonGolden name gf ioPrettyJwt
 
