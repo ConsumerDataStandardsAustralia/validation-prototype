@@ -31,14 +31,22 @@ productCategoryGen = Gen.enumBounded
 
 balanceGen :: Gen Balance
 balanceGen = Gen.choice
-  [ Deposits
-      <$> currencyAmountGen
-      <*> currencyAmountGen
-  , Lending
-      <$> currencyAmountGen
-      <*> currencyAmountGen
-      <*> currencyAmountGen
-      <*> Gen.maybe currencyAmountGen
-  , Purses
-      <$> Gen.list (Range.linear 0 3) currencyAmountGen
+  [ BalanceDeposit <$>
+      ( DepositBalanceType
+          <$> currencyAmountGen
+          <*> currencyAmountGen )
+  , BalanceLending <$>
+      ( LendingBalanceType
+          <$> currencyAmountGen
+          <*> currencyAmountGen
+          <*> currencyAmountGen
+          <*> Gen.maybe currencyAmountGen )
+  , BalancePurses <$>
+      ( MultiCurrencyPursesType
+          <$> Gen.list (Range.linear 0 3) currencyAmountGen )
   ]
+
+accountBalanceGen :: Gen AccountBalance
+accountBalanceGen = AccountBalance
+  <$> accountIdGen
+  <*> balanceGen

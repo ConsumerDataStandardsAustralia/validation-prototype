@@ -39,7 +39,19 @@ test_roundTripAccountDirectDebitsResponse = roundTripTest
   "AccountDirectDebitsGetRoundtrip"
   "tests/Web/ConsumerData/Au/Api/Types/Banking/AccountsTest/accountDirectDebits.golden.json"
 
+test_roundTripAccountBulkBalanceResponse :: TestTree
+test_roundTripAccountBulkBalanceResponse = roundTripTest
+  (untag (mkDecoder :: (Tagged OB (Decoder Identity AccountBulkBalanceResponse))))
+  (untag (mkEncoder :: (Tagged OB (Encoder Identity AccountBulkBalanceResponse))))
+  "AccountBulkBalanceResponseRoundtrip"
+  "tests/Web/ConsumerData/Au/Api/Types/Banking/AccountsTest/accountBulkBalance.golden.json"
 
+test_roundTripAccountBalanceByIdsResponse :: TestTree
+test_roundTripAccountBalanceByIdsResponse = roundTripTest
+  (untag (mkDecoder :: (Tagged OB (Decoder Identity AccountBalanceByIdsResponse))))
+  (untag (mkEncoder :: (Tagged OB (Encoder Identity AccountBalanceByIdsResponse))))
+  "AccountBalanceByIdsResponseRoundtrip"
+  "tests/Web/ConsumerData/Au/Api/Types/Banking/AccountsTest/accountBalanceByIds.golden.json"
 
 -- test_roundTripAccountsByIdRoute :: TestTree
 -- test_roundTripAccountsByIdRoute = roundTripTest
