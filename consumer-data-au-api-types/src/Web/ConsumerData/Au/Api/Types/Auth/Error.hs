@@ -3,10 +3,11 @@
 
 module Web.ConsumerData.Au.Api.Types.Auth.Error where
 
-import           Control.Lens      (makeClassyPrisms, prism)
-import qualified Crypto.JOSE.Error as JE
-import  Crypto.JWT    (JWTError, AsJWTError (..))
-import           Data.Text         (Text)
+import           Control.Lens        (makeClassyPrisms, prism)
+import           Control.Monad.Catch (Exception)
+import qualified Crypto.JOSE.Error   as JE
+import           Crypto.JWT          (AsJWTError (..), JWTError)
+import           Data.Text           (Text)
 
 data Error =
   MissingClaim Text
@@ -16,13 +17,15 @@ data Error =
   deriving (Show, Eq)
 
 
-data HttpsUriError =
+data HttpsUrlError =
   NotHttps
   | MissingScheme
   | UriParseError
   deriving (Eq, Show)
 
-makeClassyPrisms ''HttpsUriError
+instance Exception HttpsUrlError
+
+makeClassyPrisms ''HttpsUrlError
 
 
 instance JE.AsError Error where

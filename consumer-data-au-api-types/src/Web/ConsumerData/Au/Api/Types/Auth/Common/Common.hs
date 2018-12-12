@@ -23,6 +23,9 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , FapiPermittedAlg
   , getFapiPermittedAlg
   , _FapiPermittedAlg
+  , HttpsUrl
+  , mkHttpsUrlText
+  , mkHttpsUrl
   , Hash
   , Nonce (..)
   , Prompt (..)
@@ -57,8 +60,8 @@ import           Crypto.Hash                (HashAlgorithm, hashWith)
 import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
 import           Crypto.JWT                 (StringOrURI)
 import           Data.Aeson.Types
-    (FromJSON (..), FromJSON1 (..), ToJSON (..), ToJSON1 (..), object, toJSON1,
-    withObject, (.:), (.=))
+    (FromJSON (..), FromJSON1 (..), Parser, ToJSON (..), ToJSON1 (..), object,
+    toJSON1, withObject, (.:), (.=))
 import           Data.Bool                  (bool)
 import qualified Data.ByteArray             as BA
 import           Data.ByteString            (ByteString)
@@ -79,7 +82,8 @@ import           Text.URI.Lens              (unRText, uriScheme)
 import           Waargonaut.Encode          (Encoder')
 import qualified Waargonaut.Encode          as E
 
-import Web.ConsumerData.Au.Api.Types.Auth.Error (AsHttpsUriError (..))
+import Web.ConsumerData.Au.Api.Types.Auth.Error
+    (AsHttpsUrlError (..), HttpsUrlError)
 
 {-|
 
@@ -406,31 +410,42 @@ instance FromJSON RedirectUri where
 -- | A @kid@ to be returned in the token. A @kid@ is the certificate Key ID, and it must be checked to match signing cert
 newtype TokenKeyId = TokenKeyId Text --TODO is really text?
 
--- | For URIs in open banking that must be URLs using the HTTPS scheme. Use @mkHttpsUri@ to get one.
-newtype HttpsUri =
-  HttpsUri URI
+-- | For URIs in open banking that must be URLs using the HTTPS scheme. Use @mkHttpsUrl@ to get one.
+newtype HttpsUrl =
+  HttpsUrl URI
   deriving (Eq, Show)
 
-mkHttpsUriText ::
-  ( AsHttpsUriError e
+mkHttpsUrlText ::
+  ( AsHttpsUrlError e
   , MonadError e m
   )
   => Text
-  -> m HttpsUri
-mkHttpsUriText =
-  mkHttpsUri <=< maybe (throwing_ _UriParseError) pure . mkURI
+  -> m HttpsUrl
+mkHttpsUrlText =
+  mkHttpsUrl <=< maybe (throwing_ _UriParseError) pure . mkURI
 
-mkHttpsUri ::
-  ( AsHttpsUriError e
+mkHttpsUrl ::
+  ( AsHttpsUrlError e
   , MonadError e m
   )
   => URI
-  -> m HttpsUri
-mkHttpsUri uri =
+  -> m HttpsUrl
+mkHttpsUrl uri =
   case uri ^. uriScheme <&> (^. unRText) of
-    Just "https" -> pure $ HttpsUri uri
+    Just "https" -> pure $ HttpsUrl uri
     Just _       -> throwing_ _NotHttps
     Nothing      -> throwing_ _MissingScheme
+
+instance ToJSON HttpsUrl where
+  toJSON (HttpsUrl uri) =
+    toJSON $ URI.render uri
+
+instance FromJSON HttpsUrl where
+  parseJSON v =  toParser =<< mkHttpsUrlText <$> parseJSON v
+    where
+      toParser :: Either HttpsUrlError HttpsUrl -> Parser HttpsUrl
+      toParser =
+        either (fail . show) pure
 
 -- | The @iat@ value returned in a token, in seconds since epoch. @iat@ (Issued At) is used to limit the amount of time that nonces need to be stored for.
 newtype TokenIssuedAt = TokenIat Int --TODO is really text?

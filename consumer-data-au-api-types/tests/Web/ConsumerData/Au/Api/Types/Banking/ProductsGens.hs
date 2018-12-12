@@ -6,7 +6,7 @@ import           Control.Monad.Catch (MonadThrow)
 import           Hedgehog            (MonadGen)
 import qualified Hedgehog.Gen        as Gen
 import qualified Hedgehog.Range      as Range
-import           Text.URI.Gens       (genURI)
+import           Text.URI.Gens       (genUri)
 
 import Web.ConsumerData.Au.Api.Types
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Constraint
@@ -30,17 +30,17 @@ productGen  = Product
   <*> textGen
   <*> textGen
   <*> Gen.maybe textGen
-  <*> Gen.maybe genURI
+  <*> Gen.maybe genUri
   <*> Gen.bool_
   <*> Gen.maybe productAdditionalInformationGen
 
 productAdditionalInformationGen :: (MonadGen m, MonadThrow m) => m ProductAdditionalInformation
 productAdditionalInformationGen = ProductAdditionalInformation
-  <$> Gen.maybe genURI
-  <*> Gen.maybe genURI
-  <*> Gen.maybe genURI
-  <*> Gen.maybe genURI
-  <*> Gen.maybe genURI
+  <$> Gen.maybe genUri
+  <*> Gen.maybe genUri
+  <*> Gen.maybe genUri
+  <*> Gen.maybe genUri
+  <*> Gen.maybe genUri
 
 productCategoryGen :: (MonadGen m) => m ProductCategory
 productCategoryGen = Gen.element
@@ -85,7 +85,7 @@ productBundleGen :: (MonadGen m, MonadThrow m) => m ProductBundle
 productBundleGen = ProductBundle
   <$> textGen
   <*> textGen
-  <*> Gen.maybe genURI
+  <*> Gen.maybe genUri
   <*> Gen.list (Range.linear 0 10) textGen
 
 productRepaymentTypeGen :: (MonadGen m) => m ProductRepaymentType
@@ -119,7 +119,7 @@ productDepositRateGen = ProductDepositRate
 -- WARNING
   <*> rateStringGen
   <*> Gen.maybe textGen
-  <*> Gen.maybe genURI
+  <*> Gen.maybe genUri
 
 productDepositRateTypeGen :: (MonadGen m) => m ProductDepositRateType
 productDepositRateTypeGen = Gen.lift $ Gen.choice
@@ -161,7 +161,7 @@ productEligibilityGen = ProductEligibility
   <*> productEligibilityTypeGen
 -- WARNING
   <*> Gen.maybe textGen
-  <*> Gen.maybe genURI
+  <*> Gen.maybe genUri
 
 productEligibilityTypeGen :: (MonadGen m) => m ProductEligibilityType
 productEligibilityTypeGen = Gen.lift $ Gen.choice
@@ -221,7 +221,7 @@ productFeeGen = ProductFee
   <*> Gen.maybe rateStringGen
   <*> Gen.maybe currencyStringGen
   <*> Gen.maybe textGen
-  <*> Gen.maybe genURI
+  <*> Gen.maybe genUri
   <*> Gen.maybe productDiscountsGen
 
 productFeeTypeGen :: (MonadGen m) => m ProductFeeType
@@ -252,7 +252,7 @@ productLendingRateGen = ProductLendingRate
 -- WARNING
   <*> rateStringGen
   <*> Gen.maybe textGen
-  <*> Gen.maybe genURI
+  <*> Gen.maybe genUri
 
 productLendingRateTypeGen :: (MonadGen m) => m ProductLendingRateType
 productLendingRateTypeGen = Gen.lift $ Gen.choice
