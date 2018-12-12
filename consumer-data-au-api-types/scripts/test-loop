@@ -1,1 +1,1 @@
-cabal2nix . > consumer-data-au-api-types.nix && nix-shell --run 'rm -f .ghc* && ghcid -c "cabal new-repl test:tasty" -T "Main.main"'
+cabal2nix . > consumer-data-au-api-types.nix && nix-shell --run 'rm -f .ghc.* && ghcid -c "cabal new-repl test:tasty" -T "Main.main"'

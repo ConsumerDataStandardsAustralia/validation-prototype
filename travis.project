@@ -16,3 +16,8 @@ source-repository-package
   type: git
   location: https://github.com/qfpl/waargonaut.git
   tag: e94dc7c8632a2fbb5605efb21a1d9b4492457da9
+
+source-repository-package
+  type: git
+  location: https://github.com/frasertweedale/hs-jose
+  tag: 2fcf3d7b1c97a6189e55239fdbdcd79ba9a7e713

@@ -1,3 +1,5 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -6,15 +8,21 @@ module Web.ConsumerData.Au.Api.Types.Auth.Gens where
 import qualified Data.Dependent.Map as DM
 import           Data.Dependent.Sum (DSum ((:=>)))
 
-import           Hedgehog       (MonadGen)
-import qualified Hedgehog.Gen   as Gen
-import qualified Hedgehog.Range as Range
-
-import Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
+import           Control.Lens                                            ((^.))
+import           Control.Monad.IO.Class
+    (MonadIO, liftIO)
+import           Crypto.JOSE
+    (Alg (..))
+import qualified Crypto.JOSE.JWK                                         as JWK
+import           Hedgehog
+    (MonadGen)
+import qualified Hedgehog.Gen                                            as Gen
+import qualified Hedgehog.Range                                          as Range
+import           Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
     (Claims (Claims))
-import Web.ConsumerData.Au.Api.Types.Auth.Common.Common
+import           Web.ConsumerData.Au.Api.Types.Auth.Common.Common
     (Acr (Acr), Claim (Claim), TokenSubject (..))
-import Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
+import           Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
     (IdToken (IdToken), IdTokenClaims, IdTokenKey (..))
 
 genIdTokenClaims ::
@@ -43,3 +51,34 @@ genClaims ::
   => n Claims
 genClaims =
   Claims Nothing <$> genIdTokenClaims
+
+genJWK ::
+  ( MonadGen n
+  , MonadIO n
+  )
+  => n (JWK.JWK, Alg)
+genJWK = do
+  jwk <- genKeyMaterial >>= liftIO . JWK.genJWK
+  let alg = signingAlg (jwk ^. JWK.jwkMaterial)
+  return (jwk,alg)
+
+-- | Valid signing algorithms are specified in
+-- <https://openid.net/specs/openid-financial-api-part-2.html#jws-algorithm-considerations FAPI R+W §8.6>.
+-- These choices dictate the key material that is valid --- see 'genKeyMaterial'
+signingAlg ::
+  JWK.KeyMaterial
+  -> Alg
+signingAlg = \case
+  JWK.ECKeyMaterial _ -> ES256
+  _ -> PS256
+
+-- | Valid key material dictated by allowed signing algorithms (see 'signingAlg') and the
+-- <https://github.com/frasertweedale/hs-jose/blob/18865d7af9d3b16d737f38579643399cf4facc1b/src/Crypto/JOSE/JWA/JWK.hs#L610 JWK module in @jose@>
+genKeyMaterial ::
+  MonadGen n
+  => n JWK.KeyMaterialGenParam
+genKeyMaterial =
+  Gen.choice
+    [ pure (JWK.ECGenParam JWK.P_256)
+    , JWK.RSAGenParam <$> Gen.int (Range.linear (2048 `div` 8) (4096 `div` 8))
+    ]
