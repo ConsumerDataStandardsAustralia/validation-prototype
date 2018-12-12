@@ -52,8 +52,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   ) where
 
 import           Aeson.Helpers              (parseJSONWithPrism, parseWithPrism)
-import           Control.Lens
-    (Prism', prism, ( # ), (&), (<&>), (^.), (^?))
+import           Control.Lens               (Prism', prism, ( # ), (<&>), (^.))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)

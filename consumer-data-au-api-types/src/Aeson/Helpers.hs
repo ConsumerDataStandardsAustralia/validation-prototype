@@ -3,7 +3,6 @@ module Aeson.Helpers where
 
 import Control.Lens     (Prism', (^?))
 import Data.Aeson.Types (FromJSON (..), Parser, Value, parseJSON)
-import Data.Text        (Text)
 
 parseJSONWithPrism ::
   ( FromJSON s
