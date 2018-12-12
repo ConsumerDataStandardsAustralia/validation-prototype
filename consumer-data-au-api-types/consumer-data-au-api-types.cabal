@@ -19,6 +19,7 @@ library
   exposed-modules:
                        Aeson.Helpers
                      , Country.Waargonaut
+                     , Crypto.JWT.Pretty
                      , Data.GADT.Aeson
                      , Data.GADT.Aeson.TH
                      , Data.GADT.Tag.TH

@@ -7,7 +7,7 @@
 module Web.ConsumerData.Au.Api.Types.Auth.RequestTest where
 
 import           Control.Exception      (throw)
-import           Control.Lens           (preview, ( # ))
+import           Control.Lens           (( # ))
 import           Control.Monad          ((<=<))
 import           Control.Monad.Catch    (Exception, MonadThrow, throwM)
 import           Control.Monad.Except
@@ -16,17 +16,15 @@ import           Control.Monad.IO.Class (MonadIO)
 import           Crypto.JOSE
     (Alg (ES256), decodeCompact, encodeCompact)
 import qualified Crypto.JOSE.JWK        as JWK
-import           Crypto.JOSE.Types      (base64url)
 import           Crypto.JWT             (Audience (Audience), uri)
-import           Data.Aeson
-    (Value, decodeStrict, eitherDecode', object, (.=))
+import           Crypto.JWT.Pretty      (mkPrettyJWT)
+import           Data.Aeson             (eitherDecode')
 import           Data.Bifunctor         (first)
 import           Data.ByteString.Lazy   (ByteString)
 import qualified Data.ByteString.Lazy   as BS
-import           Data.Char              (ord)
 import qualified Data.Dependent.Map     as DM
 import           Data.Dependent.Sum     (DSum ((:=>)))
-import           Data.Maybe             (mapMaybe, fromJust)
+import           Data.Maybe             (fromJust)
 import qualified Data.Set               as Set
 import           Network.URI            (parseURI)
 import           Text.URI               (mkURI)
@@ -81,21 +79,12 @@ golden =
     gf = authTestPath <> "/compact-authorisation-request.golden"
     keyFile = authTestPath <> "/jwk.json"
     alg = ES256
-    dot = fromIntegral . ord $ '.'
     mJwt = do
       jwk <- ExceptT . fmap (first ParseError . eitherDecode') . BS.readFile $ keyFile
       authRequestToJwt jwk alg goldenAuthRequest
     ioHeaderPayloadJson = do
       eJwt <- runExceptT mJwt
-      jwt <- either (throw . JwtFailure . show) pure eJwt
-      let
-        -- The signing process uses random inputs, so just verify the header and payload hasn't
-        -- changed. Round tripping ensures that the signatures are valid.
-        hpsB64 = take 2 . BS.split dot . encodeCompact $ jwt
-        hpsBS = mapMaybe (preview base64url) hpsB64
-        hpsJSON :: [Value]
-        hpsJSON = mapMaybe decodeStrict hpsBS
-      pure . object . zipWith (.=) ["header", "payload"] $ hpsJSON
+      either (throw . JwtFailure . show) (pure . mkPrettyJWT) eJwt
   in
     aesonGolden name gf ioHeaderPayloadJson
 
