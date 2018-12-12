@@ -3,35 +3,50 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wwarn #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest where
 
-import           Control.Lens        (( # ))
-import           Control.Monad.Catch (Exception, MonadThrow, throwM)
+import           Control.Lens                             (( # ), (^?))
+import           Control.Monad                            ((<=<))
+import           Control.Monad.Catch
+    (Exception, MonadThrow, throwM)
 import           Crypto.JWT
-    (Audience (Audience), NumericDate (..), StringOrURI, string, uri)
-import           Data.Maybe          (isNothing)
-import qualified Data.Set            as Set
-import           Data.Time.Calendar  (fromGregorian)
+    (Alg (..), Audience (Audience), NumericDate (..), StringOrURI,
+    decodeCompact, encodeCompact, string, uri)
+import           Data.Aeson                               (eitherDecode, encode)
+import           Data.ByteString                          (ByteString)
+import qualified Data.ByteString.Lazy                     as LBS
+import           Data.Maybe                               (isNothing)
+import qualified Data.Set                                 as Set
+import           Data.Text                                (Text)
+import           Data.Time.Calendar                       (fromGregorian)
 import           Data.Time.Clock
-import           Network.URI         (parseURI)
+import           Hedgehog
+    (MonadGen, Property, PropertyT, assert, evalEither, evalExceptT, property,
+    (===))
+import qualified Hedgehog.Gen                             as Gen
+import           Hedgehog.Helpers                         (sampleT)
+import           Network.URI                              (parseURI)
+import           Prelude                                  hiding (exp)
 import           Text.URI
     (Authority (Authority), RText, RTextLabel (Scheme), URI (URI), mkHost,
     mkScheme, renderStr)
 import           Text.URI.Gens
     (genAuthority, genPathPieces, genScheme, genURI)
-
-import           Hedgehog     (MonadGen, Property, assert, property)
-import qualified Hedgehog.Gen as Gen
+import           Web.ConsumerData.Au.Api.Types.Auth.Error (Error)
 -- `forAllT` should probs be public: https://github.com/hedgehogqa/haskell-hedgehog/issues/203
-import           Hedgehog.Internal.Property (forAllT)
-import qualified Hedgehog.Range             as Range
-import           Test.Tasty                 (TestTree)
-import           Test.Tasty.Hedgehog        (testProperty)
-
-import Web.ConsumerData.Au.Api.Types.Auth.Common
-    (FapiPermittedAlg (..), RedirectUri (RedirectUri), ResponseType (..), Scope (..), mkScopes)
-import Web.ConsumerData.Au.Api.Types.Auth.Registration
+import           Control.Monad.Except
+    (ExceptT, MonadIO, liftIO, runExceptT)
+import           Hedgehog.Internal.Property                      (forAllT)
+import qualified Hedgehog.Range                                  as Range
+import           Test.Tasty                                      (TestTree)
+import           Test.Tasty.Hedgehog                             (testProperty)
+import           Web.ConsumerData.Au.Api.Types.Auth.Common
+    (ClientIss (..), FapiPermittedAlg (..), RedirectUri (RedirectUri),
+    ResponseType (..), Scope (..), mkScopes, _FapiPermittedAlg)
+import           Web.ConsumerData.Au.Api.Types.Auth.Gens
+import           Web.ConsumerData.Au.Api.Types.Auth.Registration
 
 test_request ::
   [TestTree]
@@ -39,7 +54,10 @@ test_request =
   [
   testProperty "The 'redirect_urls' smart constructor only accepts https  && !localhost hosts." redirectUrlsValid
   , testProperty "The 'redirect_urls' smart constructor rejects any non-https or localhost hosts." redirectUrlsInvalid
-  , testProperty "Redirect request round-trips to/from JWT." redirectUrlsInvalid
+  -- Until registration has been clarified in infosec, these properties won't be testable.
+  -- , testProperty "Claims round-trips to/from ClaimsMap." claimsRoundTrips
+  -- , testProperty "Redirect request round-trips to/from JSON." regoJsonRoundTrips
+  -- , testProperty "Redirect request round-trips to/from JWT." regoJwtRoundTrips
   ]
 
 redirectUrlsValid ::
@@ -56,40 +74,99 @@ redirectUrlsInvalid =
     mRedirectUrl<- redirectUrls <$> forAllT genInvalidRedirectUris
     assert (isNothing mRedirectUrl)
 
+claimsRoundTrips ::
+  Property
+claimsRoundTrips =
+  property $ do
+    md <- forAllT genMeta
+    md' <- evalExceptT (aesonClaimsToMetaData $ metaDataToAesonClaims md :: ExceptT Error (PropertyT IO) ClientMetaData)
+    md === md'
+
+regoJsonRoundTrips ::
+  Property
+regoJsonRoundTrips =
+  property $ do
+    regoReq <- forAllT genRegReq
+    regoReq'<- evalEither.eitherDecode.encode $ regoReq
+    regoReq === regoReq'
+
+regoJwtRoundTrips::
+  Property
+regoJwtRoundTrips =
+  property $ do
+    rr <- forAllT genRegReq
+    (jwk,_) <- forAllT genJWK
+    let
+      ar2jwt :: RegistrationRequest -> ExceptT Error (PropertyT IO) LBS.ByteString
+      ar2jwt = fmap encodeCompact . regoReqToJwt jwk
+      jwt2ar =  jwtToRegoReq (const True) (const True) jwk <=< decodeCompact
+    (=== rr) <=< evalExceptT . (jwt2ar <=< ar2jwt) $ rr
+
+showround :: IO (Either Error RegistrationRequest)
+showround = do
+  rr <- sampleT genRegReq
+  (jwk,_) <- sampleT genJWK
+  let ar2jwt = fmap encodeCompact . regoReqToJwt jwk
+      jwt2ar =  jwtToRegoReq (const True) (const True) jwk <=< decodeCompact
+  runExceptT $ (jwt2ar <=< ar2jwt) rr
+
 genRegReq::
   ( MonadGen n
   , MonadThrow n
+  , MonadIO n
   )
   => n RegistrationRequest
 genRegReq =
-  RegistrationRequest <$> genJwtHeaders <*> genMeta <*> (GenerateSs <$> genSs)
+  RegistrationRequest <$> genHeaders <*> genRegClaims <*> genMeta <*> (DecodedSs <$> genSs)
 
-genJwtHeaders::
+genHeaders::
   ( MonadGen n
   , MonadThrow n
+  , MonadIO n
   )
-  => n JwsSigningHeaders
-genJwtHeaders =
-  JwsSigningHeaders <$> (Just <$> genStringOrUri) <*> (Just <$> genAud) <*> (Just <$> genNumDate) <*> (Just <$> genNumDate) <*> (Just <$> genJti)
+  => n JwsHeaders
+genHeaders =  JwsHeaders <$> genAlg <*> genKid <*> Gen.maybe genX5t
+
+genRegClaims::
+  ( MonadGen n
+  , MonadThrow n
+  , MonadIO n
+  )
+  => n JwsRegisteredClaims
+genRegClaims = do
+  (i,exp) <- genIatExp
+  JwsRegisteredClaims <$> (Just . ClientIss <$> genStringOrUri) <*> (Just <$> genAud) <*> pure (Just i) <*> pure (Just exp) <*> (Just <$> genJti)
 
 genStringOrUri::
   ( MonadGen n
   , MonadThrow n
   )
   => n StringOrURI
-genStringOrUri = Gen.choice [(uri #) <$> uri', (string #) <$> txt]
-  where m2e = maybe (throwM BadUri) pure
-        uri'= m2e =<< parseURI.renderStr <$> genURI
-        txt = Gen.text (Range.linear 10 10) Gen.unicode
+genStringOrUri = Gen.choice [(uri #) <$> uri', (string #) <$> genText]
+  where uri'= m2e BadUri =<< parseURI.renderStr <$> genURI
 
--- Might actually want a relevant time here
+m2e :: forall m e a.
+     (MonadThrow m, Exception e) =>
+     e -> Maybe a -> m a
+m2e e = maybe (throwM e) pure
+
+-- Generate an iat and exp, with exp being +1s to 10m later
+genIatExp ::
+  ( MonadGen n
+  , MonadIO n
+  )
+  => n (NumericDate,NumericDate)
+genIatExp = do
+  iat <- liftIO getCurrentTime
+  exp <- NumericDate . flip addUTCTime iat . fromInteger <$> Gen.integral (Range.linear 1 600)
+  return (NumericDate iat, exp)
+
 genNumDate ::
   ( MonadGen n
-  , MonadThrow n
   )
   => n NumericDate
 genNumDate = NumericDate . utc <$> Gen.integral (Range.linear 1 31)
-  where utc a = UTCTime (fromGregorian 2018 1 a) (secondsToDiffTime 1)
+  where utc a = UTCTime (fromGregorian 2018 11 a) (secondsToDiffTime 1)
 
 --TODO: check if multi `aud` URLs are allowed.
 genAud::
@@ -100,11 +177,9 @@ genAud::
 genAud = Audience <$> Gen.list (Range.linear 10 10) genStringOrUri
 
 genJti ::
-  ( MonadGen n
-  , MonadThrow n
-  )
+  ( MonadGen n)
   => n JTI
-genJti  = JTI <$> Gen.text (Range.linear 10 10) Gen.unicode
+genJti  = JTI <$> genText
 
 genMeta ::
   ( MonadGen n
@@ -114,23 +189,23 @@ genMeta ::
 genMeta =
   ClientMetaData <$>
     genAlg <*>
-    genGrantTypes <*>
     genApplicationType <*>
     genAuthMeth <*>
-    Gen.maybe genScript <*>
+    Gen.maybe genGrantTypes <*>
+    genScript <*>
     Gen.maybe genScriptUri <*>
     Gen.maybe genContacts <*>
     Gen.maybe genScriptUri <*>
     Gen.maybe genScriptUri <*>
     Gen.maybe genScriptUri <*>
-    Gen.maybe genSubjectType<*>
+    genSubjectType<*>
     Gen.maybe genUrlHttps <*>
-    Gen.maybe genJwks <*>
+    genJwks <*>
     Gen.maybe genRequestUris <*>
     genRedirectUrls <*>
     Gen.maybe (RequestObjectEncryption <$> genAlg <*> Gen.maybe genEnc)     <*>
     Gen.maybe genAlg <*>
-    Gen.maybe (IdTokenEncryption <$> genAlg <*> Gen.maybe genEnc)     <*>
+    (IdTokenEncryption <$> genAlg <*> genEnc)     <*>
     Gen.maybe genResponseTypes <*>
     Gen.maybe (DefaultMaxAge <$> Gen.int (Range.linear 1 10000)) <*>
     Gen.maybe Gen.bool <*>
@@ -139,62 +214,75 @@ genMeta =
     Gen.maybe (UserInfoEncryption <$> genAlg <*> Gen.maybe genEnc)     <*>
     genAlg <*>
     Gen.maybe genScopes <*>
-    Gen.maybe (SoftwareId <$> Gen.text (Range.linear 10 10) Gen.unicode) <*>
-    Gen.maybe (SoftwareVersion <$> Gen.text (Range.linear 10 10) Gen.unicode)
+    Gen.maybe (SoftwareId <$> genText) <*>
+    Gen.maybe (SoftwareVersion <$> genText) <*>
+    genTlsScat <*>
+    genNoteEndpoint
 
 genSs::
   ( MonadGen n
   , MonadThrow n
+  , MonadIO n
   )
   => n SoftwareStatement
-genSs = SoftwareStatement <$> genJwtHeaders <*> genMeta
+genSs = SoftwareStatement <$> genRegClaims <*> genMeta
 
-genAlg :: ( MonadGen n , MonadThrow n ) => n FapiPermittedAlg
-genAlg = Gen.element [PS256,ES256]
+genAlg :: ( MonadGen n, MonadThrow n ) => n FapiPermittedAlg
+genAlg = m2e BadAlgType =<< ((^? _FapiPermittedAlg) <$> Gen.element [PS256,ES256])
+
+genKid :: ( MonadGen n ) => n FapiKid
+genKid  = FapiKid <$> genText
+
+genX5t :: ( MonadGen n ) => n X509ThumbPrint
+genX5t  = Gen.choice [X5T256 <$> genBytes, X5T <$> genBytes]
 
 genGrantTypes :: ( MonadGen n , MonadThrow n ) => n FapiGrantTypes
-genGrantTypes = m2e $ fapiGrantTypes . GrantTypes . Set.fromList $ [AuthorizationCode]
-  where m2e = maybe (throwM BadGrantType) pure
+genGrantTypes = m2e BadGrantType $ fapiGrantTypes . GrantTypes . Set.fromList $ [Implicit,AuthorizationCode,RefreshToken]
 
 genApplicationType :: ( MonadGen n , MonadThrow n ) => n FapiApplicationType
-genApplicationType = m2e =<< fapiApplicationType <$> Gen.element [Web]
-  where m2e = maybe (throwM BadApplicationType) pure
+genApplicationType = m2e BadApplicationType =<< fapiApplicationType <$> Gen.element [Web]
 
-genAuthMeth :: ( MonadGen n , MonadThrow n ) => n FapiTokenEndpointAuthMethod
+genAuthMeth :: ( MonadGen n , MonadThrow n) => n FapiTokenEndpointAuthMethod
 genAuthMeth = fapiTokenEndpointAuthMethod <$> (Gen.element [PrivateKeyJwt,ClientSecretJwt] <*> genAlg) >>= maybe (throwM BadAuthMeth) pure
 
-genScript :: ( MonadGen n , MonadThrow n ) => n Script
-genScript = Script DefaultLang <$> Gen.text (Range.linear 10 10) Gen.unicode
+genScript :: ( MonadGen n ) => n Script
+genScript = Script DefaultLang <$> genText
 
 genScriptUri :: ( MonadGen n , MonadThrow n ) => n ScriptUri
 genScriptUri = ScriptUri DefaultLang <$> genURI
 
-genContacts :: ( MonadGen n , MonadThrow n ) => n RegistrationContacts
-genContacts = RegistrationContacts <$> Gen.list (Range.linear 10 10) (EmailAddress <$> Gen.text (Range.linear 10 10) Gen.unicode)
+genContacts :: ( MonadGen n ) => n RegistrationContacts
+genContacts = RegistrationContacts <$> Gen.list (Range.linear 10 10) (EmailAddress <$> genText)
 
-genSubjectType :: ( MonadGen n , MonadThrow n ) => n SubjectType
-genSubjectType = Gen.element [Pairwise, Public]
+genSubjectType :: ( MonadGen n ) => n SubjectType
+genSubjectType = Gen.element [Pairwise]
 
 genJwks :: ( MonadGen n , MonadThrow n ) => n JwkSet
-genJwks = Gen.choice [JwksRef . JwksUri <$> genURI , JwksVal <$> Gen.text (Range.linear 10 10) Gen.unicode]
+genJwks = Gen.choice [JwksRef . JwksUri <$> genURI , JwksVal <$> genText]
 
 genRequestUris :: ( MonadGen n , MonadThrow n ) => n RequestUris
 genRequestUris = RequestUris <$> (map RequestUri <$> Gen.list (Range.linear 10 10) genURI)
 
-genEnc :: ( MonadGen n , MonadThrow n ) => n FapiEnc
+genEnc :: ( MonadGen n ) => n FapiEnc
 genEnc = Gen.element [A128CBC_HS256 , A192CBC_HS384 , A256CBC_HS512 , A128GCM , A192GCM , A256GCM]
 
-genResponseTypes :: ( MonadGen n , MonadThrow n ) => n FapiResponseTypes
-genResponseTypes = FapiResponseTypes <$> genSubs [CodeIdToken, CodeIdTokenToken]
+genResponseTypes :: ( MonadGen n ) => n FapiResponseTypes
+genResponseTypes = FapiResponseTypes <$> genSubs [CodeIdToken]
 
-genSubs  :: ( MonadGen n , MonadThrow n ) => [a] -> n [a]
+genSubs  :: ( MonadGen n) => [a] -> n [a]
 genSubs as = Gen.shuffle as >>= Gen.subsequence
 
-genAcr :: ( MonadGen n , MonadThrow n ) => n FapiAcrValues
-genAcr = FapiAcrValues <$> Gen.text (Range.linear 10 10) Gen.unicode
+genAcr :: ( MonadGen n) => n FapiAcrValues
+genAcr = FapiAcrValues <$> genText
 
-genScopes :: ( MonadGen n , MonadThrow n ) => n FapiScopes
-genScopes = FapiScopes . mkScopes . Set.fromList <$> genSubs  [ ProfileScope, EmailScope]
+genScopes :: ( MonadGen n ) => n FapiScopes
+genScopes = FapiScopes . mkScopes . Set.fromList <$> genSubs  [ ProfileScope ]
+
+genText :: ( MonadGen n ) => n Text
+genText = Gen.text (Range.linear 10 10) Gen.unicode
+
+genBytes :: ( MonadGen n ) => n ByteString
+genBytes = Gen.bytes (Range.linear 10 10)
 
 genUrlHttps::
   ( MonadGen n
@@ -236,6 +324,12 @@ genInvalidRedirectUris = do
   (bscheme,bautho) <- bothvalidf gs ba $ (,) <$> scheme <*> autho
   map RedirectUri <$> genUrls bscheme bautho
 
+genTlsScat  :: ( MonadGen n ) => n MutualTlsSCAT
+genTlsScat   = pure $ MutualTlsSCAT True
+
+genNoteEndpoint :: ( MonadGen n, MonadThrow n) => n NotificationEndpoint
+genNoteEndpoint = NotificationEndpoint <$> genUrlHttps
+
 data BadRedirectUri = BadRedirectUri deriving (Show)
 instance Exception BadRedirectUri
 
@@ -247,6 +341,9 @@ instance Exception BadGrantType
 
 data BadApplicationType = BadApplicationType  deriving (Show)
 instance Exception BadApplicationType
+
+data BadAlgType = BadAlgType   deriving (Show)
+instance Exception BadAlgType
 
 data BadAuthMeth = BadAuthMeth  deriving (Show)
 instance Exception BadAuthMeth
