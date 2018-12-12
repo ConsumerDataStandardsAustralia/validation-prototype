@@ -26,7 +26,7 @@ import           Waargonaut.Encode          (Encoder', simpleEncodeNoSpaces)
 roundTripProp :: (Show a, Eq a) => Gen a -> Decoder Identity a -> Encoder' a -> TestName -> TestTree
 roundTripProp gen d e tn = testProperty tn . property $ do
   a <- forAll gen
-  (Right a) === decodeBs d (encodeBs e a)
+  tripping a (encodeBs e) (decodeBs d)
 
 roundTripTest :: Decoder Identity a -> Encoder' a -> TestName -> FilePath -> TestTree
 roundTripTest d e tn gp = testCase tn . run $ do
