@@ -4,8 +4,9 @@ module AesonGolden where
 
 import           Control.Lens         (view)
 import           Data.Aeson
-    (FromJSON, ToJSON, decodeStrict, encode, encodeFile, toJSON)
+    (FromJSON, ToJSON, decodeStrict, encode, toJSON)
 import           Data.Aeson.Diff      (diff, patchOperations)
+import Data.Aeson.Encode.Pretty (encodePretty)
 import           Data.Bool            (bool)
 import qualified Data.ByteString      as BS
 import           Data.ByteString.Lens (unpackedChars)
@@ -34,7 +35,7 @@ aesonGolden name gf a =
       readGolden
       a
       aesonDiff
-      (encodeFile gf)
+      (writeFile gf . view unpackedChars . encodePretty)
 
 aesonDiff ::
   ToJSON a

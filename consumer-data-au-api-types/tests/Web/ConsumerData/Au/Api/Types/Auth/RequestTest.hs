@@ -96,7 +96,6 @@ golden =
         hpsJSON :: [Value]
         hpsJSON = mapMaybe decodeStrict hpsBS
       pure . object . zipWith (.=) ["header", "payload"] $ hpsJSON
-
   in
     aesonGolden name gf ioHeaderPayloadJson
 
