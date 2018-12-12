@@ -7,6 +7,8 @@
 module Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts where
 
 import           Control.Monad.Except       (throwError)
+import           Data.Bool                  (bool)
+import           Data.Char                  (isNumber)
 import           Data.Functor.Contravariant (contramap, (>$<))
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
@@ -21,7 +23,8 @@ import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
-import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
+import Waargonaut.Helpers
+    (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount
     (CurrencyAmount, currencyAmountDecoder, currencyAmountEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Products
@@ -108,10 +111,11 @@ newtype MaskedAccountNumber =
 -- e.g: 62 1234-5678 => XX XXXX-5678
 maskAccountId :: AccountId -> MaskedAccountNumber
 maskAccountId (AccountId (AsciiString t)) = MaskedAccountNumber $
-  (T.replicate masked "X") <> (T.takeEnd 4 t)
+  (T.map mask $ T.take nonMasked t) <> (T.takeEnd 4 t)
   where
     chars = T.length t
-    masked = max (chars - 4) 0
+    mask c = bool c 'X' (isNumber c)
+    nonMasked = chars - 4
 
 maskedAccountNumberDecoder :: Monad f => Decoder f MaskedAccountNumber
 maskedAccountNumberDecoder = MaskedAccountNumber <$> D.text
