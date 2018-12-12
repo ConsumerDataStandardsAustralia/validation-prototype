@@ -17,7 +17,7 @@ import           Crypto.JOSE
     (Alg (ES256), decodeCompact, encodeCompact)
 import qualified Crypto.JOSE.JWK        as JWK
 import           Crypto.JWT             (Audience (Audience), uri)
-import           Crypto.JWT.Pretty      (mkPrettyJWT)
+import           Crypto.JWT.Pretty      (mkPrettyJwt)
 import           Data.Aeson             (eitherDecode')
 import           Data.Bifunctor         (first)
 import           Data.ByteString.Lazy   (ByteString)
@@ -82,11 +82,11 @@ golden =
     mJwt = do
       jwk <- ExceptT . fmap (first ParseError . eitherDecode') . BS.readFile $ keyFile
       authRequestToJwt jwk alg goldenAuthRequest
-    ioHeaderPayloadJson = do
+    ioPrettyJwt = do
       eJwt <- runExceptT mJwt
-      either (throw . JwtFailure . show) (pure . mkPrettyJWT) eJwt
+      either (throw . JwtFailure . show) (pure . mkPrettyJwt) eJwt
   in
-    aesonGolden name gf ioHeaderPayloadJson
+    aesonGolden name gf ioPrettyJwt
 
 authTestPath ::
   FilePath

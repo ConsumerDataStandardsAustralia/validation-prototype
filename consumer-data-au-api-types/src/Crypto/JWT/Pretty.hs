@@ -2,8 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Crypto.JWT.Pretty
-  ( PrettyJWT
-  , mkPrettyJWT
+  ( PrettyJwt
+  , mkPrettyJwt
   ) where
 
 import           Control.Lens         (preview)
@@ -15,14 +15,14 @@ import qualified Data.ByteString.Lazy as BS
 import           Data.Char            (ord)
 import           Data.Maybe           (mapMaybe)
 
-newtype PrettyJWT =
-  PrettyJWT Value
+newtype PrettyJwt =
+  PrettyJwt Value
   deriving (Eq, Show, ToJSON, FromJSON)
 
-mkPrettyJWT ::
+mkPrettyJwt ::
   SignedJWT
-  -> PrettyJWT
-mkPrettyJWT jwt =
+  -> PrettyJwt
+mkPrettyJwt jwt =
   let
     -- The signing process uses random inputs, so just verify the header and payload hasn't
     -- changed. Round tripping ensures that the signatures are valid.
@@ -32,5 +32,5 @@ mkPrettyJWT jwt =
     hpsJSON :: [Value]
     hpsJSON = mapMaybe decodeStrict hpsBS
   in
-    PrettyJWT . object . zipWith (.=) ["header", "payload"] $ hpsJSON
+    PrettyJwt . object . zipWith (.=) ["header", "payload"] $ hpsJSON
 
