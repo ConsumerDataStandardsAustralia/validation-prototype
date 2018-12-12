@@ -9,6 +9,7 @@ module Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts where
 import           Control.Monad.Except       (throwError)
 import           Data.Functor.Contravariant (contramap, (>$<))
 import           Data.Text                  (Text)
+import qualified Data.Text                  as T
 import           Servant.API
     (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece)
 import           Waargonaut.Decode          (Decoder)
@@ -101,6 +102,16 @@ instance FromHttpApiData AccountId where
 newtype MaskedAccountNumber =
   MaskedAccountNumber { unMaskedAccountNumber :: Text }
   deriving (Eq, Show)
+
+-- TODO: This isn't quite good enough. The spec says that it is only numbers
+-- that get masked. RIP.
+-- e.g: 62 1234-5678 => XX XXXX-5678
+maskAccountId :: AccountId -> MaskedAccountNumber
+maskAccountId (AccountId (AsciiString t)) = MaskedAccountNumber $
+  (T.replicate masked "X") <> (T.takeEnd 4 t)
+  where
+    chars = T.length t
+    masked = max (chars - 4) 0
 
 maskedAccountNumberDecoder :: Monad f => Decoder f MaskedAccountNumber
 maskedAccountNumberDecoder = MaskedAccountNumber <$> D.text

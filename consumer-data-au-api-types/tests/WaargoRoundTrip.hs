@@ -1,23 +1,32 @@
 {-# LANGUAGE OverloadedStrings #-}
 module WaargoRoundTrip where
 
-import Control.Lens
-import Control.Monad ((>=>))
-import Control.Monad.Except (ExceptT(ExceptT), runExceptT, liftIO)
-import Data.Aeson (Value, eitherDecode)
-import Data.Aeson.Diff (diff)
-import Data.Bifunctor (first)
-import Data.Either (either)
-import Data.String (IsString)
-import Test.Tasty (TestTree, TestName)
-import Test.Tasty.HUnit ((@?=),testCase)
-import Waargonaut
-import Waargonaut.Decode (Decoder, CursorHistory, ppCursorHistory, simpleDecode)
-import Waargonaut.Decode.Error
-import Waargonaut.Encode (Encoder', simpleEncodeNoSpaces)
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BL
-import Data.Attoparsec.ByteString
+import           Control.Lens
+import           Control.Monad              ((>=>))
+import           Control.Monad.Except
+    (ExceptT (ExceptT), liftIO, runExceptT)
+import           Data.Aeson                 (Value, eitherDecode)
+import           Data.Aeson.Diff            (diff)
+import           Data.Attoparsec.ByteString
+import           Data.Bifunctor             (first)
+import qualified Data.ByteString            as BS
+import qualified Data.ByteString.Lazy       as BL
+import           Data.Either                (either)
+import           Data.String                (IsString)
+import           Hedgehog
+import           Test.Tasty                 (TestName, TestTree)
+import           Test.Tasty.Hedgehog        (testProperty)
+import           Test.Tasty.HUnit           (testCase, (@?=))
+import           Waargonaut
+import           Waargonaut.Decode
+    (CursorHistory, Decoder, ppCursorHistory, simpleDecode)
+import           Waargonaut.Decode.Error
+import           Waargonaut.Encode          (Encoder', simpleEncodeNoSpaces)
+
+roundTripProp :: (Show a, Eq a) => Gen a -> Decoder Identity a -> Encoder' a -> TestName -> TestTree
+roundTripProp gen d e tn = testProperty tn . property $ do
+  a <- forAll gen
+  (Right a) === decodeBs d (encodeBs e a)
 
 roundTripTest :: Decoder Identity a -> Encoder' a -> TestName -> FilePath -> TestTree
 roundTripTest d e tn gp = testCase tn . run $ do

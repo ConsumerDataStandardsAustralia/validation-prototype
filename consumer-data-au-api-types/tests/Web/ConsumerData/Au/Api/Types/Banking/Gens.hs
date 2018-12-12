@@ -9,7 +9,36 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 import Web.ConsumerData.Au.Api.Types
+import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypesGens (asciiStringGen, amountStringGen)
 import Data.Text.Gens
+
+accountsGen :: Gen Accounts
+accountsGen = Accounts <$> Gen.list (Range.linear 0 50) accountGen
+
+accountGen :: Gen Account
+accountGen = do
+  acctId <- accountIdGen
+  Account
+    <$> pure acctId
+    <*> textGen
+    <*> Gen.maybe textGen
+    <*> pure (maskAccountId acctId)
+    <*> Gen.maybe Gen.enumBounded
+    <*> textGen
+    <*> balanceGen
+
+accountIdGen :: Gen AccountId
+accountIdGen = AccountId <$> asciiStringGen
+
+balanceGen :: Gen Balance
+balanceGen = Gen.choice [depositsGen, lendingGen, pursesGen]
+  where
+    depositsGen = Deposits <$> currencyAmountGen <*> currencyAmountGen
+    lendingGen = Lending <$> currencyAmountGen <*> currencyAmountGen <*> currencyAmountGen <*> Gen.maybe currencyAmountGen
+    pursesGen  = Purses <$> Gen.list (Range.linear 1 20) currencyAmountGen
+
+currencyAmountGen :: Gen CurrencyAmount
+currencyAmountGen = CurrencyAmount <$> amountStringGen <*> Gen.maybe textGen
 
 payeeGen :: Gen Payee
 payeeGen = Payee <$> payeeIdGen <*> textGen <*> Gen.maybe textGen <*> payeeTypeGen
