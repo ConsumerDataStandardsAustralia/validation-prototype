@@ -6,14 +6,12 @@
 
 module Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts where
 
--- import           Control.Monad.Except       (throwError)
-import           Data.Functor.Contravariant ((>$<)) --contramap
+import           Data.Functor.Contravariant ((>$<))
 import           Data.Text                  (Text)
 import           Servant.API
     (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece)
 import           Waargonaut.Decode          (Decoder)
 import qualified Waargonaut.Decode          as D
--- import qualified Waargonaut.Decode.Error    as D
 import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
@@ -66,14 +64,6 @@ accountDecoder =
     <*> atKeyOptional' "productCategory" productCategoryDecoder
     <*> D.atKey "providerType" D.text
     <*> balanceTypeDecoder
-{-
-    where
-      balanceTypeDecoder = typeTaggedDecoder "balance$type" $ \case
-        "deposits" -> Just $ (TypedTagField BalanceDeposit depositBalanceTypeDecoder)
-        "lending"  -> Just $ (TypedTagField BalanceLending lendingBalanceTypeDecoder)
-        "purses"   -> Just $ (TypedTagField BalancePurses multiCurrencyPursesTypeDecoder)
-        _          -> Nothing
--}
 
 instance JsonDecode OB Account where
   mkDecoder = tagOb accountDecoder
@@ -92,14 +82,6 @@ accountFields a =
   E.atKey' "providerType" E.text (_accountProductType a) .
 -- WARNING -^ providerType (in swagger/online) vs productType (in pdf)
   balanceTypeFields (_accountBalance a)
-{-
-  where
-    balanceTypeFields = \case
-      BalanceDeposit b -> fields "deposits" depositBalanceTypeEncoder b
-      BalanceLending b -> fields "lending" lendingBalanceTypeEncoder b
-      BalancePurses b  -> fields "purses" multiCurrencyPursesTypeEncoder b
-    fields = typeTaggedField "balance$type"
--}
 
 instance JsonEncode OB Account where
   mkEncoder = tagOb accountEncoder
