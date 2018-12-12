@@ -21,8 +21,8 @@ import qualified Crypto.JOSE.Error      as JE
 import qualified Crypto.JOSE.JWK        as JWK
 import           Crypto.JWT             (Audience (Audience), uri)
 import           Crypto.JWT.Pretty
-    (AsPrettyJwtError (_PrettyJwtError), PrettyJwt, PrettyJwtError,
-    mkPrettyJwt)
+    (AsPrettyJwtError (_PrettyJwtError), JwtPart (Signature), PrettyJwt,
+    PrettyJwtError, mkPrettyJwt, removePart)
 import           Data.Aeson             (eitherDecode')
 import           Data.Bifunctor         (first)
 import           Data.ByteString.Lazy   (ByteString)
@@ -104,7 +104,7 @@ golden =
     mJwt = do
       jwk <- ExceptT . fmap (first (_ParseError #) . eitherDecode') . BS.readFile $ keyFile
       jwt <- authRequestToJwt jwk alg goldenAuthRequest
-      mkPrettyJwt jwt
+      removePart Signature <$> mkPrettyJwt jwt
     ioPrettyJwt :: IO PrettyJwt
     ioPrettyJwt =
       either (throw . JwtFailure . show) pure =<< runExceptT mJwt

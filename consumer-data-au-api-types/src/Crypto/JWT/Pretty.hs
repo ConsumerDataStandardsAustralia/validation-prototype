@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
@@ -7,6 +8,8 @@
 module Crypto.JWT.Pretty
   ( PrettyJwt
   , mkPrettyJwt
+  , removePart
+  , JwtPart (..)
   , PrettyJwtError
   , AsPrettyJwtError (..)
   ) where
@@ -18,9 +21,11 @@ import           Crypto.JOSE               (encodeCompact)
 import           Crypto.JOSE.Types         (base64url)
 import           Crypto.JWT                (SignedJWT)
 import           Data.Aeson
-    (FromJSON, ToJSON, Value (String), decodeStrict, object, (.=))
+    (FromJSON, Object, ToJSON, Value (String), decodeStrict, (.=))
 import qualified Data.ByteString.Lazy      as BS
 import           Data.Char                 (ord)
+import qualified Data.HashMap.Strict       as HM
+import           Data.Text                 (Text)
 import           Data.Text.Encoding        (decodeUtf8)
 
 data JwtPart =
@@ -38,7 +43,7 @@ data PrettyJwtError =
 makeClassyPrisms ''PrettyJwtError
 
 newtype PrettyJwt =
-  PrettyJwt Value
+  PrettyJwt Object
   deriving (Eq, Show, ToJSON, FromJSON)
 
 mkPrettyJwt ::
@@ -58,7 +63,23 @@ mkPrettyJwt jwt = do
   hpsBS <- decode _Base64DecodeError (preview base64url) parts hpsB64
   (hpJSON :: [Value]) <- decode _AesonDecodeError decodeStrict (take 2 parts) (take 2 hpsBS)
   sJSON <- decode _AesonDecodeError (pure . String . decodeUtf8 . BS.toStrict) [Signature] $ drop 2 hpsB64
-  case zipWith (.=) ["header", "payload", "signature"] (hpJSON <> sJSON) of
+  case zipWith (.=) (prettyPart <$> parts) (hpJSON <> sJSON) of
     kvs@[_,_,_] ->
-      pure . PrettyJwt . object $ kvs
+      pure . PrettyJwt . HM.fromList $ kvs
     _ -> throwError $ _NotExactlyThreeElements # ()
+
+removePart ::
+  JwtPart
+  -> PrettyJwt
+  -> PrettyJwt
+removePart p (PrettyJwt o) =
+  PrettyJwt $ HM.delete (prettyPart p) o
+
+prettyPart ::
+  JwtPart
+  -> Text
+prettyPart = \case
+  Header -> "header"
+  Payload -> "payload"
+  Signature -> "signature"
+
