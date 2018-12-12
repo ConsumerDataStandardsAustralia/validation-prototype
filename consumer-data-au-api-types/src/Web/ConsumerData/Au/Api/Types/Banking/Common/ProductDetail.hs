@@ -138,7 +138,7 @@ data ProductRepaymentType =
     PRepaymentTypeInterestOnly -- ^ "INTEREST_ONLY"
   | PRepaymentTypePrincipalAndInterest -- ^ "PRINCIPAL_AND_INTEREST"
   | PRepaymentTypeNegotiable -- ^ "NEGOTIABLE"
-  deriving (Eq, Show)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 productRepaymentTypeText ::
   Prism' Text ProductRepaymentType
