@@ -252,7 +252,7 @@ instance FromJSON HttpsUrl where
         either (fail . show) pure
 
 -- @subject_type@ requested for responses to the client; only @pairwise@ is supported in <https://consumerdatastandardsaustralia.github.io/infosec/#data-holder-metadata §CDR>
-data SubjectType = Pairwise -- | Public
+data SubjectType = Pairwise -- `Public` type not supported
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 newtype JwksUri = JwksUri URI
