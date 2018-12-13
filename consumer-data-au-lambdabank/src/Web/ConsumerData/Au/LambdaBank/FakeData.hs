@@ -34,8 +34,7 @@ testPerson = Person
   ["Leigh"]
   "Mr"
   Nothing
-  (Just $ OccupationCode "261313 Software Engineer")
-
+  (Just $ OccupationCode (V6 DecDigit2 DecDigit6 DecDigit1 DecDigit3 DecDigit1 DecDigit3))
 testPhoneNumber :: PhoneNumber
 testPhoneNumber = PhoneNumber True PhoneNumberPurposeMobile (Just "+61") (Just "04") "88145427" Nothing "+61488145427"
 

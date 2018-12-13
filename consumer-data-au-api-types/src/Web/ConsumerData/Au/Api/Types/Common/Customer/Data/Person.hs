@@ -8,10 +8,12 @@ module Web.ConsumerData.Au.Api.Types.Common.Customer.Data.Person
   ( module Web.ConsumerData.Au.Api.Types.Common.Customer.Data.Person
   ) where
 
+import           Data.Digit.Decimal
 import           Data.Functor.Contravariant ((>$<))
 import           Data.Text                  (Text)
 import           Data.Time                  (UTCTime)
 import           Data.Time.Waargonaut       (utcTimeDecoder, utcTimeEncoder)
+import           Data.Vector.V6
 import           GHC.Generics               (Generic)
 import           Waargonaut.Decode          (Decoder)
 import qualified Waargonaut.Decode          as D
@@ -35,18 +37,17 @@ data Person = Person
   }
   deriving (Generic, Eq, Show)
 
-
 -- | Value should be a valid ANZCO v1.2 Standard Occupation classification.
 -- http://www.abs.gov.au/ANZSCO
 data OccupationCode =
-  OccupationCode {getOccupationCode :: Text}
+  OccupationCode { getOccupationCode :: V6 DecDigit }
   deriving (Generic, Eq, Show)
 
 occupationCodeDecoder :: Monad m => Decoder m OccupationCode
-occupationCodeDecoder = OccupationCode <$> D.text
+occupationCodeDecoder = OccupationCode <$> v6DigitDecoder
 
 occupationCodeEncoder :: Monad m => Encoder m OccupationCode
-occupationCodeEncoder = getOccupationCode >$< E.text
+occupationCodeEncoder = getOccupationCode >$< v6DigitEncoder
 
 personEncoder :: Applicative f => Encoder f Person
 personEncoder = E.mapLikeObj $ personFields
