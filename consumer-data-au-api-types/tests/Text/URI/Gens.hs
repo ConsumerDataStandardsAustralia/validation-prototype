@@ -16,12 +16,12 @@ import qualified Hedgehog.Gen   as Gen
 import qualified Hedgehog.Range as Range
 
 -- | Unreserved chars taken from <https://www.ietf.org/rfc/rfc3986.txt §2.3 RFC3986>
-genURI ::
+genUri ::
   ( MonadGen n
   , MonadThrow n
   )
   => n URI
-genURI =
+genUri =
     URI
     <$> (Just <$> genScheme)
     <*> (Right <$> genAuthority)

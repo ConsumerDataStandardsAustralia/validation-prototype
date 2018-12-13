@@ -156,7 +156,7 @@ data ProductCategory =
   | PCForeignCurrLoan -- ^ "FOREIGN_CURR_LOAN"
   | PCForeignCurrrenctOverdraft -- ^ "FOREIGN_CURRRENCT_OVERDRAFT"
   | PCTravelCard -- ^ "TRAVEL_CARD"
-  deriving (Eq, Show)
+  deriving (Eq, Show, Enum, Bounded)
 
 productCategoryText :: Prism' Text ProductCategory
 productCategoryText =

@@ -20,9 +20,15 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , Acr (..)
   , AuthUri
   , Claim (..)
-  , FapiPermittedAlg(..)
+  , FapiPermittedAlg
+  , getFapiPermittedAlg
+  , _FapiPermittedAlg
+  , HttpsUrl
+  , mkHttpsUrlText
+  , mkHttpsUrl
   , Hash
   , Nonce (..)
+  , Prompt (..)
   , SHash
   , TokenAddressText
   , TokenAuthTime
@@ -36,19 +42,25 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , ClientId (..)
   , RedirectUri (..)
   , ResponseType (..)
+  , ClientIss (..)
   -- Not exporting constructor for Scopes --- use the smart constructor
   , Scopes
   , mkScopes
+  , scopeText
   , Scope (..)
-  , State
+  , State (..)
+  , SpaceSeperatedSet (..)
+  , parseSpaceSeperatedSet
   ) where
 
-import           Control.Lens
-    (Prism', prism, ( # ), (<&>), (^.), (^?))
+import           Aeson.Helpers              (parseJSONWithPrism, parseWithPrism)
+import           Control.Lens               (Prism', prism, ( # ), (<&>), (^.))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
 import           Crypto.Hash                (HashAlgorithm, hashWith)
+import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
+import           Crypto.JWT                 (StringOrURI)
 import           Data.Aeson.Types
     (FromJSON (..), FromJSON1 (..), Parser, ToJSON (..), ToJSON1 (..), Value,
     object, toJSON1, withObject, (.:), (.=))
@@ -60,20 +72,20 @@ import           Data.ByteString.Base64.URL (encode)
 import           Data.Char                  (isAscii)
 import           Data.Functor.Classes       (Eq1 (liftEq), Show1 (..))
 import           Data.Functor.Contravariant ((>$<))
-import           Data.Set           (Set)
-import qualified Data.Set           as Set
-import           Data.Text          (Text)
-import qualified Data.Text          as T
-import           Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import           GHC.Generics       (Generic, Generic1)
---import           Network.URI                (URI, parseURI, uriToString)
-import           Text.URI          (URI, mkURI)
-import qualified Text.URI          as URI
-import           Text.URI.Lens     (unRText, uriScheme)
-import           Waargonaut.Encode (Encoder')
-import qualified Waargonaut.Encode as E
+import           Data.Set                   (Set)
+import qualified Data.Set                   as Set
+import           Data.Text                  (Text)
+import qualified Data.Text                  as T
+import           Data.Text.Encoding         (decodeUtf8, encodeUtf8)
+import           GHC.Generics               (Generic, Generic1)
+import           Text.URI                   (URI, mkURI)
+import qualified Text.URI                   as URI
+import           Text.URI.Lens              (unRText, uriScheme)
+import           Waargonaut.Encode          (Encoder')
+import qualified Waargonaut.Encode          as E
 
-import Web.ConsumerData.Au.Api.Types.Auth.Error (AsHttpsUriError (..))
+import Web.ConsumerData.Au.Api.Types.Auth.Error
+    (AsHttpsUrlError (..), HttpsUrlError)
 
 {-|
 
@@ -102,12 +114,20 @@ newtype Nonce =
 newtype ErrorCode = ErrorCode Text
 
 
--- | The @error_description@ returned as parameter of the query component of the part of the redirection URI using the "application/x-www-form-urlencoded" format. Human-readable ASCII [USASCII] text providing additional information, used to assist the client developer in understanding the error that occurred. Values for the @error_description@ parameter MUST NOT include characters outside the set %x20-21 / %x23-5B / %x5D-7E.
+-- | The @error_description@ returned as parameter of the query component of the part of the
+-- redirection URI using the @application/x-www-form-urlencoded@ format. Human-readable ASCII [USASCII]
+-- text providing additional information, used to assist the client developer in understanding the
+-- error that occurred. Values for the @error_description@ parameter MUST NOT include characters
+-- outside the set %x20-21 / %x23-5B / %x5D-7E.
 newtype ErrorDescription =
   ErrorDescription {getErrorDescription :: Text}
   deriving (Generic, ToJSON)
 
--- | The @error_uri@ returned as parameter of the query component of the part of the redirection URI using the "application/x-www-form-urlencoded" format. A URI identifying a human-readable web page with information about the error, used to provide the client developer with additional information about the error. Values for the @error_uri@ parameter MUST conform to the URI-reference syntax and thus MUST NOT include characters outside the set %x21 / %x23-5B / %x5D-7E.
+-- | The @error_uri@ returned as parameter of the query component of the part of the redirection URI
+-- using the "application/x-www-form-urlencoded" format. A URI identifying a human-readable web page
+-- with information about the error, used to provide the client developer with additional information
+-- about the error. Values for the @error_uri@ parameter MUST conform to the URI-reference syntax and
+-- thus MUST NOT include characters outside the set %x21 / %x23-5B / %x5D-7E.
 newtype AuthUri =
   AuthUri {getAuthUri :: URI}
   deriving (Eq, Show)
@@ -128,19 +148,27 @@ instance FromJSON AuthUri where
 -- <https://tools.ietf.org/html/rfc6749#section-4.2.2.1 OAuth 2.0 §4.2.2.1> for implicit grant
 data GrantErrorResponseType =
   InvalidRequest
-  -- ^ @invalid_request@: The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed.
+  -- ^ @invalid_request@: The request is missing a required parameter, includes an invalid parameter
+  -- value, includes a parameter more than once, or is otherwise malformed.
   | UnauthorizedClient
-  -- ^ @unauthorized_client@: The client is not authorized to request an authorization code (or access token) using this method.
+  -- ^ @unauthorized_client@: The client is not authorized to request an authorization code (or
+  -- access token) using this method.
   | AccessDenied
   -- ^ @access_denied@: The resource owner or authorization server denied the request.
   | UnsupportedResponseType
-  -- ^ @unsupported_response_type@: The authorization server does not support obtaining an authorization code (or access code) using this method.
+  -- ^ @unsupported_response_type@: The authorization server does not support obtaining an
+  -- authorization code (or access code) using this method.
   | InvalidScope
   -- ^ @invalid_scope@: The requested scope is invalid, unknown, or malformed.
   | ServerError
-  -- ^ @server_error@: The authorization server encountered an unexpected condition that prevented it from fulfilling the request. (This error code is needed because a 500 Internal Server Error HTTP status code cannot be returned to the client via an HTTP redirect.)
+  -- ^ @server_error@: The authorization server encountered an unexpected condition that prevented
+  -- it from fulfilling the request. (This error code is needed because a 500 Internal Server Error
+  -- HTTP status code cannot be returned to the client via an HTTP redirect.)
   | TemporarilyUnavailable
-  -- ^ @temporarily_unavailable@: The authorization server is currently unable to handle the request due to a temporary overloading or maintenance of the server. (This error code is needed because a 503 Service Unavailable HTTP status code cannot be returned to the client via an HTTP redirect.)
+  -- ^ @temporarily_unavailable@: The authorization server is currently unable to handle the request
+  -- due to a temporary overloading or maintenance of the server. (This error code is needed because
+  -- a 503 Service Unavailable HTTP status code cannot be returned to the client via an HTTP
+  -- redirect.)
 
 grantErrorResponseTypeText ::
   Prism' Text GrantErrorResponseType
@@ -174,17 +202,29 @@ grantErrorResponseTypeEncoder =
 -- <https://tools.ietf.org/html/rfc6749#section-5.2 OAuth 2.0 §5.2>
 data TokenErrorResponseType =
   TokenInvalidRequest
-  -- ^ @invalid_request@: The request is missing a required parameter, includes an unsupported parameter value (other than grant type), repeats a parameter, includes multiple credentials, utilizes more than one mechanism for authenticating the client, or is otherwise malformed.
+  -- ^ @invalid_request@: The request is missing a required parameter, includes an unsupported
+  -- parameter value (other than grant type), repeats a parameter, includes multiple credentials,
+  -- utilizes more than one mechanism for authenticating the client, or is otherwise malformed.
   | TokenInvalidClient
-  -- ^ @invalid_client@: Client authentication failed (e.g., unknown client, no client authentication included, or unsupported authentication method).  The authorization server MAY return an HTTP 401 (Unauthorized) status code to indicate which HTTP authentication schemes are supported.  If the  client attempted to authenticate via the "Authorization" request header field, the authorization server MUST respond with an HTTP 401 (Unauthorized) status code and include the "WWW-Authenticate" response header field matching the authentication scheme used by the client.
+  -- ^ @invalid_client@: Client authentication failed (e.g., unknown client, no client
+  -- authentication included, or unsupported authentication method). The authorization server MAY
+  -- return an HTTP 401 (Unauthorized) status code to indicate which HTTP authentication schemes are
+  -- supported. If the client attempted to authenticate via the "Authorization" request header
+  -- field, the authorization server MUST respond with an HTTP 401 (Unauthorized) status code and
+  -- include the "WWW-Authenticate" response header field matching the authentication scheme used by
+  -- the client.
   | TokenInvalidGrant
-  -- ^ @invalid_grant@: The provided authorization grant (e.g., authorization code, resource owner credentials) or refresh token is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.
+  -- ^ @invalid_grant@: The provided authorization grant (e.g., authorization code, resource owner
+  -- credentials) or refresh token is invalid, expired, revoked, does not match the redirection URI
+  -- used in the authorization request, or was issued to another client.
   | TokenUnauthorizedClient
-  -- ^ @unauthorized_client@: The authenticated client is not authorized to use this authorization grant type.
+  -- ^ @unauthorized_client@: The authenticated client is not authorized to use this authorization
+  -- grant type.
   | TokenUnsupportedGrantType
   -- ^ @unsupported_grant_type@: The authorization grant type is not supported by the authorization server.
   | TokenInvalidScope
-  -- ^ @invalid_scope@: The requested scope is invalid, unknown, malformed, or exceeds the scope granted by the resource owner.
+  -- ^ @invalid_scope@: The requested scope is invalid, unknown, malformed, or exceeds the scope
+  -- granted by the resource owner.
 
 tokenErrorResponseTypeText ::
   Prism' Text TokenErrorResponseType
@@ -216,12 +256,11 @@ tokenErrorResponseTypeEncoder =
 -- <https://openid.net/specs/openid-financial-api-part-2.html#authorization-server FAPI R+W §5.2.2.2>
 -- mandates the use of @code id_token@ or @code id_token token@ to be supplied in @response_type@.
 -- Furthermore, <https://consumerdatastandardsaustralia.github.io/standards/#additional-constraints the standards>
--- mandate that only the hybrid flow is supported.
+-- mandate that only the hybrid flow is supported, and only @code id_token@ as per the
+-- <https://consumerdatastandardsaustralia.github.io/infosec/#oidc-hybrid-flow §infosec> spec.
 data ResponseType =
+  -- | @code id_token@ response type, implying a Hybrid flow
   CodeIdToken
-  -- ^ @code id_token@ response type, implying a Hybrid flow
-  | CodeIdTokenToken
-  -- ^ @code id_token token@ response type, implying a Hybrid flow
   deriving (Show, Eq)
 
 responseTypeText ::
@@ -229,11 +268,9 @@ responseTypeText ::
 responseTypeText =
   prism (\case
             CodeIdToken -> "code id_token"
-            CodeIdTokenToken -> "code id_token token"
         )
         (\case
             "code id_token" -> Right CodeIdToken
-            "code id_token token" -> Right CodeIdTokenToken
             t -> Left t
         )
 
@@ -258,7 +295,21 @@ instance FromJSON ResponseType where
 -- suggests that FAPI R+W should only be the hybrid flow, which would mandate @openid@ as a scope.
 newtype Scopes =
   Scopes (Set Scope)
-  deriving (Eq, Show, FromJSON, ToJSON)
+  deriving (Eq, Show)
+
+instance ToJSON Scopes where
+  toJSON (Scopes s) =
+    toJSON . SpaceSeperatedSet . Set.map (scopeText #) $ s
+
+instance FromJSON Scopes where
+  parseJSON =
+    let
+      missingOpenId =
+        fail "'scope' claim does not include 'openid'"
+      validate s =
+         bool missingOpenId (pure (Scopes s)) $ Set.member OpenIdScope s
+    in
+      (>>= validate) . parseSpaceSeperatedSet scopeText "Scope"
 
 mkScopes ::
   Set Scope
@@ -266,10 +317,18 @@ mkScopes ::
 mkScopes =
   Scopes . Set.insert OpenIdScope
 
+-- | Authorisation scopes, as defined in
+-- <https://consumerdatastandardsaustralia.github.io/standards/?swagger#authorisation-scopes §AU OB Security>
 data Scope =
   OpenIdScope -- ^ Include @openid@ in @scope@ JSON value
-  | ProfileScope -- ^ Include @profile@ in @scope@ JSON value
-  | EmailScope -- ^ Include @email@ in @scope@ JSON value
+  | ProfileScope -- ^ Include @profile@ in @scope@ JSON value, for the following claims: name,
+                 --   family_name, given_name
+  | BasicBankAccount -- ^ Include @bank_basic_accounts@ in @scope@ JSON value
+  | BankDetailedAccounts -- ^ Include @bank_detailed_accounts@ in @scope@ JSON value
+  | BankTransactions -- ^ Include @bank_transactions@ in @scope@ JSON value
+  | CommonBasicCustomer -- ^ Include @common_basic_customer@ in @scope@ JSON value
+  | CommonDetailedCustomer -- ^ Include @common_detailed_customer@ in @scope@ JSON value
+
   deriving (Eq, Ord, Show)
 
 scopeText ::
@@ -278,12 +337,20 @@ scopeText =
   prism (\case
             OpenIdScope -> "openid"
             ProfileScope -> "profile"
-            EmailScope -> "email"
+            BasicBankAccount -> "bank_basic_accounts"
+            BankDetailedAccounts  -> "bank_detailed_accounts"
+            BankTransactions -> "bank_transactions"
+            CommonBasicCustomer -> "common_basic_customer"
+            CommonDetailedCustomer -> "common_detailed_customer"
         )
         (\case
             "openid" -> Right OpenIdScope
             "profile" -> Right ProfileScope
-            "email" -> Right EmailScope
+            "bank_basic_accounts" -> Right BasicBankAccount
+            "bank_detailed_accounts" -> Right BankDetailedAccounts
+            "bank_transactions" -> Right BankTransactions
+            "common_basic_customer" -> Right CommonBasicCustomer
+            "common_detailed_customer" -> Right CommonDetailedCustomer
             t -> Left t
         )
 
@@ -293,35 +360,64 @@ instance ToJSON Scope where
 instance FromJSON Scope where
   parseJSON = parseJSONWithPrism scopeText "Scope"
 
+data Prompt =
+  SelectAccount
+  deriving (Eq, Show)
+
+prompt ::
+  Prism' Text Prompt
+prompt = prism
+  (\SelectAccount -> "select_account")
+  (\case
+      "select_account" -> Right SelectAccount
+      t -> Left t
+  )
+
+instance ToJSON Prompt where
+  toJSON = toJSON . (prompt #)
+
+instance FromJSON Prompt where
+  parseJSON = parseJSONWithPrism prompt "Prompt"
+
 newtype TokenHeaders = TokenHeaders [Header]
 data Header = Header {key::Text, value::Text}
 
 -- | Use @PS256@ or @ES256@ in @alg@ for a JWT
-data FapiPermittedAlg = PS256 | ES256 deriving (Eq, Ord, Show)
+newtype FapiPermittedAlg = FapiPermittedAlg {
+  getFapiPermittedAlg :: Alg }
+  deriving (Eq, Ord, Show)
 
-fapiPermittedAlgText ::
-  Prism' Text FapiPermittedAlg
-fapiPermittedAlgText =
+_FapiPermittedAlg ::
+  Prism' Alg FapiPermittedAlg
+_FapiPermittedAlg =
   prism (\case
-            PS256 -> "PS256"
-            ES256 -> "ES256"
+            FapiPermittedAlg a -> a
         )
         (\case
-            "PS256" -> Right PS256
-            "ES256" -> Right ES256
+            PS256 -> Right $ FapiPermittedAlg PS256
+            ES256 -> Right $ FapiPermittedAlg ES256
             t -> Left t
         )
 
 instance ToJSON FapiPermittedAlg where
-  toJSON = toJSON . (fapiPermittedAlgText #)
+  toJSON = toJSON . (_FapiPermittedAlg #)
 
 instance FromJSON FapiPermittedAlg where
-  parseJSON = parseJSONWithPrism fapiPermittedAlgText "FapiPermittedAlg"
+  parseJSON = parseJSONWithPrism _FapiPermittedAlg "FapiPermittedAlg"
 
--- | The @aud@ for the auth request. It must include (but is not limited to) the OP's Issuer Identifier URL. See < https://openid.net/specs/openid-connect-core-1_0.html#RequestObject §6.1. Passing a Request Object by Value>
+-- | The @aud@ for the auth request. It must include (but is not limited to) the OP's Issuer Identifier URL.
+-- See < https://openid.net/specs/openid-connect-core-1_0.html#RequestObject §6.1. Passing a Request Object by Value>
 newtype AuthRequestAudience = AuthRequestAudience Text --TODO is really text?
--- | The @iss@ value for the auth request, which must be the @client_id@, unless it was signed by a different party than the RP. See <https://openid.net/specs/openid-connect-core-1_0.html#RequestObject §6.1. Passing a Request Object by Value>
+
+-- | The @iss@ value for the auth request, which must be the @client_id@, unless it was signed by a
+-- different party than the RP.
+-- See <https://openid.net/specs/openid-connect-core-1_0.html#RequestObject §6.1. Passing a Request Object by Value>
+
+-- TODO: need to clarify these types, whether we need a
 newtype AuthIss = AuthIss Text
+newtype ClientIss = ClientIss
+  { getClientIss :: StringOrURI}
+  deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 -- TODO: these are not really URIs ... URNs?
 newtype RedirectUri =
@@ -339,34 +435,46 @@ instance FromJSON RedirectUri where
       toParser =
         either (fail . show) pure
 
--- | A @kid@ to be returned in the token. A @kid@ is the certificate Key ID, and it must be checked to match signing cert
+-- | A @kid@ to be returned in the token. A @kid@ is the certificate Key ID, and it must be checked
+-- to match signing cert
 newtype TokenKeyId = TokenKeyId Text --TODO is really text?
 
--- | For URIs in open banking that must be URLs using the HTTPS scheme. Use @mkHttpsUri@ to get one.
-newtype HttpsUri =
-  HttpsUri URI
+-- | For URIs in open banking that must be URLs using the HTTPS scheme. Use @mkHttpsUrl@ to get one.
+newtype HttpsUrl =
+  HttpsUrl URI
   deriving (Eq, Show)
 
-mkHttpsUriText ::
-  ( AsHttpsUriError e
+mkHttpsUrlText ::
+  ( AsHttpsUrlError e
   , MonadError e m
   )
   => Text
-  -> m HttpsUri
-mkHttpsUriText =
-  mkHttpsUri <=< maybe (throwing_ _UriParseError) pure . mkURI
+  -> m HttpsUrl
+mkHttpsUrlText =
+  mkHttpsUrl <=< maybe (throwing_ _UriParseError) pure . mkURI
 
-mkHttpsUri ::
-  ( AsHttpsUriError e
+mkHttpsUrl ::
+  ( AsHttpsUrlError e
   , MonadError e m
   )
   => URI
-  -> m HttpsUri
-mkHttpsUri uri =
+  -> m HttpsUrl
+mkHttpsUrl uri =
   case uri ^. uriScheme <&> (^. unRText) of
-    Just "https" -> pure $ HttpsUri uri
+    Just "https" -> pure $ HttpsUrl uri
     Just _       -> throwing_ _NotHttps
     Nothing      -> throwing_ _MissingScheme
+
+instance ToJSON HttpsUrl where
+  toJSON (HttpsUrl uri) =
+    toJSON $ URI.render uri
+
+instance FromJSON HttpsUrl where
+  parseJSON v =  toParser =<< mkHttpsUrlText <$> parseJSON v
+    where
+      toParser :: Either HttpsUrlError HttpsUrl -> Parser HttpsUrl
+      toParser =
+        either (fail . show) pure
 
 -- | The @iat@ value returned in a token, in seconds since epoch. @iat@ (Issued At) is used to limit the amount of time that nonces need to be stored for.
 newtype TokenIssuedAt = TokenIat Int --TODO is really text?
@@ -375,18 +483,29 @@ newtype TokenIntentId = TokenIntentId Text
 newtype TokenSubject =
   TokenSubject Text
   deriving (Eq, Show, ToJSON, FromJSON)
--- | The @jti@, a unique indentifier for the token (for debugging/revocation), required for @client_secret_jwt@ and @private_key_jwt@ client authentication types. Note that FAPI mandates the use of either MTLS or JWTs to authenticate against the token endpoint. See <https://openid.net/specs/openid-financial-api-part-1.html#authorization-server §5.2.2. Authorization server> and <https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication §9. Client Authentication>.
+-- | The @jti@, a unique indentifier for the token (for debugging/revocation), required for
+-- @client_secret_jwt@ and @private_key_jwt@ client authentication types. Note that FAPI mandates the
+-- use of either MTLS or JWTs to authenticate against the token endpoint.
+-- See <https://openid.net/specs/openid-financial-api-part-1.html#authorization-server §5.2.2. Authorization server>
+-- and <https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication §9. Client Authentication>.
 newtype TokenIdentifier = TokenIdentifier Text
--- | The @aud@ for the ID Token. It must contain (but is not limited to) the client_id <https://openid.net/specs/openid-connect-core-1_0.html#HybridIDTValidation §2. ID Token>
+
+-- | The @aud@ for the ID Token. It must contain (but is not limited to) the client_id
+-- <https://openid.net/specs/openid-connect-core-1_0.html#HybridIDTValidation §2. ID Token>
+
 -- TODO: confirm if support needed for other audiences
 newtype TokenAudience = TokenAudience Text
+
  -- when the token was created (seconds since epoch)
 newtype TokenAccessTime = TokenAccessTime Int
+
 -- how many seconds before the token expires
 newtype TokenMaxAgeSeconds = TokenMaxAgeSeconds Int
+
 newtype TokenAuthTime =
   TokenAuthTime Int
   deriving (Eq, Show, FromJSON, ToJSON)
+
 -- when the token expires (epoch)
 newtype TokenExpiry = TokenExpiry Int
 
@@ -394,16 +513,6 @@ newtype TokenExpiry = TokenExpiry Int
 newtype SHash =
   SHash Text
   deriving (Eq, Show, FromJSON, ToJSON)
--- Access Token's hash
--- data AtHash where
---   AtHash :: Hash a -> AtHash
-
--- instance Eq AtHash where
---   AtHash h1 == AtHash h2 = h1 == h2
-    -- case (h1, h2) of
-    --   (Hash a bs :: Hash a, )
-
--- deriving instance Show AtHash
 
 newtype TokenCHash =
   TokenCHash Text
@@ -417,6 +526,8 @@ newtype TokenPhoneText =
   TokenPhoneText Text
   deriving (Eq, Show, FromJSON, ToJSON)
 
+-- TODO: confirm what LoA we'll be using, and how it is represented.
+-- | The minimum ACR for AU OB is LoA3, represented by URI @urn:cds.au:cdr:3@.
 newtype Acr =
   Acr Text
   deriving (Eq, Show, FromJSON, ToJSON)
@@ -458,24 +569,7 @@ mkHash a (Ascii t) =
   in
     Hash . encode $ h
 
--- Possible ACR claim values
--- acrPSD2_RTS = [AcrPSD2_RTS]
--- noSCA = [NoSCA]
--- acrPSD2_RTS_Then_NoSCA = [AcrPSD2_RTS,NoSCA]
--- noSCA_Then_AcrPSD2_RTS = [NoSCA,AcrPSD2_RTS]
-
-parseJSONWithPrism ::
-  ( FromJSON s
-  , Show s
-  )
-  => Prism' s a
-  -> String
-  -> Value
-  -> Parser a
-parseJSONWithPrism p name v = do
-    t <- parseJSON v
-    maybe (fail $ show t <> " is not a " <> name) pure (t ^? p)
-
+-- TODO: handle `value` key and optionality of keys
 data Claim a =
   Claim
   { claimValues    :: [a]
@@ -488,7 +582,6 @@ instance Applicative Claim where
   (Claim fs e1) <*> (Claim as e2) = Claim (fs <*> as) (e1 || e2)
 
 instance ToJSON1 Claim where
-  --liftToJSON = genericLiftToJSON aesonOpts
   liftToJSON _ f Claim{..} =
     object
     [ "values" .= f claimValues
@@ -513,9 +606,20 @@ instance FromJSON1 Claim where
 instance ToJSON a => ToJSON (Claim a) where
   toJSON = toJSON1
 
--- aesonOpts ::
---   Options
--- aesonOpts =
---   defaultOptions {fieldLabelModifier = fmap toLower . dropWhile isLower}
+newtype SpaceSeperatedSet = SpaceSeperatedSet
+  {
+    fromSpaceSeperatedSet :: Set T.Text
+  } deriving (Show)
 
--- makeWrapped ''Hash
+instance ToJSON SpaceSeperatedSet where
+  toJSON (SpaceSeperatedSet s) = toJSON . T.intercalate " " . Set.toList $ s
+
+instance FromJSON SpaceSeperatedSet where
+  parseJSON v = SpaceSeperatedSet . Set.fromList .  T.split (== ' ') <$> parseJSON v
+
+parseSpaceSeperatedSet :: Ord a => Prism' Text a -> String -> Value -> Parser (Set a)
+parseSpaceSeperatedSet p n =
+  fmap Set.fromList
+  . (>>= traverse (parseWithPrism p n))
+  . fmap (Set.toList . fromSpaceSeperatedSet)
+  .  parseJSON
