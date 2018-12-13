@@ -49,6 +49,8 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , scopeText
   , Scope (..)
   , State (..)
+  , SpaceSeperatedSet (..)
+  , parseSpaceSeperatedSet
   ) where
 
 import           Aeson.Helpers              (parseJSONWithPrism, parseWithPrism)
@@ -272,7 +274,7 @@ newtype Scopes =
 
 instance ToJSON Scopes where
   toJSON (Scopes s) =
-    toJSON . AesonSet . Set.map (scopeText #) $ s
+    toJSON . SpaceSeperatedSet . Set.map (scopeText #) $ s
 
 instance FromJSON Scopes where
   parseJSON =
@@ -282,7 +284,7 @@ instance FromJSON Scopes where
       validate s =
          bool missingOpenId (pure (Scopes s)) $ Set.member OpenIdScope s
     in
-      (>>= validate) . parseAesonSet scopeText "Scope"
+      (>>= validate) . parseSpaceSeperatedSet scopeText "Scope"
 
 mkScopes ::
   Set Scope
@@ -570,19 +572,19 @@ instance FromJSON1 Claim where
 instance ToJSON a => ToJSON (Claim a) where
   toJSON = toJSON1
 
-newtype AesonSet = AesonSet
+newtype SpaceSeperatedSet = SpaceSeperatedSet
   {
-    fromAesonSet :: Set T.Text
+    fromSpaceSeperatedSet :: Set T.Text
   } deriving (Show)
 
-instance ToJSON AesonSet where
-  toJSON (AesonSet s) = toJSON . T.intercalate " " . Set.toList $ s
+instance ToJSON SpaceSeperatedSet where
+  toJSON (SpaceSeperatedSet s) = toJSON . T.intercalate " " . Set.toList $ s
 
-instance FromJSON AesonSet where
-  parseJSON v = AesonSet . Set.fromList .  T.split (== ' ') <$> parseJSON v
+instance FromJSON SpaceSeperatedSet where
+  parseJSON v = SpaceSeperatedSet . Set.fromList .  T.split (== ' ') <$> parseJSON v
 
-parseAesonSet :: Ord a => Prism' Text a -> String -> Value -> Parser (Set a)
-parseAesonSet p n = fmap Set.fromList . (>>= traverse (parseWithPrism p n)) . fmap (Set.toList . fromAesonSet) .  parseJSON
+parseSpaceSeperatedSet :: Ord a => Prism' Text a -> String -> Value -> Parser (Set a)
+parseSpaceSeperatedSet p n = fmap Set.fromList . (>>= traverse (parseWithPrism p n)) . fmap (Set.toList . fromSpaceSeperatedSet) .  parseJSON
 
 -- aesonOpts ::
 --   Options
