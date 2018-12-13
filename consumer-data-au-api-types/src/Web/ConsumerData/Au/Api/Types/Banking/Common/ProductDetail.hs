@@ -43,8 +43,7 @@ import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Le
 
 -- | ProductDetail <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocBankingCommonSchemas CDR AU v0.1.0 ProductDetail>
 data ProductDetail = ProductDetail
-  { _productDetailProduct       :: Product
--- WARNING in 0.1.0 it is Maybe Product in the swagger
+  { _productDetailProduct       :: Maybe Product
   , _productDetailBundles       :: Maybe ProductBundles -- ^ An array of bundles that this product participates in. Each bundle is described by free form information but also by a list of product IDs of the other products that are included in the bundle. It is assumed that the current product is included in the bundle also
   , _productDetailFeatures      :: Maybe ProductFeatures -- ^ Array of features available for the product
   , _productDetailConstraints   :: Maybe ProductConstraints -- ^ Constraints on the application for or operation of the product such as minimum balances or limit thresholds
@@ -58,7 +57,7 @@ data ProductDetail = ProductDetail
 productDetailDecoder :: Monad f => Decoder f ProductDetail
 productDetailDecoder =
   ProductDetail
-    <$> productDecoder
+    <$> (D.maybeOrNull productDecoder)
     <*> atKeyOptional' "bundles" productBundlesDecoder
     <*> atKeyOptional' "features" productFeaturesDecoder
     <*> atKeyOptional' "constraints" productConstraintsDecoder
@@ -76,7 +75,7 @@ instance JsonEncode OB ProductDetail where
 
 productDetailEncoder :: Applicative f => Encoder f ProductDetail
 productDetailEncoder = E.mapLikeObj $ \pd ->
-  productFields (_productDetailProduct pd) .
+  maybe id productFields (_productDetailProduct pd) .
   maybeOrAbsentE "bundles" productBundlesEncoder (_productDetailBundles pd) .
   maybeOrAbsentE "features" productFeaturesEncoder (_productDetailFeatures pd) .
   maybeOrAbsentE "constraints" productConstraintsEncoder (_productDetailConstraints pd) .

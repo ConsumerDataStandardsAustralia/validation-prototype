@@ -48,7 +48,7 @@ productCategoryGen = Gen.enumBounded
 
 productDetailGen :: (MonadGen m, MonadThrow m) => m ProductDetail
 productDetailGen = ProductDetail
-  <$> productGen
+  <$> Gen.maybe productGen
   <*> Gen.maybe productBundlesGen
   <*> Gen.maybe productFeaturesGen
   <*> Gen.maybe productConstraintsGen
