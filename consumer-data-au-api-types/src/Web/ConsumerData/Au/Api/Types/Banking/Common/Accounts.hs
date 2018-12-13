@@ -158,7 +158,7 @@ depositBalanceTypeEncoder = E.mapLikeObj $ \b ->
 
 
 data LendingBalanceType = LendingBalanceType
-  { _lbtCurrentBalance   :: CurrencyAmount
+  { _lbtAccountBalance   :: CurrencyAmount
   , _lbtAvailableBalance :: CurrencyAmount
   , _lbtCreditLimit      :: CurrencyAmount
   , _lbtAmortisedLimit   :: Maybe CurrencyAmount
@@ -167,14 +167,14 @@ data LendingBalanceType = LendingBalanceType
 lendingBalanceTypeDecoder :: Monad f => Decoder f LendingBalanceType
 lendingBalanceTypeDecoder =
   LendingBalanceType
-    <$> D.atKey "currentBalance" currencyAmountDecoder
+    <$> D.atKey "accountBalance" currencyAmountDecoder
     <*> D.atKey "availableBalance" currencyAmountDecoder
     <*> D.atKey "creditLimit" currencyAmountDecoder
     <*> atKeyOptional' "amortisedLimit" currencyAmountDecoder
 
 lendingBalanceTypeEncoder :: Applicative f => Encoder f LendingBalanceType
 lendingBalanceTypeEncoder = E.mapLikeObj $ \b ->
-  E.atKey' "currentBalance" currencyAmountEncoder (_lbtCurrentBalance b) .
+  E.atKey' "accountBalance" currencyAmountEncoder (_lbtAccountBalance b) .
   E.atKey' "availableBalance" currencyAmountEncoder (_lbtAvailableBalance b) .
   E.atKey' "creditLimit" currencyAmountEncoder (_lbtCreditLimit b) .
   maybeOrAbsentE "amortisedLimit" currencyAmountEncoder (_lbtAmortisedLimit b)
