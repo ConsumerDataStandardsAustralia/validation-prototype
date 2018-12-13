@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TupleSections              #-}
 
 module Crypto.JWT.Pretty
   ( PrettyJwt
@@ -14,8 +15,8 @@ module Crypto.JWT.Pretty
   , AsPrettyJwtError (..)
   ) where
 
-import           Control.Lens              (makeClassyPrisms, preview, ( # ))
-import           Control.Monad             (zipWithM)
+import           Control.Lens
+    (makeClassyPrisms, preview, ( # ))
 import           Control.Monad.Error.Class (MonadError, throwError)
 import           Crypto.JOSE               (encodeCompact)
 import           Crypto.JOSE.Types         (base64url)
@@ -56,14 +57,18 @@ mkPrettyJwt jwt = do
   let
     dot = fromIntegral . ord $ '.'
     hpsB64 = BS.split dot . encodeCompact $ jwt
-    parts = [Header, Payload, Signature]
+    lHpsB64 = zip [Header, Payload, Signature] hpsB64
     decode e f =
-      zipWithM (\part -> maybe (throwError $ e # part) pure . f)
+      traverse (\(part, a) -> maybe (throwError $ e # part) (pure . (part,)) $ f a)
 
-  hpsBS <- decode _Base64DecodeError (preview base64url) parts hpsB64
-  (hpJSON :: [Value]) <- decode _AesonDecodeError decodeStrict (take 2 parts) (take 2 hpsBS)
-  sJSON <- decode _AesonDecodeError (pure . String . decodeUtf8 . BS.toStrict) [Signature] $ drop 2 hpsB64
-  case zipWith (.=) (prettyPart <$> parts) (hpJSON <> sJSON) of
+  -- Transform the header and payload to aeson @Object@s
+  hpsBS <- decode _Base64DecodeError (preview base64url) (take 2 lHpsB64)
+  (hpJSON :: [(JwtPart, Value)]) <- decode _AesonDecodeError decodeStrict hpsBS
+
+  -- Transform the base64 signature to an aeson @String@
+  sJSON <- decode _AesonDecodeError (pure . String . decodeUtf8 . BS.toStrict) $ drop 2 lHpsB64
+
+  case fmap (\(p,json) -> prettyPart p .= json) (hpJSON <> sJSON) of
     kvs@[_,_,_] ->
       pure . PrettyJwt . HM.fromList $ kvs
     _ -> throwError $ _NotExactlyThreeElements # ()
