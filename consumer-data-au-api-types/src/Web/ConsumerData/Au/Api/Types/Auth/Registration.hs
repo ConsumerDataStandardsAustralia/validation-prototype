@@ -2,12 +2,14 @@
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.Registration
   (
@@ -80,10 +82,13 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
     , ClientDescription (..)
   ) where
 
+import           Aeson.Helpers                             (parseJSONWithPrism)
 import           Control.Applicative                       (liftA2)
 import           Control.Lens
-    (Lens', Prism', at, makePrisms, prism, prism', to, ( # ), (&), (.~), (?~),
-    (^.), (^?), _Right)
+    (Lens', Prism', at, iso, makePrisms, makeWrapped, prism, prism', to, ( # ),
+    (&), (.~), (?~), (^.), (^?), _Right)
+import           Control.Lens.Wrapped
+    (_Unwrapped, _Wrapped)
 import           Control.Monad.Error.Class
     (MonadError, throwError)
 import           Control.Monad.Time                        (MonadTime)
@@ -116,13 +121,14 @@ import           Data.Text.Encoding                        as TE
     (decodeUtf8, encodeUtf8)
 import           GHC.Generics                              (Generic)
 import           Prelude                                   hiding (exp)
-import           Text.URI                                  (URI, mkURI)
+import           Text.URI                                  (URI, mkURI, render)
 import qualified Text.URI                                  as URI
 import           Text.URI.Lens
     (authHost, uriAuthority, uriScheme)
 import           Web.ConsumerData.Au.Api.Types.Auth.Common
     (ClientId, ClientIss (..), FapiPermittedAlg, HttpsUrl, RedirectUri,
-    ResponseType, Scopes, getRedirectUri, _FapiPermittedAlg)
+    ResponseType, Scopes, SpaceSeperatedSet (..), getRedirectUri,
+    parseSpaceSeperatedSet, _FapiPermittedAlg, _URI)
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, _MissingClaim, _ParseError)
 
@@ -132,22 +138,33 @@ import           Web.ConsumerData.Au.Api.Types.Auth.Error
 --
 -- Full details of CDR dynamic client registration can be found in the <https://consumerdatastandardsaustralia.github.io/infosec/#discovery-and-registration §CDR infosec standards>.
 
---   * TODO: exclude exports of data constructors for those that have SC's
---   * TODO: move common data types into Common: FapiJwtHeaders etc
---   * TODO: implement predicate checking (aud/iss) for the registration request and the software statement.
---   * TODO: @Script@ type does not yet support any BCP47 [RFC5646] language tags.
---   * TODO: JSON encoder/decoder must support BCP47 [RFC5646] language tags in keys.
---   * TODO: Implementation of ToJSON/FromJSON to correctly map to OIDC expected values.
---   * TODO: Successful registration response will return with a HTTP 201.
---   * TODO: data validation, generation and persistence of server response data.
---   * TODO: JWKS SSA validation based on URI
---   * TODO: /clients endpoint
-
 -- | Determines the set of credentials that will be used by a client when accessing /token endpoint. OIDC requires a restricted subset of the allowed OAuth values (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>). Also, because OZ OB only supports `code id_token` and `code id_token token` (i.e. the `hybrid` flow), this means `grant_types` must contain at least `authorization_code` and `implicit`, as per the OIDC Registration spec (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>).
 -- NB: For UK OB, `client_credentials` is required as a grant type, as is it needed for the client to submit a JWT to the /token endpoint to obtain a consent ID / payment ID before sending the request to /payments.
 data GrantType = Implicit | AuthorizationCode | RefreshToken -- ClientCredentials
-  deriving (Generic, ToJSON, FromJSON, Show, Eq, Ord)
+  deriving (Generic, Show, Eq, Ord)
 
+_GrantType ::
+  Prism' T.Text GrantType
+_GrantType =
+  prism (\case
+            Implicit -> "implicit"
+            AuthorizationCode  -> "authorization_code"
+            RefreshToken -> "refresh_token"
+        )
+        (\case
+            "implicit" -> Right Implicit
+            "authorization_code" -> Right AuthorizationCode
+            "refresh_token" -> Right RefreshToken
+            t -> Left t
+        )
+
+instance ToJSON GrantType where
+  toJSON = toJSON . (_GrantType #)
+
+instance FromJSON GrantType where
+  parseJSON = parseJSONWithPrism _GrantType "GrantType"
+
+--todo fix to/from with set
 newtype GrantTypes = GrantTypes (Set GrantType)
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
@@ -182,13 +199,6 @@ x509ByteString :: Lens' X509ThumbPrint ByteString
 x509ByteString f (X5T a)    = fmap X5T (f a)
 x509ByteString f (X5T256 a) = fmap X5T256 (f a)
 
---TODO: remove all to/fromJSONs
-instance ToJSON X509ThumbPrint where
-  toJSON  = undefined
-
-instance FromJSON X509ThumbPrint where
-  parseJSON = undefined
-
 -- | Smart constructor for producing FAPI permitted `grant_types`
 -- TODO: Investigate further how SCs will work with testing, consider type parameters (fapi, cdr, testing possibities)
 fapiGrantTypes :: GrantTypes -> Maybe FapiGrantTypes
@@ -197,7 +207,27 @@ fapiGrantTypes (GrantTypes grantTypes) =  if grantTypes `isSubsetOf` permittedGr
   requiredGrantTypes = Set.fromList [Implicit,AuthorizationCode]
 
 data ApplicationType = Web | Native
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
+
+_ApplicationType ::
+  Prism' T.Text ApplicationType
+_ApplicationType =
+  prism (\case
+            Web -> "web"
+            Native -> "native"
+        )
+        (\case
+            "web" -> Right Web
+            "native" -> Right Native
+            t -> Left t
+        )
+
+instance ToJSON ApplicationType where
+  toJSON = toJSON . (_ApplicationType #)
+
+instance FromJSON ApplicationType where
+  parseJSON = parseJSONWithPrism _ApplicationType "ApplicationType"
+
 newtype FapiApplicationType = FapiApplicationType ApplicationType
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
@@ -207,18 +237,30 @@ fapiApplicationType a = case a of
                            Web -> Just . FapiApplicationType $ Web
                            _   -> Nothing
 
--- TODO: Use an email type.
-newtype RegistrationContacts = RegistrationContacts [EmailAddress]
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+newtype EmailAddress = EmailAddress {
+    fromEmailAddress :: T.Text
+  } deriving (Ord, Show, Eq)
 
-newtype EmailAddress = EmailAddress T.Text
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+newtype RegistrationContacts = RegistrationContacts (Set EmailAddress)
+  deriving (Generic, Show, Eq)
 
--- TODO: discuss with Luke if this can be excluded and mentioned in the delta
+instance ToJSON RegistrationContacts where
+  toJSON (RegistrationContacts s) = toJSON . SpaceSeperatedSet . Set.map fromEmailAddress $ s
+
+instance FromJSON RegistrationContacts where
+  parseJSON = fmap RegistrationContacts . parseSpaceSeperatedSet _Unwrapped "EmailAddress"
+
 -- | Text with support for BCP47 [RFC5646] language tags in keys.
 -- e.g. client_name#ja-Jpan-JP :: クライアント名", as required by https://openid.net/specs/openid-connect-registration-1_0.html#LanguagesAndScripts.
 data Script = Script Language T.Text
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
+
+instance ToJSON Script where
+  toJSON (Script _ t) = toJSON t
+
+instance FromJSON Script where
+  parseJSON v = Script DefaultLang <$> parseJSON v
+
 data Language = DefaultLang
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 data ScriptUri = ScriptUri Language URI
@@ -237,7 +279,24 @@ instance FromJSON ScriptUri where
 
 -- @subject_type@ requested for responses to the client; only @pairwise@ is supported in <https://consumerdatastandardsaustralia.github.io/infosec/#data-holder-metadata §CDR>
 data SubjectType = Pairwise -- `Public` type not supported
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
+
+_SubjectType ::
+  Prism' T.Text SubjectType
+_SubjectType =
+  prism (\case
+            Pairwise -> "pairwise"
+        )
+        (\case
+            "pairwise" -> Right Pairwise
+            t -> Left t
+        )
+
+instance ToJSON SubjectType where
+  toJSON = toJSON . (_SubjectType #)
+
+instance FromJSON SubjectType where
+  parseJSON = parseJSONWithPrism _SubjectType "SubjectType"
 
 newtype JwksUri = JwksUri URI
   deriving (Generic, Show, Eq)
@@ -254,13 +313,10 @@ instance FromJSON JwksUri where
         either (fail . show) pure
 
 --TODO use keyset instead of Text for JwksVal
---TODO must include @use@ to specify either enc or sig
---TODO must include kid
 -- | Client's JSON Web Key Set
 data JwkSet = JwksRef JwksUri --  ^ @jwks_uri@ parameter that specifies a URL for the client's JSON Web Key Set for pass-by-reference
   | JwksVal T.Text -- ^ @jwks@ parameter that specifies client's JSON Web Key Set document (passed by value). It is recommended [OIDC-R] that keys are passed by reference if possible.
-  deriving (Generic, FromJSON, ToJSON, Show, Eq)
-makePrisms ''JwkSet
+  deriving (Generic, Show, Eq)
 
 -- | JWE @alg@ (and optional @enc@) algorithms for encrypting the ID token issued to the client (server must comply). @none@ is not permitted, unless the client only uses response types that return no ID token from the authorization endpoint (such as when only using the authorization code flow). This is not currently an option in OB.
 --
@@ -270,7 +326,7 @@ data IdTokenEncryption = IdTokenEncryption
     idTokenAlg :: FapiPermittedAlg
   , idTokenEnc :: FapiEnc
   }
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
 
 -- | JWE @alg@ (and optional @enc@) algorithms for encrypting the UserInfo response sent to the client (server must comply). @none@ is not permitted, unless the client only uses response types that return no ID token from the authorization endpoint (such as when only using the authorization code flow). This is not currently an option in OB.
 --
@@ -280,17 +336,17 @@ data UserInfoEncryption = UserInfoEncryption
     userInfoAlg :: FapiPermittedAlg
   , userInfoEnc :: Maybe FapiEnc
   }
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
 
 data RequestObjectEncryption = RequestObjectEncryption
   {
     reqObjAlg :: FapiPermittedAlg
   , reqObjEnc :: Maybe FapiEnc
   }
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
 
 data TokenEndpointAuthMethod = ClientSecretPost | ClientSecretBasic | ClientSecretJwt FapiPermittedAlg | PrivateKeyJwt FapiPermittedAlg | TlsClientAuth TlsClientAuthSubjectDn | None
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
 
 -- | A string representation of the expected subject distinguished name of the certificate the OAuth client will use in mutual TLS authentication.
 newtype TlsClientAuthSubjectDn = TlsClientAuthSubjectDn T.Text
@@ -298,7 +354,7 @@ newtype TlsClientAuthSubjectDn = TlsClientAuthSubjectDn T.Text
 
 -- | Only PrivateKeyJwt and TlsClientAuth are supported by CDR. @token_endpoint_auth_signing_alg@ is required if using @PrivateKeyJwt@ @token_endpoint_auth_method@, and @tls_client_auth_subject_dn@ must be supplied if using @tls_client_auth@ (as per <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration §CDR Registration>). All token requests will be rejected by the server if they are not signed by the algorithm specified in @alg@, or if they are signed with @none@, or if the subject distinguished name of the certificate does not match that of the MTLS certificate.
 newtype FapiTokenEndpointAuthMethod = FapiTokenEndpointAuthMethod TokenEndpointAuthMethod
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
 
 fapiTokenEndpointAuthMethod :: TokenEndpointAuthMethod -> Maybe FapiTokenEndpointAuthMethod
 fapiTokenEndpointAuthMethod = (^?_FapiTokenEndpointAuthMethod)
@@ -324,7 +380,7 @@ data FapiEnc =
     | A256GCM
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
--- TODO: this doesn't look right
+-- TODO: make iso if all enc's supported
 fapiEnc :: Prism' Enc FapiEnc
 fapiEnc =
    prism' (\case
@@ -367,12 +423,18 @@ newtype JTI = JTI {
 --          )
 
 newtype RequestUris = RequestUris {
-  getRequestUris  :: [RequestUri]}
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  getRequestUris  :: Set RequestUri}
+  deriving (Generic, Show, Eq)
+
+instance ToJSON RequestUris where
+  toJSON (RequestUris s) = toJSON . SpaceSeperatedSet . Set.map (render . getRequestUri) $ s
+
+instance FromJSON RequestUris where
+  parseJSON = fmap RequestUris . parseSpaceSeperatedSet (_URI . _Unwrapped) "EmailAddress"
 
 newtype RequestUri =
   RequestUri {getRequestUri :: URI}
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 instance ToJSON RequestUri where
   toJSON (RequestUri uri) =
@@ -424,7 +486,7 @@ data RegistrationRequest = RegistrationRequest {
   , _regoReqRegClaims        :: JwsRegisteredClaims
   , _regReqClientMetaData    :: ClientMetaData
   , _regReqsoftwareStatement :: RegoReqSoftwareStatement -- ^ A signed JWT containing metadata about the client software. RFC7591 mandates that this is a JWS.
-} deriving (Generic, ToJSON, FromJSON, Show, Eq)
+} deriving (Generic, Show, Eq)
 
 --TODO better type only allowing {YYYY-MM-DD | YYYY-MM-DD.<V>} format.
 -- | This key ID must be the value of the date on which the key was published in the format YYYY-MM-DD and must be unique within the set. If more than one key is published on the same date, the kid must consist of the following format YYYY-MM-DD.<V> where <V> represents an increasing version number and positive integer. See the <https://consumerdatastandardsaustralia.github.io/infosec/#json-web-key-sets §infosec spec> for more info.
@@ -448,7 +510,7 @@ data JwsHeaders = JwsHeaders
      _alg     :: FapiPermittedAlg -- ^ The JWK @alg@ to sign the request with.
     ,_kid     :: FapiKid -- ^ @kid@ is a required header for <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header §CDR>.
     , _thumbs :: Maybe X509ThumbPrint -- ^ If present on the JWK, the X509 thumbprint must be included in the header.
-} deriving (Generic, ToJSON, FromJSON, Show, Eq)
+} deriving (Generic, Show, Eq)
 
 -- | The following claims are specified in <https://tools.ietf.org/html/rfc7591 §RFC7591: 3.1 Client Registration Request> to be used in both the registration request object and the software statement, all of them as optional. However, some fields are non-optional under FAPI, and even fewer are optional under <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration §CDR>
 data ClientMetaData = ClientMetaData {
@@ -482,17 +544,17 @@ data ClientMetaData = ClientMetaData {
   , _softwareVersion                        :: Maybe SoftwareVersion  -- ^ The version number of the software should a TPP choose to register and / or maintain it.
   , _mutualTlsSenderConstrainedAccessTokens :: MutualTlsSCAT -- ^ @mutual_tls_sender_constrained_access_tokens@ indicating the client's intention to use mutual TLS sender constrained access tokens; CDR required field that must always be `true`.
   , _clientNotificationEndpoint             :: NotificationEndpoint -- ^ @client_notification_endpoint@ - CDR required URI for CIBA callback.
-} deriving (Generic, ToJSON, FromJSON, Show, Eq)
+} deriving (Generic, Show, Eq)
 
 -- TODO: Add smart constructor to only allow supply of encoded SS, depending on the CDR spec
 data RegoReqSoftwareStatement = EncodedSs T.Text | DecodedSs SoftwareStatement
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Show, Eq)
 
 data SoftwareStatement = SoftwareStatement {
     _ssSigningData :: JwsRegisteredClaims
   , _ssMetaData    :: ClientMetaData -- ^ All the claims to include in the SSA; RFC7591 allows any/all that are included in the request object, however SSA claims take precedence over request object claims (3.1.1).
 }
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
 
 -- | The folowing fields are specified by UK OB. See <https://openbanking.atlassian.net/wiki/spaces/DZ/pages/36667724/The+OpenBanking+OpenID+Dynamic+Client+Registration+Specification+-+v1.0.0-rc2 §UK OB Spec> for more information) (NB: the OB naming convention deviates from OIDC-R/RFC7591 in that it includes a `software_` prefix in the field keys.)
   -- , _clientId            :: Maybe ClientId -- ^ The Client ID Registered at OB used to access OB resources.
@@ -637,7 +699,7 @@ metaDataToAesonClaims ClientMetaData{..} =
     & at "request_object_signing_alg"?~ toJSON _requestObjectSigningAlg
     & at "grant_types" .~ (toJSON <$> _grantTypes)
     & at "application_type"?~ toJSON _applicationType
-    & at "token_endpoint_auth_method"?~ toJSON _tokenEndpointAuthMethod
+    -- & at "token_endpoint_auth_method" ?~ (toJSON <$> (_tokenEndpointAuthMethod ^? ) )
     & at "scope".~ (toJSON <$> _scope)
     & at "software_id".~ (toJSON <$> _softwareId)
     & at "software_version".~ (toJSON <$> _softwareVersion)
@@ -801,10 +863,15 @@ aesonClaimsToMetaData m = do
   _requestObjectSigningAlg         <- getClaim m "request_object_signing_alg"
   _grantTypes         <- getmClaim m "grant_types"
   _applicationType         <- getClaim m "application_type"
-  _tokenEndpointAuthMethod         <- getClaim m "token_endpoint_auth_method"
+  --_tokenEndpointAuthMethod         <- getClaim m "token_endpoint_auth_method"
   _scope         <- getmClaim m "scope"
   _softwareId         <- getmClaim m "software_id"
   _softwareVersion         <- getmClaim m "software_version"
   _mutualTlsSenderConstrainedAccessTokens <- getClaim m "software_version"
   _clientNotificationEndpoint <- getClaim m "software_version"
   pure ClientMetaData {..}
+
+makePrisms ''TokenEndpointAuthMethod
+makePrisms ''JwkSet
+makeWrapped ''EmailAddress
+makeWrapped ''RequestUri

@@ -51,10 +51,12 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , State (..)
   , SpaceSeperatedSet (..)
   , parseSpaceSeperatedSet
+  , _URI
   ) where
 
 import           Aeson.Helpers              (parseJSONWithPrism, parseWithPrism)
-import           Control.Lens               (Prism', prism, ( # ), (<&>), (^.))
+import           Control.Lens
+    (Prism', prism, prism', ( # ), (<&>), (^.))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
@@ -585,6 +587,9 @@ instance FromJSON SpaceSeperatedSet where
 
 parseSpaceSeperatedSet :: Ord a => Prism' Text a -> String -> Value -> Parser (Set a)
 parseSpaceSeperatedSet p n = fmap Set.fromList . (>>= traverse (parseWithPrism p n)) . fmap (Set.toList . fromSpaceSeperatedSet) .  parseJSON
+
+_URI :: Prism' T.Text URI
+_URI = prism' URI.render mkURI
 
 -- aesonOpts ::
 --   Options
