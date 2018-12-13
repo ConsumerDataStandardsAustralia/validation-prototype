@@ -7,8 +7,11 @@
 module Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts where
 
 import           Control.Monad.Except       (throwError)
+import           Data.Bool                  (bool)
+import           Data.Char                  (isNumber)
 import           Data.Functor.Contravariant (contramap, (>$<))
 import           Data.Text                  (Text)
+import qualified Data.Text                  as T
 import           Servant.API
     (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece)
 import           Waargonaut.Decode          (Decoder)
@@ -20,7 +23,8 @@ import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
-import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
+import Waargonaut.Helpers
+    (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount
     (CurrencyAmount, currencyAmountDecoder, currencyAmountEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Products
@@ -101,6 +105,17 @@ instance FromHttpApiData AccountId where
 newtype MaskedAccountNumber =
   MaskedAccountNumber { unMaskedAccountNumber :: Text }
   deriving (Eq, Show)
+
+-- TODO: This isn't quite good enough. The spec says that it is only numbers
+-- that get masked. RIP.
+-- e.g: 62 1234-5678 => XX XXXX-5678
+maskAccountId :: AccountId -> MaskedAccountNumber
+maskAccountId (AccountId (AsciiString t)) = MaskedAccountNumber $
+  (T.map mask $ T.take nonMasked t) <> (T.takeEnd 4 t)
+  where
+    chars = T.length t
+    mask c = bool c 'X' (isNumber c)
+    nonMasked = chars - 4
 
 maskedAccountNumberDecoder :: Monad f => Decoder f MaskedAccountNumber
 maskedAccountNumberDecoder = MaskedAccountNumber <$> D.text
