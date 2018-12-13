@@ -23,7 +23,7 @@ a12345 = AccountId (AsciiString "12345")
 testBalances :: AccountBalances
 testBalances = AccountBalances
   [ AccountBalance a12345
-      (Deposits (CurrencyAmount (AmountString "400") Nothing) (CurrencyAmount (AmountString "350.75") Nothing))
+      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "400") Nothing) (CurrencyAmount (AmountString "350.75") Nothing)))
   ]
 
 testPerson :: Person
@@ -94,7 +94,7 @@ testAccount :: Account
 testAccount =
   Account a12345 "acc12345" (Just "my savings")
     (MaskedAccountNumber "abcde") (Just PCTermDeposits) "saving"
-    (Deposits (CurrencyAmount (AmountString "201.30") Nothing) (CurrencyAmount (AmountString "198.80") Nothing))
+    (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "201.30") Nothing) (CurrencyAmount (AmountString "198.80") Nothing)))
 
 testAccountDetail :: AccountDetail
 testAccountDetail = AccountDetail (Just testAccount) Nothing Nothing Nothing Nothing Nothing Nothing Nothing
@@ -155,4 +155,4 @@ testProducts :: Products
 testProducts = Products [testProduct]
 
 testProductDetail :: ProductDetail
-testProductDetail = ProductDetail testProduct Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+testProductDetail = ProductDetail (Just testProduct) Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
