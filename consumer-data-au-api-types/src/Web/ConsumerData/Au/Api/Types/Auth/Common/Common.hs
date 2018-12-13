@@ -23,6 +23,9 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , FapiPermittedAlg
   , getFapiPermittedAlg
   , _FapiPermittedAlg
+  , HttpsUrl
+  , mkHttpsUrlText
+  , mkHttpsUrl
   , Hash
   , Nonce (..)
   , Prompt (..)
@@ -43,13 +46,15 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   -- Not exporting constructor for Scopes --- use the smart constructor
   , Scopes
   , mkScopes
+  , scopeText
   , Scope (..)
   , State (..)
+  , SpaceSeperatedSet (..)
+  , parseSpaceSeperatedSet
   ) where
 
-import           Aeson.Helpers              (parseJSONWithPrism)
-import           Control.Lens
-    (Prism', prism, ( # ), (&), (<&>), (^.), (^?))
+import           Aeson.Helpers              (parseJSONWithPrism, parseWithPrism)
+import           Control.Lens               (Prism', prism, ( # ), (<&>), (^.))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
@@ -57,8 +62,8 @@ import           Crypto.Hash                (HashAlgorithm, hashWith)
 import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
 import           Crypto.JWT                 (StringOrURI)
 import           Data.Aeson.Types
-    (FromJSON (..), FromJSON1 (..), ToJSON (..), ToJSON1 (..), object, toJSON1,
-    withObject, (.:), (.=))
+    (FromJSON (..), FromJSON1 (..), Parser, ToJSON (..), ToJSON1 (..), Value,
+    object, toJSON1, withObject, (.:), (.=))
 import           Data.Bool                  (bool)
 import qualified Data.ByteArray             as BA
 import           Data.ByteString            (ByteString)
@@ -79,7 +84,8 @@ import           Text.URI.Lens              (unRText, uriScheme)
 import           Waargonaut.Encode          (Encoder')
 import qualified Waargonaut.Encode          as E
 
-import Web.ConsumerData.Au.Api.Types.Auth.Error (AsHttpsUriError (..))
+import Web.ConsumerData.Au.Api.Types.Auth.Error
+    (AsHttpsUrlError (..), HttpsUrlError)
 
 {-|
 
@@ -268,23 +274,17 @@ newtype Scopes =
 
 instance ToJSON Scopes where
   toJSON (Scopes s) =
-    toJSON . T.intercalate " " . fmap (scopeText #) . Set.toList $ s
+    toJSON . SpaceSeperatedSet . Set.map (scopeText #) $ s
 
 instance FromJSON Scopes where
   parseJSON =
     let
-      parseFail t =
-        fail ("'" <> show t <> "' is not a known scope.")
-      tToScope t =
-        t ^? scopeText & maybe (parseFail t) pure
-      scopeSet =
-        fmap Set.fromList . (>>= traverse tToScope) . fmap (T.split (== ' ')) . parseJSON
       missingOpenId =
         fail "'scope' claim does not include 'openid'"
       validate s =
          bool missingOpenId (pure (Scopes s)) $ Set.member OpenIdScope s
     in
-      (>>= validate) . scopeSet
+      (>>= validate) . parseSpaceSeperatedSet scopeText "Scope"
 
 mkScopes ::
   Set Scope
@@ -406,31 +406,42 @@ instance FromJSON RedirectUri where
 -- | A @kid@ to be returned in the token. A @kid@ is the certificate Key ID, and it must be checked to match signing cert
 newtype TokenKeyId = TokenKeyId Text --TODO is really text?
 
--- | For URIs in open banking that must be URLs using the HTTPS scheme. Use @mkHttpsUri@ to get one.
-newtype HttpsUri =
-  HttpsUri URI
+-- | For URIs in open banking that must be URLs using the HTTPS scheme. Use @mkHttpsUrl@ to get one.
+newtype HttpsUrl =
+  HttpsUrl URI
   deriving (Eq, Show)
 
-mkHttpsUriText ::
-  ( AsHttpsUriError e
+mkHttpsUrlText ::
+  ( AsHttpsUrlError e
   , MonadError e m
   )
   => Text
-  -> m HttpsUri
-mkHttpsUriText =
-  mkHttpsUri <=< maybe (throwing_ _UriParseError) pure . mkURI
+  -> m HttpsUrl
+mkHttpsUrlText =
+  mkHttpsUrl <=< maybe (throwing_ _UriParseError) pure . mkURI
 
-mkHttpsUri ::
-  ( AsHttpsUriError e
+mkHttpsUrl ::
+  ( AsHttpsUrlError e
   , MonadError e m
   )
   => URI
-  -> m HttpsUri
-mkHttpsUri uri =
+  -> m HttpsUrl
+mkHttpsUrl uri =
   case uri ^. uriScheme <&> (^. unRText) of
-    Just "https" -> pure $ HttpsUri uri
+    Just "https" -> pure $ HttpsUrl uri
     Just _       -> throwing_ _NotHttps
     Nothing      -> throwing_ _MissingScheme
+
+instance ToJSON HttpsUrl where
+  toJSON (HttpsUrl uri) =
+    toJSON $ URI.render uri
+
+instance FromJSON HttpsUrl where
+  parseJSON v =  toParser =<< mkHttpsUrlText <$> parseJSON v
+    where
+      toParser :: Either HttpsUrlError HttpsUrl -> Parser HttpsUrl
+      toParser =
+        either (fail . show) pure
 
 -- | The @iat@ value returned in a token, in seconds since epoch. @iat@ (Issued At) is used to limit the amount of time that nonces need to be stored for.
 newtype TokenIssuedAt = TokenIat Int --TODO is really text?
@@ -560,6 +571,20 @@ instance FromJSON1 Claim where
 
 instance ToJSON a => ToJSON (Claim a) where
   toJSON = toJSON1
+
+newtype SpaceSeperatedSet = SpaceSeperatedSet
+  {
+    fromSpaceSeperatedSet :: Set T.Text
+  } deriving (Show)
+
+instance ToJSON SpaceSeperatedSet where
+  toJSON (SpaceSeperatedSet s) = toJSON . T.intercalate " " . Set.toList $ s
+
+instance FromJSON SpaceSeperatedSet where
+  parseJSON v = SpaceSeperatedSet . Set.fromList .  T.split (== ' ') <$> parseJSON v
+
+parseSpaceSeperatedSet :: Ord a => Prism' Text a -> String -> Value -> Parser (Set a)
+parseSpaceSeperatedSet p n = fmap Set.fromList . (>>= traverse (parseWithPrism p n)) . fmap (Set.toList . fromSpaceSeperatedSet) .  parseJSON
 
 -- aesonOpts ::
 --   Options

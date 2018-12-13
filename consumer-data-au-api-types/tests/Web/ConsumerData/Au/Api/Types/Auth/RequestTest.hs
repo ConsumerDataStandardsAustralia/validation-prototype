@@ -39,7 +39,7 @@ import           Test.Tasty                 (TestTree)
 import           Test.Tasty.Golden          (goldenVsString)
 import           Test.Tasty.Hedgehog        (testProperty)
 
-import Text.URI.Gens                           (genURI)
+import Text.URI.Gens                           (genUri)
 import Web.ConsumerData.Au.Api.Types.Auth.Gens (genClaims,genJWK)
 
 import Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
@@ -138,7 +138,7 @@ genAuthRequest =
     AuthorisationRequest
     <$> pure CodeIdToken
     <*> (ClientId <$> genUnicodeText 1 15)
-    <*> (RedirectUri <$> genURI)
+    <*> (RedirectUri <$> genUri)
     <*> (mkScopes <$> genAdditionalScopes)
     <*> (State <$> genUnicodeText 10 10)
     <*> (Nonce <$> genUnicodeText 10 10)

@@ -6,8 +6,11 @@
 
 module Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts where
 
+import           Data.Bool                  (bool)
+import           Data.Char                  (isNumber)
 import           Data.Functor.Contravariant ((>$<))
 import           Data.Text                  (Text)
+import qualified Data.Text                  as T
 import           Servant.API
     (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece)
 import           Waargonaut.Decode          (Decoder)
@@ -123,6 +126,17 @@ newtype MaskedAccountNumber =
   MaskedAccountNumber { unMaskedAccountNumber :: Text }
   deriving (Eq, Show)
 
+-- TODO: This isn't quite good enough. The spec says that it is only numbers
+-- that get masked. RIP.
+-- e.g: 62 1234-5678 => XX XXXX-5678
+maskAccountId :: AccountId -> MaskedAccountNumber
+maskAccountId (AccountId (AsciiString t)) = MaskedAccountNumber $
+  (T.map mask $ T.take nonMasked t) <> (T.takeEnd 4 t)
+  where
+    chars = T.length t
+    mask c = bool c 'X' (isNumber c)
+    nonMasked = chars - 4
+
 maskedAccountNumberDecoder :: Monad f => Decoder f MaskedAccountNumber
 maskedAccountNumberDecoder = MaskedAccountNumber <$> D.text
 
@@ -137,8 +151,6 @@ data Balance =
   | BalancePurses MultiCurrencyPursesType
   deriving (Eq, Show)
 
-
-
 data DepositBalanceType = DepositBalanceType
   { _dbtCurrentBalance   :: CurrencyAmount
   , _dbtAvailableBalance :: CurrencyAmount
@@ -149,7 +161,6 @@ depositBalanceTypeDecoder =
   DepositBalanceType
     <$> D.atKey "currentBalance" currencyAmountDecoder
     <*> D.atKey "availableBalance" currencyAmountDecoder
-
 
 depositBalanceTypeEncoder :: Applicative f => Encoder f DepositBalanceType
 depositBalanceTypeEncoder = E.mapLikeObj $ \b ->
