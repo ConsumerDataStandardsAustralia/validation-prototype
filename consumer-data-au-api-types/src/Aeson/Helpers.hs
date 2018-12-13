@@ -14,4 +14,14 @@ parseJSONWithPrism ::
   -> Parser a
 parseJSONWithPrism p name v = do
     t <- parseJSON v
-    maybe (fail $ show t <> " is not a " <> name) pure (t ^? p)
+    parseWithPrism  p name t
+
+parseWithPrism ::
+  ( FromJSON s
+  , Show s
+  )
+  => Prism' s a
+  -> String
+  -> s
+  -> Parser a
+parseWithPrism p name t = maybe (fail $ show t <> " is not a " <> name) pure (t ^? p)
