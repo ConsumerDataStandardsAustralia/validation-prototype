@@ -43,7 +43,7 @@ import           Test.Tasty                 (TestTree)
 import           Test.Tasty.Hedgehog        (testProperty)
 
 import AesonGolden (aesonGolden)
-import Text.URI.Gens                           (genURI)
+import Text.URI.Gens                           (genUri)
 import Web.ConsumerData.Au.Api.Types.Auth.Gens (genClaims, genJWK)
 
 import Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
