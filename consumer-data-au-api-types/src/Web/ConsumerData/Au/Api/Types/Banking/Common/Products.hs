@@ -6,19 +6,20 @@
 
 module Web.ConsumerData.Au.Api.Types.Banking.Common.Products where
 
-import           Control.Lens            (Prism', prism, ( # ))
-import           Data.Text               (Text)
-import           Text.URI                (URI)
-import           Waargonaut.Decode       (Decoder)
-import qualified Waargonaut.Decode       as D
-import qualified Waargonaut.Decode.Error as D
-import           Waargonaut.Encode       (Encoder)
-import qualified Waargonaut.Encode       as E
-import           Waargonaut.Generic      (JsonDecode (..), JsonEncode (..))
-import           Waargonaut.Types.JObject   (MapLikeObj)
-import           Waargonaut.Types.Json      (Json)
+import           Control.Lens             (Prism', prism, ( # ))
+import           Data.Text                (Text)
+import           Text.URI                 (URI)
+import           Waargonaut.Decode        (Decoder)
+import qualified Waargonaut.Decode        as D
+import qualified Waargonaut.Decode.Error  as D
+import           Waargonaut.Encode        (Encoder)
+import qualified Waargonaut.Encode        as E
+import           Waargonaut.Generic       (JsonDecode (..), JsonEncode (..))
+import           Waargonaut.Types.JObject (MapLikeObj)
+import           Waargonaut.Types.Json    (Json)
 
-import           Waargonaut.Helpers      (atKeyOptional', maybeOrAbsentE)
+import Waargonaut.Helpers
+    (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
     (AsciiString, DateTimeString, asciiStringDecoder, asciiStringEncoder,
     dateTimeStringDecoder, dateTimeStringEncoder)
@@ -156,7 +157,7 @@ data ProductCategory =
   | PCForeignCurrLoan -- ^ "FOREIGN_CURR_LOAN"
   | PCForeignCurrrenctOverdraft -- ^ "FOREIGN_CURRRENCT_OVERDRAFT"
   | PCTravelCard -- ^ "TRAVEL_CARD"
-  deriving (Eq, Show, Enum, Bounded)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 productCategoryText :: Prism' Text ProductCategory
 productCategoryText =

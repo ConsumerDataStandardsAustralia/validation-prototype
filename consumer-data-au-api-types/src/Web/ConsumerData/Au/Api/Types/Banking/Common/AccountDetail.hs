@@ -19,7 +19,7 @@ import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types           (Json, MapLikeObj, WS)
 
-import           Waargonaut.Helpers         (atKeyOptional', fromKeyOptional', maybeOrAbsentE)
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
     (Account, AccountId, accountDecoder, accountIdDecoder,
     accountIdEncoder, accountFields)
@@ -27,7 +27,7 @@ import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.De
     (AccountDepositRates, accountDepositRatesDecoder,
     accountDepositRatesEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.Feature
-    (AccountFeatures, accountFeaturesDecoder)
+    (AccountFeatures, accountFeaturesDecoder, accountFeaturesEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.Fee
     (AccountFees, accountFeesDecoder, accountFeesEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.LendingRate
@@ -63,17 +63,16 @@ data AccountDetail = AccountDetail
   } deriving (Eq, Show)
 
 accountDetailDecoder :: Monad f => Decoder f AccountDetail
-accountDetailDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+accountDetailDecoder =
   AccountDetail
-    <$> D.focus (D.maybeOrNull accountDecoder) o
-    <*> fromKeyOptional' "bundleName" D.text o
-    <*> D.focus (D.maybeOrNull specificAccountDecoder) o
-    <*> fromKeyOptional' "features" accountFeaturesDecoder o
-    <*> fromKeyOptional' "fees" accountFeesDecoder o
-    <*> fromKeyOptional' "depositRates" accountDepositRatesDecoder o
-    <*> fromKeyOptional' "lendingRates" accountLendingRatesDecoder o
-    <*> D.focus (D.maybeOrNull physicalAddressDecoder) o
+    <$> (D.maybeOrNull accountDecoder)
+    <*> atKeyOptional' "bundleName" D.text
+    <*> (D.maybeOrNull specificAccountDecoder)
+    <*> atKeyOptional' "features" accountFeaturesDecoder
+    <*> atKeyOptional' "fees" accountFeesDecoder
+    <*> atKeyOptional' "depositRates" accountDepositRatesDecoder
+    <*> atKeyOptional' "lendingRates" accountLendingRatesDecoder
+    <*> atKeyOptional' "address" physicalAddressDecoder
 
 instance JsonDecode OB AccountDetail where
   mkDecoder = tagOb accountDetailDecoder
@@ -84,6 +83,7 @@ accountDetailEncoder = E.mapLikeObj $ \p ->
   maybe id accountFields (_accountDetailAccount p) .
   maybeOrAbsentE "bundleName" E.text (_accountDetailBundleName p) .
   maybe id specificAccountFields (_accountDetailSpecificAccount p) .
+  maybeOrAbsentE "features" accountFeaturesEncoder (_accountDetailFeatures p) .
   maybeOrAbsentE "fees" accountFeesEncoder (_accountDetailFees p) .
   maybeOrAbsentE "depositRates" accountDepositRatesEncoder (_accountDetailDepositRates p) .
   maybeOrAbsentE "lendingRates" accountLendingRatesEncoder (_accountDetailLendingRates p) .

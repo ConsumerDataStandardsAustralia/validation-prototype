@@ -2,7 +2,7 @@ module Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypesGens where
 
 import           Data.Text           (Text)
 import           Data.Time.Gens      (utcTimeGen)
-import           Hedgehog            (MonadGen)
+import           Hedgehog            (MonadGen, Gen)
 import qualified Hedgehog.Gen        as Gen
 import qualified Hedgehog.Range      as Range
 
@@ -26,6 +26,10 @@ currencyStringGen :: (MonadGen m) => m CurrencyString
 currencyStringGen = CurrencyString
   <$> Gen.enumBounded
 
+currencyAmountGen :: Gen CurrencyAmount
+currencyAmountGen = CurrencyAmount
+  <$> amountStringGen
+  <*> Gen.maybe currencyStringGen
 
 -- currencyStringGen :: Gen CurrencyString
 dateTimeStringGen :: (MonadGen m) => m DateTimeString

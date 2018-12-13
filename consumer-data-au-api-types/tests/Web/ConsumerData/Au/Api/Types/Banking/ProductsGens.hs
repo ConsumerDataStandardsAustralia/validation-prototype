@@ -43,31 +43,12 @@ productAdditionalInformationGen = ProductAdditionalInformation
   <*> Gen.maybe genUri
 
 productCategoryGen :: (MonadGen m) => m ProductCategory
-productCategoryGen = Gen.element
-  [ PCPersAtCallDeposits
-  , PCBusAtCallDeposits
-  , PCTermDeposits
-  , PCResidential_mortgages
-  , PCPersCredAndChrgCards
-  , PCBusCredAndChrgCards
-  , PCPersLoans
-  , PCPersLeasing
-  , PCBusLeasing
-  , PCTradeFinance
-  , PCPersOverdraft
-  , PCBusOverdraft
-  , PCBusLoans
-  , PCForeignCurrAtCallDeposits
-  , PCForeignCurrTermDeposits
-  , PCForeignCurrLoan
-  , PCForeignCurrrenctOverdraft
-  , PCTravelCard
-  ]
+productCategoryGen = Gen.enumBounded
 
 
 productDetailGen :: (MonadGen m, MonadThrow m) => m ProductDetail
 productDetailGen = ProductDetail
-  <$> productGen
+  <$> Gen.maybe productGen
   <*> Gen.maybe productBundlesGen
   <*> Gen.maybe productFeaturesGen
   <*> Gen.maybe productConstraintsGen
@@ -89,11 +70,7 @@ productBundleGen = ProductBundle
   <*> Gen.list (Range.linear 0 10) textGen
 
 productRepaymentTypeGen :: (MonadGen m) => m ProductRepaymentType
-productRepaymentTypeGen = Gen.element
-  [ PRepaymentTypeInterestOnly
-  , PRepaymentTypePrincipalAndInterest
-  , PRepaymentTypeNegotiable
-  ]
+productRepaymentTypeGen = Gen.enumBounded
 
 
 productConstraintsGen :: (MonadGen m) => m ProductConstraints
