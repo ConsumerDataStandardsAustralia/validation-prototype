@@ -4,11 +4,12 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.RequestTest where
 
 import           Control.Exception      (throw)
-import           Control.Lens           (( # ))
+import           Control.Lens           (makeClassyPrisms, ( # ))
 import           Control.Monad          ((<=<))
 import           Control.Monad.Catch    (Exception, MonadThrow, throwM)
 import           Control.Monad.Except
@@ -16,13 +17,16 @@ import           Control.Monad.Except
 import           Control.Monad.IO.Class (MonadIO)
 import           Crypto.JOSE
     (Alg (ES256), decodeCompact, encodeCompact)
+import qualified Crypto.JOSE.Error      as JE
 import qualified Crypto.JOSE.JWK        as JWK
 import           Crypto.JWT             (Audience (Audience), uri)
+import           Crypto.JWT.Pretty
+    (AsPrettyJwtError (_PrettyJwtError), JwtPart (Signature), PrettyJwt,
+    PrettyJwtError, mkPrettyJwt, removePart)
 import           Data.Aeson             (eitherDecode')
 import           Data.Bifunctor         (first)
 import           Data.ByteString.Lazy   (ByteString)
 import qualified Data.ByteString.Lazy   as BS
-import           Data.Char              (ord)
 import qualified Data.Dependent.Map     as DM
 import           Data.Dependent.Sum     (DSum ((:=>)))
 import           Data.Maybe             (fromJust)
@@ -36,11 +40,11 @@ import qualified Hedgehog.Gen as Gen
 import           Hedgehog.Internal.Property (forAllT)
 import qualified Hedgehog.Range             as Range
 import           Test.Tasty                 (TestTree)
-import           Test.Tasty.Golden          (goldenVsString)
 import           Test.Tasty.Hedgehog        (testProperty)
 
+import AesonGolden (aesonGolden)
 import Text.URI.Gens                           (genUri)
-import Web.ConsumerData.Au.Api.Types.Auth.Gens (genClaims,genJWK)
+import Web.ConsumerData.Au.Api.Types.Auth.Gens (genClaims, genJWK)
 
 import Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
     (AuthorisationRequest (AuthorisationRequest), Claims (Claims),
@@ -48,10 +52,27 @@ import Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
 import Web.ConsumerData.Au.Api.Types.Auth.Common
     (Acr (Acr), Claim (Claim), ClientId (ClientId), IdToken (IdToken),
     IdTokenClaims, IdTokenKey (IdTokenSub), Nonce (Nonce),
-    RedirectUri (RedirectUri), ResponseType (CodeIdToken), Scope (..),
-    TokenSubject (..), mkScopes, Prompt (SelectAccount), State (..))
+    Prompt (SelectAccount), RedirectUri (RedirectUri),
+    ResponseType (CodeIdToken), Scope (..), State (..), TokenSubject (..),
+    mkScopes)
 import Web.ConsumerData.Au.Api.Types.Auth.Error
-    (Error (ParseError))
+    (AsError (..), Error)
+
+data GoldenError =
+  AuthE Error
+  | PrettyJwtE PrettyJwtError
+  deriving (Eq, Show)
+
+makeClassyPrisms ''GoldenError
+
+instance AsPrettyJwtError GoldenError where
+  _PrettyJwtError = _PrettyJwtE . _PrettyJwtError
+
+instance AsError GoldenError where
+  _Error = _AuthE . _Error
+
+instance JE.AsError GoldenError where
+  _Error = _Error . _JoseError
 
 test_request ::
   [TestTree]
@@ -78,16 +99,17 @@ golden =
     name = "Golden AuthorisationRequest JWT"
     gf = authTestPath <> "/compact-authorisation-request.golden"
     keyFile = authTestPath <> "/jwk.json"
+    alg = ES256
+    mJwt :: ExceptT GoldenError IO PrettyJwt
     mJwt = do
-      jwk <- ExceptT . fmap (first ParseError . eitherDecode') . BS.readFile $ keyFile
-      mkJwt jwk ES256 goldenAuthRequest
-    dot = fromIntegral (ord '.')
-    ioJwt = (>>= either (throw . JwtFailure . show) pure) . runExceptT $ mJwt
-    -- The signing process uses random inputs, so just verify the header and payload hasn't changed.
-    -- Round tripping ensures that the signatures are valid.
-    ioHeaderPayload = BS.intercalate "." . take 2 . BS.split dot <$> ioJwt
+      jwk <- ExceptT . fmap (first (_ParseError #) . eitherDecode') . BS.readFile $ keyFile
+      jwt <- authRequestToJwt jwk alg goldenAuthRequest
+      removePart Signature <$> mkPrettyJwt jwt
+    ioPrettyJwt :: IO PrettyJwt
+    ioPrettyJwt =
+      either (throw . JwtFailure . show) pure =<< runExceptT mJwt
   in
-    goldenVsString name gf ioHeaderPayload
+    aesonGolden name gf ioPrettyJwt
 
 authTestPath ::
   FilePath
