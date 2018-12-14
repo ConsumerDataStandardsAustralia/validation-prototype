@@ -5,8 +5,8 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TypeOperators         #-}
-module Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionBasic
-  ( module Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionBasic
+module Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
+  ( module Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
   ) where
 
 import           Control.Lens               (Prism', prism, (#))
@@ -31,22 +31,40 @@ import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
 import Web.ConsumerData.Au.Api.Types.Tag
 
 
--- | TransactionBasic <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schematransactionbasic CDR AU v0.1.0 TransactionBasic>
-data TransactionBasic = TransactionBasic
-  { _transactionBasicTransactionId     :: Maybe TransactionId -- ^ A unique ID of the transaction adhering to the standards for ID permanence. This field is mandatory in this payload as it is a reflection of the requested transaction in the path parameter.
-  , _transactionBasicIsDetailAvailable :: Bool -- ^ True if extended information is available using the transaction detail end point. False if extended data is not available
-  , _transactionBasicStatus            :: TransactionStatus -- ^ Status of the transaction.
-  , _transactionBasicDescription       :: Text -- ^ The transaction description as applied by the financial institution.
-  , _transactionBasicPostDateTime      :: Maybe DateTimeString -- ^ The time the transaction was posted. This field is MANDATORY if the transaction has status POSTED. This is the time that appears on a standard statement.
-  , _transactionBasicExecutionDateTime :: Maybe DateTimeString -- ^ The time the transaction was executed by the originating customer, if available.
-  , _transactionBasicAmount            :: Maybe AmountString -- ^ The value of the transaction. Negative values mean money was outgoing.
-  , _transactionBasicCurrency          :: Maybe CurrencyString -- ^ The currency for the transaction amount. AUD assumed if not present.
-  , _transactionBasicReference         :: Text -- ^ The reference for the transaction provided by the originating institution.
+newtype Transactions = Transactions
+  { unTransactions :: [Transaction] }
+  deriving (Eq, Show)
+
+transactionsDecoder :: Monad f => Decoder f Transactions
+transactionsDecoder =
+  Transactions <$> D.list transactionDecoder
+
+transactionsEncoder :: Applicative f => Encoder f Transactions
+transactionsEncoder =
+  unTransactions >$< E.list transactionEncoder
+
+instance JsonDecode OB Transactions where
+  mkDecoder = tagOb transactionsDecoder
+
+instance JsonEncode OB Transactions where
+  mkEncoder = tagOb transactionsEncoder
+
+
+data Transaction = Transaction
+  { _transactionTransactionId     :: Maybe TransactionId -- ^ A unique ID of the transaction adhering to the standards for ID permanence. This field is mandatory in this payload as it is a reflection of the requested transaction in the path parameter.
+  , _transactionIsDetailAvailable :: Bool -- ^ True if extended information is available using the transaction detail end point. False if extended data is not available
+  , _transactionStatus            :: TransactionStatus -- ^ Status of the transaction.
+  , _transactionDescription       :: Text -- ^ The transaction description as applied by the financial institution.
+  , _transactionPostDateTime      :: Maybe DateTimeString -- ^ The time the transaction was posted. This field is MANDATORY if the transaction has status POSTED. This is the time that appears on a standard statement.
+  , _transactionExecutionDateTime :: Maybe DateTimeString -- ^ The time the transaction was executed by the originating customer, if available.
+  , _transactionAmount            :: Maybe AmountString -- ^ The value of the transaction. Negative values mean money was outgoing.
+  , _transactionCurrency          :: Maybe CurrencyString -- ^ The currency for the transaction amount. AUD assumed if not present.
+  , _transactionReference         :: Text -- ^ The reference for the transaction provided by the originating institution.
   } deriving (Eq, Show)
 
-transactionBasicDecoder :: (Monad f) => Decoder f TransactionBasic
-transactionBasicDecoder =
-  TransactionBasic
+transactionDecoder :: (Monad f) => Decoder f Transaction
+transactionDecoder =
+  Transaction
     <$> atKeyOptional' "transactionId" transactionIdDecoder
     <*> D.atKey "isDetailAvailable" D.bool
     <*> D.atKey "status" transactionStatusDecoder
@@ -57,26 +75,26 @@ transactionBasicDecoder =
     <*> atKeyOptional' "currency" currencyStringDecoder
     <*> D.atKey "reference" D.text
 
-instance JsonDecode OB TransactionBasic where
-  mkDecoder = tagOb transactionBasicDecoder
+instance JsonDecode OB Transaction where
+  mkDecoder = tagOb transactionDecoder
 
-transactionBasicEncoder :: Applicative f => Encoder f TransactionBasic
-transactionBasicEncoder = E.mapLikeObj transactionBasicMLO
+transactionEncoder :: Applicative f => Encoder f Transaction
+transactionEncoder = E.mapLikeObj transactionMLO
 
-transactionBasicMLO :: TransactionBasic -> MapLikeObj WS Json -> MapLikeObj WS Json
-transactionBasicMLO p =
-  maybeOrAbsentE "transactionId" transactionIdEncoder (_transactionBasicTransactionId p) .
-  E.atKey' "isDetailAvailable" E.bool (_transactionBasicIsDetailAvailable p) .
-  E.atKey' "status" transactionStatusEncoder (_transactionBasicStatus p) .
-  E.atKey' "description" E.text (_transactionBasicDescription p) .
-  maybeOrAbsentE "postDateTime" dateTimeStringEncoder (_transactionBasicPostDateTime p) .
-  maybeOrAbsentE "executionDateTime" dateTimeStringEncoder (_transactionBasicExecutionDateTime p) .
-  maybeOrAbsentE "amount" amountStringEncoder (_transactionBasicAmount p) .
-  maybeOrAbsentE "currency" currencyStringEncoder (_transactionBasicCurrency p) .
-  E.atKey' "reference" E.text (_transactionBasicReference p)
+transactionMLO :: Transaction -> MapLikeObj WS Json -> MapLikeObj WS Json
+transactionMLO p =
+  maybeOrAbsentE "transactionId" transactionIdEncoder (_transactionTransactionId p) .
+  E.atKey' "isDetailAvailable" E.bool (_transactionIsDetailAvailable p) .
+  E.atKey' "status" transactionStatusEncoder (_transactionStatus p) .
+  E.atKey' "description" E.text (_transactionDescription p) .
+  maybeOrAbsentE "postDateTime" dateTimeStringEncoder (_transactionPostDateTime p) .
+  maybeOrAbsentE "executionDateTime" dateTimeStringEncoder (_transactionExecutionDateTime p) .
+  maybeOrAbsentE "amount" amountStringEncoder (_transactionAmount p) .
+  maybeOrAbsentE "currency" currencyStringEncoder (_transactionCurrency p) .
+  E.atKey' "reference" E.text (_transactionReference p)
 
-instance JsonEncode OB TransactionBasic where
-  mkEncoder = tagOb transactionBasicEncoder
+instance JsonEncode OB Transaction where
+  mkEncoder = tagOb transactionEncoder
 
 
 -- | A unique ID of the transaction adhering to the standards for ID permanence. This field is mandatory in this payload as it is a reflection of the requested transaction in the path parameter. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schematransactionid CDR AU v0.1.0 TransactionId>
@@ -100,7 +118,7 @@ instance FromHttpApiData TransactionId where
 data TransactionStatus =
     TransactionStatusPending -- ^ "PENDING"
   | TransactionStatusPosted -- ^ "POSTED"
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 transactionStatusText ::
   Prism' Text TransactionStatus

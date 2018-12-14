@@ -44,18 +44,19 @@ library
                      , Web.ConsumerData.Au.Api.Types.Banking.Common
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDetail
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransaction
+                     , Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransactions
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.AuthorisedEntity
+                     , Web.ConsumerData.Au.Api.Types.Banking.Common.BulkTransaction
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionExtendedData
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Identified
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.PayeeDetail
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Payees
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.ProductDetail
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Products
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionBasic
+                     , Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionDetail
+                     , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionExtendedData
                      , Web.ConsumerData.Au.Api.Types.Banking.Payees
                      , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.DepositRate
                      , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.Discount

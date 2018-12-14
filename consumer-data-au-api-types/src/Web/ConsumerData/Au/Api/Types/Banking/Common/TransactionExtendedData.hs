@@ -17,17 +17,20 @@ import qualified Waargonaut.Decode          as D
 import qualified Waargonaut.Decode.Error    as D
 import           Waargonaut.Encode          (Encoder')
 import qualified Waargonaut.Encode          as E
+import           Waargonaut.Types.JObject   (MapLikeObj)
+import           Waargonaut.Types.Json      (Json)
 
-import Waargonaut.Helpers (atKeyOptional', maybeOrAbsentE)
+import Waargonaut.Helpers
+    (atKeyOptional', maybeOrAbsentE)
+import Web.ConsumerData.Au.Api.Types.SumTypeHelpers
 
 
 -- Contains more detailed information specific to transactions originated via NPP. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaextendedtransactiondata CDR AU v0.1.0 TransactionExtendedData>
 data TransactionExtendedData = TransactionExtendedData
-  { _transactionExtendedDataPayer :: Maybe Text -- ^ Label of the originating payer. Mandatory for an inbound payment.
-  , _transactionExtendedDataPayee :: Maybe Text -- ^ Label of the target PayID. Mandatory for an outbound payment.
-  , _transactionExtendedDataExtensionType :: Maybe TransactionExtendedDataExtensionType -- ^ The type of transaction data extension.
-  , _transactionExtendedDataExtendedDescription :: Maybe TransactionExtendedDataExtendedDescription -- ^ An extended string description. Only present if specified by the extension$type field.
-  , _transactionExtendedDataService :: TransactionExtendedDataService -- ^ Identifier of the applicable overlay service.
+  { _transactionExtendedDataPayer         :: Maybe Text -- ^ Label of the originating payer. Mandatory for an inbound payment.
+  , _transactionExtendedDataPayee         :: Maybe Text -- ^ Label of the target PayID. Mandatory for an outbound payment.
+  , _transactionExtendedDataExtensionType :: Maybe ExtensionType -- ^ The type of transaction data extension.
+  , _transactionExtendedDataService       :: TransactionExtendedDataService -- ^ Identifier of the applicable overlay service.
   } deriving (Generic, Show, Eq)
 
 transactionExtendedDataDecoder :: Monad f => Decoder f TransactionExtendedData
@@ -35,56 +38,38 @@ transactionExtendedDataDecoder =
   TransactionExtendedData
     <$> atKeyOptional' "payer" D.text
     <*> atKeyOptional' "payee" D.text
-    <*> atKeyOptional' "extensionType" transactionExtendedDataExtensionTypeDecoder
-    <*> atKeyOptional' "extendedDescription"
-          (TransactionExtendedDataExtendedDescription <$> D.text)
+    <*> D.maybeOrNull extensionTypeDecoder
     <*> D.atKey "service" transactionExtendedDataServiceDecoder
 
 transactionExtendedDataEncoder :: Encoder' TransactionExtendedData
-transactionExtendedDataEncoder = E.mapLikeObj $ \(TransactionExtendedData payer payee et ed serv) ->
+transactionExtendedDataEncoder = E.mapLikeObj $ \(TransactionExtendedData payer payee et serv) ->
   maybeOrAbsentE "payer" E.text payer .
   maybeOrAbsentE "payee" E.text payee .
-  maybeOrAbsentE "extensionType" transactionExtendedDataExtensionTypeEncoder et .
-  maybeOrAbsentE "extendedDescription" (unTransactionExtendedDataExtendedDescription >$< E.text) ed .
+  maybe id extensionTypeFields et .
   E.atKey' "service" transactionExtendedDataServiceEncoder serv
 
 
--- | Optional extended data provided specific to transaction originated via NPP.
-data TransactionExtendedDataExtendedDescription =
-  TransactionExtendedDataExtendedDescription { unTransactionExtendedDataExtendedDescription :: Text }
-  deriving (Show, Eq)
+data ExtensionType =
+    ExtendedDescription Text
+  deriving (Eq, Show)
 
+extensionTypeDecoder :: Monad f => Decoder f ExtensionType
+extensionTypeDecoder = typeTaggedDecoder "extension$type" $ \case
+  "extendedDescription" -> Just $ (TypedTagField ExtendedDescription D.text)
+  _                     -> Nothing
 
--- | Optional extended data provided specific to transaction originated via NPP.
-data TransactionExtendedDataExtensionType =
-  ExtendedDescription
-  deriving (Show, Eq)
-
-transactionExtendedDataExtensionTypeText ::
-  Prism' Text TransactionExtendedDataExtensionType
-transactionExtendedDataExtensionTypeText =
-  prism (\case
-          ExtendedDescription -> "extendedDescription"
-      )
-      (\case
-          "extendedDescription" -> Right ExtendedDescription
-          t -> Left t
-      )
-
-transactionExtendedDataExtensionTypeDecoder ::
-  Monad f => Decoder f TransactionExtendedDataExtensionType
-transactionExtendedDataExtensionTypeDecoder =
-  D.prismDOrFail (D.ConversionFailure "Unexpected value in extension$type") transactionExtendedDataExtensionTypeText D.text
-
-transactionExtendedDataExtensionTypeEncoder ::
-  Encoder' TransactionExtendedDataExtensionType
-transactionExtendedDataExtensionTypeEncoder =
-  (transactionExtendedDataExtensionTypeText #) >$< E.text'
+extensionTypeFields ::
+  (Monoid ws, Semigroup ws)
+  => ExtensionType -> MapLikeObj ws Json -> MapLikeObj ws Json
+extensionTypeFields = \case
+  ExtendedDescription t -> fields "extendedDescription" E.text t
+  where
+    fields = typeTaggedField "extension$type"
 
 
 data TransactionExtendedDataService =
   X2P101
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 transactionExtendedDataServiceText ::
   Prism' Text TransactionExtendedDataService

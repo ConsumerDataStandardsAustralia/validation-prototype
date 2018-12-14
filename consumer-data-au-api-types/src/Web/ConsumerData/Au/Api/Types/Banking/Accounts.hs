@@ -16,11 +16,12 @@ import Servant.API.ContentTypes.Waargonaut (WaargJSON)
 import Servant.API.Generic                 ((:-), AsApi, ToServant, fromServant)
 import Servant.Links                       (AsLink, Link)
 
-import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDetail
-import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransaction
-import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit (DirectDebitAuthorisations)
-import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionBasic
+import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
+    (DirectDebitAuthorisations)
+import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
+import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransactions
+import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
 import Web.ConsumerData.Au.Api.Types.Response
 import Web.ConsumerData.Au.Api.Types.Tag
 

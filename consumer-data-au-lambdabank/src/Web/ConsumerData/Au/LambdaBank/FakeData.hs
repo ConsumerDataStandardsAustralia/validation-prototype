@@ -106,20 +106,15 @@ testAccounts = Accounts
   [ testAccount
   ]
 
-testTransactionBasic :: TransactionBasic
-testTransactionBasic = TransactionBasic
+testAccountTransactions :: AccountTransactions
+testAccountTransactions = AccountTransactions a12345 "name" "nick name" [testTransaction]
+
+testTransaction :: Transaction
+testTransaction = Transaction
   (Just (TransactionId (AsciiString "reference"))) False TransactionStatusPosted "" Nothing Nothing Nothing Nothing "ref"
 
 testTransactionDetail :: TransactionDetail
 testTransactionDetail = TransactionDetail Nothing TransactionStatusPosted "" Nothing Nothing Nothing Nothing "" Nothing
-
-testAccountTransaction :: AccountTransaction
-testAccountTransaction = AccountTransaction a12345 (Just testTransactionBasic)
-
-testAccountTransactions :: AccountTransactions
-testAccountTransactions = AccountTransactions $ identified
-  [ testTransactionBasic
-  ]
 
 testAccountsTransactions :: AccountsTransactions
 testAccountsTransactions = AccountsTransactions [testAccountTransaction]
