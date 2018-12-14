@@ -8,6 +8,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 
@@ -91,6 +92,8 @@ import           Control.Lens.Wrapped
     (_Unwrapped, _Wrapped)
 import           Control.Monad.Error.Class
     (MonadError, throwError)
+import           Control.Monad.Except
+    (Except, ExceptT (ExceptT), MonadError, runExceptT)
 import           Control.Monad.Time                        (MonadTime)
 import qualified Crypto.JOSE.Error                         as JE
 import           Crypto.JOSE.JWA.JWE                       (Enc)
@@ -107,7 +110,7 @@ import           Crypto.JWT
     issuerPredicate, signClaims, unregisteredClaims, verifyClaims)
 import           Crypto.Random.Types                       (MonadRandom)
 import           Data.Aeson
-    (FromJSON (..), Result (..), ToJSON (..), Value, fromJSON)
+    (FromJSON (..), Result (..), ToJSON (..), Value (..), fromJSON)
 import           Data.Bool                                 (bool)
 import           Data.ByteString                           (ByteString)
 import qualified Data.ByteString.Lazy                      as BSL
@@ -130,7 +133,7 @@ import           Web.ConsumerData.Au.Api.Types.Auth.Common
     ResponseType, Scopes, SpaceSeperatedSet (..), getRedirectUri,
     parseSpaceSeperatedSet, _FapiPermittedAlg, _URI)
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
-    (AsError, _MissingClaim, _ParseError)
+    (AsError, Error, _MissingClaim, _ParseError)
 
 -- | The client registration endpoint is an OAuth 2.0 endpoint that is designed to allow a client to be dynamically registered with the authorization server. 'RegistrationRequest' represents a client request for registration containing meta-data elements specified in <https://tools.ietf.org/html/rfc7591 §RFC7591 - OAuth 2.0 Dynamic Client Registration Protocol> and <https://openid.net/specs/openid-connect-registration-1_0.html §OIDC registration>. Each request must contain a software statement assertion (a JWT is issued and signed by the OpenBanking Directory). Metadata values may be duplicated in the registration request, but if different, those in the software statement will take precedence and override those in the request.
 --
@@ -345,8 +348,61 @@ data RequestObjectEncryption = RequestObjectEncryption
   }
   deriving (Generic, Show, Eq)
 
-data TokenEndpointAuthMethod = ClientSecretPost | ClientSecretBasic | ClientSecretJwt FapiPermittedAlg | PrivateKeyJwt FapiPermittedAlg | TlsClientAuth TlsClientAuthSubjectDn | None
+data TokenEndpointAuthMethod = ClientSecretPost
+                             | ClientSecretBasic
+                             | ClientSecretJwt FapiPermittedAlg
+                             | PrivateKeyJwt FapiPermittedAlg
+                             | TlsClientAuth TlsClientAuthSubjectDn
+                             | None
   deriving (Generic, Show, Eq)
+
+_TokenEndpointAuthMethod ::
+  Prism' AesonClaims TokenEndpointAuthMethod
+_TokenEndpointAuthMethod =
+  prism tokEndPtMethMap
+        (\m -> either (const $ Left m) Right (getTokEndPtMeth m))
+
+tokEndPtMethMap :: TokenEndpointAuthMethod -> AesonClaims
+tokEndPtMethMap = \case
+            ClientSecretPost ->
+              setApm ("token_endpoint_auth_method","client_secret_post"::T.Text)
+            ClientSecretBasic ->
+              setApm ("token_endpoint_auth_method","client_secret_basic"::T.Text)
+            ClientSecretJwt j ->
+              setApm ("token_endpoint_auth_method","client_secret_jwt"::T.Text)
+              <> setApm ("token_endpoint_auth_signing_alg",j)
+            PrivateKeyJwt j ->
+              setApm ("token_endpoint_auth_method","private_key_jwt"::T.Text)
+              <> setApm ("token_endpoint_auth_signing_alg",j)
+            TlsClientAuth t ->
+              setApm ("token_endpoint_auth_method","tls_client_auth"::T.Text)
+              <> setApm ("tls_client_auth_subject_dn",t)
+            None ->
+              setApm ("token_endpoint_auth_method","none"::T.Text)
+        where
+          setApm :: ToJSON a => (T.Text,a) -> AesonClaims
+          setApm (k,a) = M.empty & at k ?~ toJSON a
+
+getTokEndPtMeth :: AesonClaims -> Either Error TokenEndpointAuthMethod
+getTokEndPtMeth m = do
+                      meth <- getClaim m "token_endpoint_auth_method"
+                      case meth::T.Text of
+                        "client_secret_post" -> pure ClientSecretPost
+                        "client_secret_basic" -> pure ClientSecretBasic
+                        "client_secret_jwt" -> ClientSecretJwt <$>
+                          getClaim m "token_endpoint_auth_signing_alg"
+                        "private_key_jwt" -> PrivateKeyJwt <$>
+                          getClaim m "token_endpoint_auth_signing_alg"
+                        "tls_client_auth" -> TlsClientAuth <$>
+                          getClaim m "tls_client_auth_subject_dn"
+                        "none" -> Right None
+                        _ -> throwError $ _ParseError # "Invalid token_endpoint_auth_method"
+
+instance ToJSON TokenEndpointAuthMethod where
+  toJSON = toJSON . (_TokenEndpointAuthMethod #)
+
+instance FromJSON TokenEndpointAuthMethod where
+  parseJSON = parseJSONWithPrism _TokenEndpointAuthMethod "TokenEndpointAuthMethod"
 
 -- | A string representation of the expected subject distinguished name of the certificate the OAuth client will use in mutual TLS authentication.
 newtype TlsClientAuthSubjectDn = TlsClientAuthSubjectDn T.Text
@@ -699,7 +755,7 @@ metaDataToAesonClaims ClientMetaData{..} =
     & at "request_object_signing_alg"?~ toJSON _requestObjectSigningAlg
     & at "grant_types" .~ (toJSON <$> _grantTypes)
     & at "application_type"?~ toJSON _applicationType
-    -- & at "token_endpoint_auth_method" ?~ (toJSON <$> (_tokenEndpointAuthMethod ^? ) )
+    & (<> (_TokenEndpointAuthMethod . _FapiTokenEndpointAuthMethod # _tokenEndpointAuthMethod))
     & at "scope".~ (toJSON <$> _scope)
     & at "software_id".~ (toJSON <$> _softwareId)
     & at "software_version".~ (toJSON <$> _softwareVersion)
