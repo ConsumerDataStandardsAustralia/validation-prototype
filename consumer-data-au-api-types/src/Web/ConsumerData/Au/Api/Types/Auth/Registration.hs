@@ -49,27 +49,26 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
     , NotificationEndpoint (..)
     , SoftwareId (..)
     , SoftwareVersion (..)
-    , fapiGrantTypes
     , GrantType (..)
-    , fapiApplicationType
+    , _FapiApplicationType
     , ApplicationType (..)
     , TokenEndpointAuthMethod (..)
     , RequestUri (..)
-    , redirectUrls
+    , _RedirectUrls
     , aesonClaimsToMetaData
     , metaDataToAesonClaims
     , regoReqToJwt
     , jwtToRegoReq
     , JwksUri (..)
-    , fapiTokenEndpointAuthMethod
+    , _FapiTokenEndpointAuthMethod
     , GrantTypes (..)
     , isX5t
     , _X5T
     , _X5T256
     , x509ByteString
     , fapiEnc
-    , mutualTlsSCAT
-    , registrationErrorType
+    , _MutualTlsSCAT
+    , _RegistrationErrorType
     , RegistrationErrorDescription (..)
     , RegistrationErrorType (..)
     , RegistrationError (..)
@@ -79,21 +78,17 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
     , RegistrationClientUri (..)
     , RegistrationAccessToken (..)
     , RegistrationResponse (..)
-    , ClientName (..)
-    , ClientDescription (..)
   ) where
 
-import           Aeson.Helpers                             (parseJSONWithPrism)
+import           Aeson.Helpers
+    (parseJSONWithPrism, parseSpaceSeperatedSet, toJsonSpaceSeperatedSet, _URI)
 import           Control.Applicative                       (liftA2)
 import           Control.Lens
-    (Lens', Prism', at, iso, makePrisms, makeWrapped, prism, prism', to, ( # ),
-    (&), (.~), (?~), (^.), (^?), _Right)
-import           Control.Lens.Wrapped
-    (_Unwrapped, _Wrapped)
+    (Lens', Prism', at, makePrisms, makeWrapped, prism, prism', to, ( # ), (&),
+    (.~), (?~), (^.), (^?), _Right)
+import           Control.Lens.Wrapped                      (_Unwrapped)
 import           Control.Monad.Error.Class
     (MonadError, throwError)
-import           Control.Monad.Except
-    (Except, ExceptT (ExceptT), MonadError, runExceptT)
 import           Control.Monad.Time                        (MonadTime)
 import qualified Crypto.JOSE.Error                         as JE
 import           Crypto.JOSE.JWA.JWE                       (Enc)
@@ -124,17 +119,15 @@ import           Data.Text.Encoding                        as TE
     (decodeUtf8, encodeUtf8)
 import           GHC.Generics                              (Generic)
 import           Prelude                                   hiding (exp)
-import           Text.URI                                  (URI, mkURI, render)
+import           Text.URI                                  (URI, render)
 import qualified Text.URI                                  as URI
 import           Text.URI.Lens
     (authHost, uriAuthority, uriScheme)
 import           Web.ConsumerData.Au.Api.Types.Auth.Common
     (ClientId, ClientIss (..), FapiPermittedAlg, HttpsUrl, RedirectUri,
-    ResponseType, Scopes, SpaceSeperatedSet (..), getRedirectUri,
-    parseSpaceSeperatedSet, _FapiPermittedAlg, _URI)
+    ResponseType, Scopes, getRedirectUri, responseTypeText, _FapiPermittedAlg)
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, Error, _MissingClaim, _ParseError)
-
 -- | The client registration endpoint is an OAuth 2.0 endpoint that is designed to allow a client to be dynamically registered with the authorization server. 'RegistrationRequest' represents a client request for registration containing meta-data elements specified in <https://tools.ietf.org/html/rfc7591 §RFC7591 - OAuth 2.0 Dynamic Client Registration Protocol> and <https://openid.net/specs/openid-connect-registration-1_0.html §OIDC registration>. Each request must contain a software statement assertion (a JWT is issued and signed by the OpenBanking Directory). Metadata values may be duplicated in the registration request, but if different, those in the software statement will take precedence and override those in the request.
 --
 --A RP will submit the registration request to a OP in order to receive `client_id` credentials. The registration request parameters are sent in a JWT signed by the RP [UK OB mandates this] and include the signed software statement assertion as a JWT claim.
@@ -167,19 +160,40 @@ instance ToJSON GrantType where
 instance FromJSON GrantType where
   parseJSON = parseJSONWithPrism _GrantType "GrantType"
 
---todo fix to/from with set
 newtype GrantTypes = GrantTypes (Set GrantType)
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
+
+instance ToJSON GrantTypes where
+  toJSON (GrantTypes s) = toJsonSpaceSeperatedSet (_GrantType #) s
+
+instance FromJSON GrantTypes where
+  parseJSON = fmap GrantTypes . parseSpaceSeperatedSet _GrantType "GrantType"
 
 newtype FapiGrantTypes = FapiGrantTypes GrantTypes
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
+
+instance ToJSON FapiGrantTypes where
+  toJSON = toJSON . (_FapiGrantTypes #)
+
+instance FromJSON FapiGrantTypes where
+  parseJSON = parseJSONWithPrism _FapiGrantTypes  "FapiGrantTypes"
+
+_FapiGrantTypes :: Prism' GrantTypes FapiGrantTypes
+_FapiGrantTypes = prism'
+  (\(FapiGrantTypes f) -> f)
+  (\(GrantTypes grantTypes) ->
+    if grantTypes `isSubsetOf` permittedGrantTypes && requiredGrantTypes `isSubsetOf` grantTypes then Just . FapiGrantTypes . GrantTypes $ grantTypes else Nothing
+  )
+      where
+        permittedGrantTypes = Set.fromList [Implicit,AuthorizationCode,RefreshToken]
+        requiredGrantTypes = Set.fromList [Implicit,AuthorizationCode]
 
 -- | The X.509 Certificate Thumbprint (SHA-1) field (@x5t@) must be included in the headers if present on the JWK, as must the @x5t#S256@ header (SHA-256). See <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header §CDR spec>, <https://tools.ietf.org/html/rfc7515#section-4.1.7 §RFC7515 4.1.7> has further details.
 -- TODO: check if we can borrow Jose types
 data X509ThumbPrint = X5T ByteString | X5T256 ByteString
   deriving (Generic, Show, Eq)
 
--- TODO: NB: this may be the used instead of the KID
+-- TODO: NB: this may be being used instead of the KID
 _X5T :: Prism' X509ThumbPrint ByteString
 _X5T = prism' X5T
          (\case
@@ -201,13 +215,6 @@ isX5t f o@(X5T256 a) = fmap (bool o (X5T a)) (f False)
 x509ByteString :: Lens' X509ThumbPrint ByteString
 x509ByteString f (X5T a)    = fmap X5T (f a)
 x509ByteString f (X5T256 a) = fmap X5T256 (f a)
-
--- | Smart constructor for producing FAPI permitted `grant_types`
--- TODO: Investigate further how SCs will work with testing, consider type parameters (fapi, cdr, testing possibities)
-fapiGrantTypes :: GrantTypes -> Maybe FapiGrantTypes
-fapiGrantTypes (GrantTypes grantTypes) =  if grantTypes `isSubsetOf` permittedGrantTypes && requiredGrantTypes `isSubsetOf` grantTypes then Just . FapiGrantTypes . GrantTypes $ grantTypes else Nothing where
-  permittedGrantTypes = Set.fromList [Implicit,AuthorizationCode,RefreshToken]
-  requiredGrantTypes = Set.fromList [Implicit,AuthorizationCode]
 
 data ApplicationType = Web | Native
   deriving (Generic, Show, Eq)
@@ -232,13 +239,17 @@ instance FromJSON ApplicationType where
   parseJSON = parseJSONWithPrism _ApplicationType "ApplicationType"
 
 newtype FapiApplicationType = FapiApplicationType ApplicationType
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, ToJSON, Show, Eq)
+
+instance FromJSON FapiApplicationType where
+  parseJSON = parseJSONWithPrism _FapiApplicationType  "FapiApplicationType"
 
 -- | Smart constructor for producing FAPI permitted @application_type@s. In the current version of CDR, only @web@ is allowed.
-fapiApplicationType :: ApplicationType -> Maybe FapiApplicationType
-fapiApplicationType a = case a of
-                           Web -> Just . FapiApplicationType $ Web
-                           _   -> Nothing
+_FapiApplicationType :: Prism' ApplicationType FapiApplicationType
+_FapiApplicationType = prism' (\(FapiApplicationType a) -> a)
+                              (\case
+                                 Web -> Just . FapiApplicationType $ Web
+                                 _   -> Nothing)
 
 newtype EmailAddress = EmailAddress {
     fromEmailAddress :: T.Text
@@ -248,7 +259,7 @@ newtype RegistrationContacts = RegistrationContacts (Set EmailAddress)
   deriving (Generic, Show, Eq)
 
 instance ToJSON RegistrationContacts where
-  toJSON (RegistrationContacts s) = toJSON . SpaceSeperatedSet . Set.map fromEmailAddress $ s
+  toJSON (RegistrationContacts s) = toJsonSpaceSeperatedSet fromEmailAddress s
 
 instance FromJSON RegistrationContacts where
   parseJSON = fmap RegistrationContacts . parseSpaceSeperatedSet _Unwrapped "EmailAddress"
@@ -270,15 +281,10 @@ data ScriptUri = ScriptUri Language URI
   deriving (Generic, Show, Eq)
 
 instance ToJSON ScriptUri where
-  toJSON (ScriptUri _ uri) =
-    toJSON $ URI.render uri
+  toJSON (ScriptUri _ uri) = toJSON uri
 
 instance FromJSON ScriptUri where
-  parseJSON =
-    fmap (ScriptUri DefaultLang) . (>>= toParser) . fmap mkURI . parseJSON
-    where
-      toParser =
-        either (fail . show) pure
+  parseJSON = fmap (ScriptUri DefaultLang) . parseJSON
 
 -- @subject_type@ requested for responses to the client; only @pairwise@ is supported in <https://consumerdatastandardsaustralia.github.io/infosec/#data-holder-metadata §CDR>
 data SubjectType = Pairwise -- `Public` type not supported
@@ -302,18 +308,7 @@ instance FromJSON SubjectType where
   parseJSON = parseJSONWithPrism _SubjectType "SubjectType"
 
 newtype JwksUri = JwksUri URI
-  deriving (Generic, Show, Eq)
-
-instance ToJSON JwksUri where
-  toJSON (JwksUri uri) =
-    toJSON $ URI.render uri
-
-instance FromJSON JwksUri where
-  parseJSON =
-    fmap JwksUri . (>>= toParser) . fmap mkURI . parseJSON
-    where
-      toParser =
-        either (fail . show) pure
+  deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 --TODO use keyset instead of Text for JwksVal
 -- | Client's JSON Web Key Set
@@ -365,9 +360,9 @@ _TokenEndpointAuthMethod =
 tokEndPtMethMap :: TokenEndpointAuthMethod -> AesonClaims
 tokEndPtMethMap = \case
             ClientSecretPost ->
-              setApm ("token_endpoint_auth_method","client_secret_post"::T.Text)
+              setApm' "client_secret_post"
             ClientSecretBasic ->
-              setApm ("token_endpoint_auth_method","client_secret_basic"::T.Text)
+              setApm' "client_secret_basic"
             ClientSecretJwt j ->
               setApm ("token_endpoint_auth_method","client_secret_jwt"::T.Text)
               <> setApm ("token_endpoint_auth_signing_alg",j)
@@ -378,10 +373,11 @@ tokEndPtMethMap = \case
               setApm ("token_endpoint_auth_method","tls_client_auth"::T.Text)
               <> setApm ("tls_client_auth_subject_dn",t)
             None ->
-              setApm ("token_endpoint_auth_method","none"::T.Text)
+              setApm' "none"
         where
           setApm :: ToJSON a => (T.Text,a) -> AesonClaims
           setApm (k,a) = M.empty & at k ?~ toJSON a
+          setApm' a = M.empty & at "token_endpoint_auth_method" ?~ toJSON (a::T.Text)
 
 getTokEndPtMeth :: AesonClaims -> Either Error TokenEndpointAuthMethod
 getTokEndPtMeth m = do
@@ -411,9 +407,6 @@ newtype TlsClientAuthSubjectDn = TlsClientAuthSubjectDn T.Text
 -- | Only PrivateKeyJwt and TlsClientAuth are supported by CDR. @token_endpoint_auth_signing_alg@ is required if using @PrivateKeyJwt@ @token_endpoint_auth_method@, and @tls_client_auth_subject_dn@ must be supplied if using @tls_client_auth@ (as per <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration §CDR Registration>). All token requests will be rejected by the server if they are not signed by the algorithm specified in @alg@, or if they are signed with @none@, or if the subject distinguished name of the certificate does not match that of the MTLS certificate.
 newtype FapiTokenEndpointAuthMethod = FapiTokenEndpointAuthMethod TokenEndpointAuthMethod
   deriving (Generic, Show, Eq)
-
-fapiTokenEndpointAuthMethod :: TokenEndpointAuthMethod -> Maybe FapiTokenEndpointAuthMethod
-fapiTokenEndpointAuthMethod = (^?_FapiTokenEndpointAuthMethod)
 
 _FapiTokenEndpointAuthMethod :: Prism' TokenEndpointAuthMethod FapiTokenEndpointAuthMethod
 _FapiTokenEndpointAuthMethod = prism (\case
@@ -467,58 +460,54 @@ newtype JTI = JTI {
                   }
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
---TODO iso
--- _KidValue :: Prism' Value FapiKid
--- _KidValue =
---    prism (\case
---              FapiKid v -> A.String v
---          )
---          (\case
---              A.String v -> Right . FapiKid $ v
---              e -> Left e
---          )
-
 newtype RequestUris = RequestUris {
   getRequestUris  :: Set RequestUri}
   deriving (Generic, Show, Eq)
 
 instance ToJSON RequestUris where
-  toJSON (RequestUris s) = toJSON . SpaceSeperatedSet . Set.map (render . getRequestUri) $ s
+  toJSON (RequestUris set) = toJsonSpaceSeperatedSet (render . getRequestUri) set
 
 instance FromJSON RequestUris where
-  parseJSON = fmap RequestUris . parseSpaceSeperatedSet (_URI . _Unwrapped) "EmailAddress"
+  parseJSON = fmap RequestUris . parseSpaceSeperatedSet (_URI . _Unwrapped) "RequestUris"
 
 newtype RequestUri =
   RequestUri {getRequestUri :: URI}
-  deriving (Show, Eq, Ord)
-
-instance ToJSON RequestUri where
-  toJSON (RequestUri uri) =
-    toJSON $ URI.render uri
-
-instance FromJSON RequestUri where
-  parseJSON =
-    fmap RequestUri . (>>= toParser) . fmap URI.mkURI . parseJSON
-    where
-      toParser =
-        either (fail . show) pure
+  deriving (Generic, Show, Eq, ToJSON, FromJSON, Ord)
 
 -- | 'RedirectUrls' is a non-empty array of redirection URI values used by the client to match against supplied @redirect_uri@ request parameter. If using @web@ scheme (as per CDR) these must all be HTTPS, and must not use 'localhost' as hostname.
 newtype RedirectUrls = RedirectUrls {
-  getRedirectUrls  :: [RedirectUri]}
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  getRedirectUrls  :: Set RedirectUri}
+  deriving (Generic, Show, Eq)
+
+instance ToJSON RedirectUrls where
+  toJSON (RedirectUrls set) = toJsonSpaceSeperatedSet (render . getRedirectUri) set
+
+instance FromJSON RedirectUrls where
+  parseJSON = fmap RedirectUrls . parseSpaceSeperatedSet (_URI . _Unwrapped) "RedirectUrls"
 
 -- | Constructor for @redirect_url@ array; all URLs must be HTTPS, none may be localhost, as mandated by CDR.
-redirectUrls :: [RedirectUri] -> Maybe RedirectUrls
-redirectUrls uris = if not (null uris) && allValid uris then Just . RedirectUrls $ uris else Nothing where
+_RedirectUrls :: Prism' (Set RedirectUri) RedirectUrls
+_RedirectUrls = prism' (\(RedirectUrls r) -> r)
+                       (\uris ->
+                         if
+                            not (null uris) && allValid uris
+                         then
+                            Just . RedirectUrls $ uris else Nothing)
+                       where
   isValidHost uri = and $ liftA2 (/=) (URI.mkHost "localhost") (uri ^? uriAuthority . _Right . authHost)
   isHttps uri = and $ liftA2 (==) (URI.mkScheme "https") (uri ^. uriScheme)
   allValid = all (liftA2 (&&) isValidHost isHttps . getRedirectUri)
 
 -- TODO: It is unclear that our ResponseType type already has a smart constructor; perhaps it should be renamed with FAPI prefix?
 -- | FAPI acceptable values are either @code id_token@ or @code id_token token@.
-newtype FapiResponseTypes = FapiResponseTypes [ResponseType]
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+newtype FapiResponseTypes = FapiResponseTypes (Set ResponseType)
+  deriving (Generic, Show, Eq)
+
+instance ToJSON FapiResponseTypes where
+  toJSON (FapiResponseTypes set) = toJsonSpaceSeperatedSet (responseTypeText #) set
+
+instance FromJSON FapiResponseTypes where
+  parseJSON = fmap FapiResponseTypes . parseSpaceSeperatedSet responseTypeText "FapiResponseTypes"
 
 newtype FapiScopes = FapiScopes Scopes
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
@@ -531,8 +520,11 @@ newtype MutualTlsSCAT = MutualTlsSCAT Bool
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 -- | Smart constructor for @mutual_tls_sender_constrained_access_tokens@, which can only have the value of True.
-mutualTlsSCAT :: MutualTlsSCAT
-mutualTlsSCAT = MutualTlsSCAT True
+_MutualTlsSCAT :: Prism' Bool MutualTlsSCAT
+_MutualTlsSCAT = prism' (\(MutualTlsSCAT a)-> a)
+                        (\case
+                          True -> Just $ MutualTlsSCAT True
+                          _ -> Nothing)
 
 newtype NotificationEndpoint = NotificationEndpoint HttpsUrl
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
@@ -548,7 +540,7 @@ data RegistrationRequest = RegistrationRequest {
 -- | This key ID must be the value of the date on which the key was published in the format YYYY-MM-DD and must be unique within the set. If more than one key is published on the same date, the kid must consist of the following format YYYY-MM-DD.<V> where <V> represents an increasing version number and positive integer. See the <https://consumerdatastandardsaustralia.github.io/infosec/#json-web-key-sets §infosec spec> for more info.
 newtype FapiKid = FapiKid {
   getFapiKid :: T.Text }
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, Show, Eq)
 -- makeWrapped ''FapiKid
 
 -- | These claims are JWS registered claims required for the registration requests.
@@ -559,7 +551,7 @@ data JwsRegisteredClaims = JwsRegisteredClaims
   , _iat :: Maybe NumericDate -- ^ Issued at.
   , _exp :: Maybe NumericDate -- ^ Expiration time.
   , _jti :: Maybe JTI -- ^ JWT ID.
-} deriving (Generic, ToJSON, FromJSON, Show, Eq)
+} deriving (Generic, Show, Eq)
 
 data JwsHeaders = JwsHeaders
   {
@@ -658,8 +650,6 @@ data SoftwareStatement = SoftwareStatement {
 
 newtype SoftwareId = SoftwareId T.Text
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
-newtype ClientDescription = ClientDescription T.Text
-newtype ClientName = ClientName T.Text
 newtype SoftwareVersion = SoftwareVersion T.Text
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
@@ -699,9 +689,9 @@ data RegistrationErrorType = INVALID_REDIRECT_URI -- ^  The value of one or more
 newtype RegistrationErrorDescription = RegistrationErrorDescription T.Text
 
 
-registrationErrorType ::
+_RegistrationErrorType ::
   Prism' T.Text RegistrationErrorType
-registrationErrorType =
+_RegistrationErrorType =
   prism (\case
             INVALID_REDIRECT_URI -> "invalid_redirect_uri"
             INVALID_CLIENT_METADATA -> "invalid_client_metadata"
