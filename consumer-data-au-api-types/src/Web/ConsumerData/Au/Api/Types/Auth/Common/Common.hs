@@ -9,6 +9,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 
@@ -37,6 +38,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , TokenHeaders
   , TokenKeyId
   , TokenMaxAgeSeconds
+  , responseTypeText
   , TokenPhoneText
   , TokenSubject (..)
   , ClientId (..)
@@ -49,14 +51,12 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , scopeText
   , Scope (..)
   , State (..)
-  , SpaceSeperatedSet (..)
-  , parseSpaceSeperatedSet
-  , _URI
   ) where
 
-import           Aeson.Helpers              (parseJSONWithPrism, parseWithPrism)
+import           Aeson.Helpers
+    (SpaceSeperatedSet (..), parseJSONWithPrism, parseSpaceSeperatedSet)
 import           Control.Lens
-    (Prism', prism, prism', ( # ), (<&>), (^.))
+    (Prism', makeWrapped, prism, ( # ), (<&>), (^.))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
@@ -64,8 +64,8 @@ import           Crypto.Hash                (HashAlgorithm, hashWith)
 import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
 import           Crypto.JWT                 (StringOrURI)
 import           Data.Aeson.Types
-    (FromJSON (..), FromJSON1 (..), Parser, ToJSON (..), ToJSON1 (..), Value,
-    object, toJSON1, withObject, (.:), (.=))
+    (FromJSON (..), FromJSON1 (..), Parser, ToJSON (..), ToJSON1 (..), object,
+    toJSON1, withObject, (.:), (.=))
 import           Data.Bool                  (bool)
 import qualified Data.ByteArray             as BA
 import           Data.ByteString            (ByteString)
@@ -81,7 +81,6 @@ import qualified Data.Text                  as T
 import           Data.Text.Encoding         (decodeUtf8, encodeUtf8)
 import           GHC.Generics               (Generic, Generic1)
 import           Text.URI                   (URI, mkURI)
-import qualified Text.URI                   as URI
 import           Text.URI.Lens              (unRText, uriScheme)
 import           Waargonaut.Encode          (Encoder')
 import qualified Waargonaut.Encode          as E
@@ -115,7 +114,6 @@ newtype Nonce =
 --TODO create error types
 newtype ErrorCode = ErrorCode Text
 
-
 -- | The @error_description@ returned as parameter of the query component of the part of the redirection URI using the "application/x-www-form-urlencoded" format. Human-readable ASCII [USASCII] text providing additional information, used to assist the client developer in understanding the error that occurred. Values for the @error_description@ parameter MUST NOT include characters outside the set %x20-21 / %x23-5B / %x5D-7E.
 newtype ErrorDescription =
   ErrorDescription {getErrorDescription :: Text}
@@ -124,18 +122,7 @@ newtype ErrorDescription =
 -- | The @error_uri@ returned as parameter of the query component of the part of the redirection URI using the "application/x-www-form-urlencoded" format. A URI identifying a human-readable web page with information about the error, used to provide the client developer with additional information about the error. Values for the @error_uri@ parameter MUST conform to the URI-reference syntax and thus MUST NOT include characters outside the set %x21 / %x23-5B / %x5D-7E.
 newtype AuthUri =
   AuthUri {getAuthUri :: URI}
-  deriving (Eq, Show)
-
-instance ToJSON AuthUri where
-  toJSON (AuthUri uri) =
-    toJSON $ URI.render uri
-
-instance FromJSON AuthUri where
-  parseJSON =
-    fmap AuthUri . (>>= toParser) . fmap mkURI . parseJSON
-    where
-      toParser =
-        either (fail . show) pure
+  deriving (Eq, Show, ToJSON, FromJSON)
 
 -- | Error response types for authorization code grant and for implicit grant
 -- <https://tools.ietf.org/html/rfc6749#section-4.1.2.1 OAuth 2.0 §4.1.2.1> for authorization code grant
@@ -236,7 +223,7 @@ data ResponseType =
   -- ^ @code id_token@ response type, implying a Hybrid flow
   --  | CodeIdTokenToken
   -- ^ @code id_token token@ response type are not supported in AU OB.
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 responseTypeText ::
   Prism' Text ResponseType
@@ -392,18 +379,8 @@ newtype ClientIss = ClientIss
 -- TODO: these are not really URIs ... URNs?
 newtype RedirectUri =
   RedirectUri {getRedirectUri :: URI}
-  deriving (Show, Eq)
-
-instance ToJSON RedirectUri where
-  toJSON (RedirectUri uri) =
-    toJSON $ URI.render uri
-
-instance FromJSON RedirectUri where
-  parseJSON =
-    fmap RedirectUri . (>>= toParser) . fmap mkURI . parseJSON
-    where
-      toParser =
-        either (fail . show) pure
+  deriving (Show, FromJSON, ToJSON, Eq, Ord)
+makeWrapped ''RedirectUri
 
 -- | A @kid@ to be returned in the token. A @kid@ is the certificate Key ID, and it must be checked to match signing cert
 newtype TokenKeyId = TokenKeyId Text --TODO is really text?
@@ -435,8 +412,7 @@ mkHttpsUrl uri =
     Nothing      -> throwing_ _MissingScheme
 
 instance ToJSON HttpsUrl where
-  toJSON (HttpsUrl uri) =
-    toJSON $ URI.render uri
+  toJSON (HttpsUrl uri) = toJSON uri
 
 instance FromJSON HttpsUrl where
   parseJSON v =  toParser =<< mkHttpsUrlText <$> parseJSON v
@@ -573,23 +549,6 @@ instance FromJSON1 Claim where
 
 instance ToJSON a => ToJSON (Claim a) where
   toJSON = toJSON1
-
-newtype SpaceSeperatedSet = SpaceSeperatedSet
-  {
-    fromSpaceSeperatedSet :: Set T.Text
-  } deriving (Show)
-
-instance ToJSON SpaceSeperatedSet where
-  toJSON (SpaceSeperatedSet s) = toJSON . T.intercalate " " . Set.toList $ s
-
-instance FromJSON SpaceSeperatedSet where
-  parseJSON v = SpaceSeperatedSet . Set.fromList .  T.split (== ' ') <$> parseJSON v
-
-parseSpaceSeperatedSet :: Ord a => Prism' Text a -> String -> Value -> Parser (Set a)
-parseSpaceSeperatedSet p n = fmap Set.fromList . (>>= traverse (parseWithPrism p n)) . fmap (Set.toList . fromSpaceSeperatedSet) .  parseJSON
-
-_URI :: Prism' T.Text URI
-_URI = prism' URI.render mkURI
 
 -- aesonOpts ::
 --   Options
