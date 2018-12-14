@@ -5,7 +5,7 @@ module Web.ConsumerData.Au.Api.Types.Banking.Common
   , module AccountTransaction
   , module AuthorisedEntity
   , module CurrencyAmount
-  , module ExtendedTransactionData
+  , module TransactionExtendedData
   , module Identified
   , module PayeeDetail
   , module Payees
@@ -22,7 +22,7 @@ import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit as Accoun
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransaction as AccountTransaction
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AuthorisedEntity as AuthorisedEntity
 import Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount as CurrencyAmount
-import Web.ConsumerData.Au.Api.Types.Banking.Common.ExtendedTransactionData as ExtendedTransactionData
+import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionExtendedData as TransactionExtendedData
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Identified as Identified
 import Web.ConsumerData.Au.Api.Types.Banking.Common.PayeeDetail as PayeeDetail
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Payees as Payees

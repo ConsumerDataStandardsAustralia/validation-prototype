@@ -16,9 +16,9 @@ import           Waargonaut.Encode (Encoder')
 import qualified Waargonaut.Encode as E
 
 import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
-import Web.ConsumerData.Au.Api.Types.Banking.Common.ExtendedTransactionData
-    (ExtendedTransactionData, extendedTransactionDataDecoder,
-    extendedTransactionDataEncoder)
+import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionExtendedData
+    (TransactionExtendedData, transactionExtendedDataDecoder,
+    transactionExtendedDataEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionBasic
     (TransactionId, TransactionStatus, transactionIdDecoder,
     transactionIdEncoder, transactionStatusDecoder, transactionStatusEncoder)
@@ -38,7 +38,7 @@ data TransactionDetail = TransactionDetail
   , _transactionDetailAmount            :: Maybe AmountString -- ^ The value of the transaction. Negative values mean money was outgoing.
   , _transactionDetailCurrency          :: Maybe CurrencyString -- ^ The currency for the transaction amount. AUD assumed if not present.
   , _transactionDetailReference         :: Text -- ^ The reference for the transaction provided by the originating institution.
-  , _transactionDetailExtendedData      :: Maybe ExtendedTransactionData -- ^ Contains more detailed information specific to transactions originated via NPP.
+  , _transactionDetailExtendedData      :: Maybe TransactionExtendedData -- ^ Contains more detailed information specific to transactions originated via NPP.
   } deriving (Generic, Show, Eq)
 
 transactionDetailDecoder :: Monad f => Decoder f TransactionDetail
@@ -52,7 +52,7 @@ transactionDetailDecoder =
     <*> atKeyOptional' "amount" amountStringDecoder
     <*> atKeyOptional' "currency" currencyStringDecoder
     <*> D.atKey "reference" D.text
-    <*> atKeyOptional' "extendedData" extendedTransactionDataDecoder
+    <*> atKeyOptional' "extendedData" transactionExtendedDataDecoder
 
 transactionDetailEncoder :: Encoder' TransactionDetail
 transactionDetailEncoder = E.mapLikeObj $ \(TransactionDetail tid ts desc pdt edt amt cur ref ed) ->
@@ -64,4 +64,4 @@ transactionDetailEncoder = E.mapLikeObj $ \(TransactionDetail tid ts desc pdt ed
   maybeOrAbsentE "amount" amountStringEncoder amt .
   maybeOrAbsentE "currency" currencyStringEncoder cur .
   E.atKey' "reference" E.text ref .
-  maybeOrAbsentE "extendedData" extendedTransactionDataEncoder ed
+  maybeOrAbsentE "extendedData" transactionExtendedDataEncoder ed

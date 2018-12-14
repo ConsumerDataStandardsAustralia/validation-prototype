@@ -48,7 +48,7 @@ library
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.AuthorisedEntity
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.ExtendedTransactionData
+                     , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionExtendedData
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Identified
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.PayeeDetail
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Payees
