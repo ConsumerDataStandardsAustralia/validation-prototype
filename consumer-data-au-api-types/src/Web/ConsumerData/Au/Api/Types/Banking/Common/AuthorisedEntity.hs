@@ -32,7 +32,7 @@ authorisedEntityDecoder :: Monad f => Decoder f AuthorisedEntity
 authorisedEntityDecoder =
   AuthorisedEntity
     <$> D.atKey "name" D.text
-    <*> D.atKey "financialInstitution" D.text -- WARNING
+    <*> D.atKey "financialInstitution" D.text -- WARNING miss typed in swagger `financialInsitution`
     <*> atKeyOptional' "abn" abnDecoder
     <*> atKeyOptional' "acn" acnDecoder
 

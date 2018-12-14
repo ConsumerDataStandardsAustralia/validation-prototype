@@ -54,14 +54,14 @@ accountDirectDebitEncoder = E.mapLikeObj $ \ p ->
 instance JsonEncode OB AccountDirectDebit where
   mkEncoder = tagOb accountDirectDebitEncoder
 
-newtype DirectDebitAuthorisations
-  = DirectDebitAuthorisations { getAuthorisations :: [AccountDirectDebit] }
+newtype DirectDebitAuthorisations =
+  DirectDebitAuthorisations { getAuthorisations :: [AccountDirectDebit] }
+    deriving (Eq, Show)
 
 directDebitAuthorisationsDecoder :: Monad f => Decoder f DirectDebitAuthorisations
-directDebitAuthorisationsDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  auths <- D.fromKey "directDebitAuthorisations" (D.list accountDirectDebitDecoder) o
-  pure $ DirectDebitAuthorisations auths
+directDebitAuthorisationsDecoder =
+  DirectDebitAuthorisations
+    <$> D.atKey "directDebitAuthorisations" (D.list accountDirectDebitDecoder)
 
 directDebitAuthorisationsEncoder :: Applicative f => Encoder f DirectDebitAuthorisations
 directDebitAuthorisationsEncoder = E.mapLikeObj $ \dda ->
