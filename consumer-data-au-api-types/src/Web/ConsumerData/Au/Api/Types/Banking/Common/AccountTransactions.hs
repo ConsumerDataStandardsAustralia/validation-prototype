@@ -9,11 +9,12 @@ module Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransactions
   ( module Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransactions
   ) where
 
-import           Data.Text         (Text)
-import           Waargonaut.Decode (Decoder)
-import qualified Waargonaut.Decode as D
-import           Waargonaut.Encode (Encoder)
-import qualified Waargonaut.Encode as E
+import           Data.Text          (Text)
+import           Waargonaut.Decode  (Decoder)
+import qualified Waargonaut.Decode  as D
+import           Waargonaut.Encode  (Encoder)
+import qualified Waargonaut.Encode  as E
+import           Waargonaut.Generic (JsonDecode (..), JsonEncode (..))
 
 import Waargonaut.Helpers
     (atKeyOptional', maybeOrAbsentE)
@@ -21,7 +22,7 @@ import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
     (AccountId, accountIdDecoder, accountIdEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
     (Transactions, transactionsDecoder, transactionsEncoder)
--- import Web.ConsumerData.Au.Api.Types.Tag                        (OB, tagOb)
+import Web.ConsumerData.Au.Api.Types.Tag                        (OB, tagOb)
 
 
 data AccountTransactions = AccountTransactions
@@ -45,3 +46,9 @@ accountTransactionEncoder = E.mapLikeObj $ \(AccountTransactions accId dName nNa
   E.atKey' "displayName" E.text dName .
   maybeOrAbsentE "nickname" E.text nName .
   E.atKey' "transactions" transactionsEncoder ts
+
+instance JsonDecode OB AccountTransactions where
+  mkDecoder = tagOb accountTransactionDecoder
+
+instance JsonEncode OB AccountTransactions where
+  mkEncoder = tagOb accountTransactionEncoder

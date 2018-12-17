@@ -57,6 +57,7 @@ library
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionDetail
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionExtendedData
+                     , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionsDetail
                      , Web.ConsumerData.Au.Api.Types.Banking.Payees
                      , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.DepositRate
                      , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.Discount

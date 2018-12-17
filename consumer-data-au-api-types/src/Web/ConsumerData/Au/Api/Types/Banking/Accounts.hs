@@ -21,7 +21,9 @@ import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
     (DirectDebitAuthorisations)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransactions
-import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
+import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction (TransactionId)
+import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionsDetail
+import Web.ConsumerData.Au.Api.Types.Banking.Common.BulkTransaction
 import Web.ConsumerData.Au.Api.Types.Response
 import Web.ConsumerData.Au.Api.Types.Tag
 
@@ -95,6 +97,6 @@ type AccountByIdResponse = StandardResponse AccountDetail
 type AccountBulkBalanceResponse = PaginatedResponse AccountBalances
 type AccountBalanceByIdsResponse = StandardResponse AccountBalances
 type AccountDirectDebitsResponse = PaginatedResponse DirectDebitAuthorisations
-type AccountTransactionDetailResponse = StandardResponse AccountTransactionDetail
 type AccountTransactionsResponse = PaginatedResponse AccountTransactions
-type AccountsTransactionsResponse = PaginatedResponse AccountsTransactions
+type AccountTransactionDetailResponse = StandardResponse TransactionsDetail
+type AccountsTransactionsResponse = PaginatedResponse BulkTransactions
