@@ -29,7 +29,7 @@ import Web.ConsumerData.Au.Api.Types.SumTypeHelpers
 data TransactionExtendedData = TransactionExtendedData
   { _transactionExtendedDataPayer         :: Maybe Text -- ^ Label of the originating payer. Mandatory for an inbound payment.
   , _transactionExtendedDataPayee         :: Maybe Text -- ^ Label of the target PayID. Mandatory for an outbound payment.
-  , _transactionExtendedDataExtensionType :: Maybe ExtensionType -- ^ The type of transaction data extension.
+  , _transactionExtendedDataExtensionType :: Maybe TransactionExtendedDataExtensionType -- ^ The type of transaction data extension.
   , _transactionExtendedDataService       :: TransactionExtendedDataService -- ^ Identifier of the applicable overlay service.
   } deriving (Generic, Show, Eq)
 
@@ -49,20 +49,20 @@ transactionExtendedDataEncoder = E.mapLikeObj $ \(TransactionExtendedData payer 
   E.atKey' "service" transactionExtendedDataServiceEncoder serv
 
 
-data ExtensionType =
-    ExtendedDescription Text
+data TransactionExtendedDataExtensionType =
+    TEDExtendedDescription Text
   deriving (Eq, Show)
 
-extensionTypeDecoder :: Monad f => Decoder f ExtensionType
+extensionTypeDecoder :: Monad f => Decoder f TransactionExtendedDataExtensionType
 extensionTypeDecoder = typeTaggedDecoder "extension$type" $ \case
-  "extendedDescription" -> Just $ (TypedTagField ExtendedDescription D.text)
+  "extendedDescription" -> Just $ (TypedTagField TEDExtendedDescription D.text)
   _                     -> Nothing
 
 extensionTypeFields ::
   (Monoid ws, Semigroup ws)
-  => ExtensionType -> MapLikeObj ws Json -> MapLikeObj ws Json
+  => TransactionExtendedDataExtensionType -> MapLikeObj ws Json -> MapLikeObj ws Json
 extensionTypeFields = \case
-  ExtendedDescription t -> fields "extendedDescription" E.text t
+  TEDExtendedDescription t -> fields "extendedDescription" E.text t
   where
     fields = typeTaggedField "extension$type"
 
