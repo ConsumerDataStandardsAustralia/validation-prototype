@@ -9,10 +9,8 @@ module Web.ConsumerData.Au.Api.Types.Banking.Common.BulkTransaction
   ( module Web.ConsumerData.Au.Api.Types.Banking.Common.BulkTransaction
   ) where
 
-import Control.Lens (Prism', prism, ( # ))
-import Data.Text    (Text)
--- import           Servant.API
---     (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece)
+import           Control.Lens            (Prism', prism, ( # ))
+import           Data.Text               (Text)
 import           Waargonaut.Decode       (Decoder)
 import qualified Waargonaut.Decode       as D
 import qualified Waargonaut.Decode.Error as D
@@ -20,7 +18,6 @@ import           Waargonaut.Encode       (Encoder)
 import qualified Waargonaut.Encode       as E
 import           Waargonaut.Generic      (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types        (Json, MapLikeObj, WS)
-
 
 import Waargonaut.Helpers
     (atKeyOptional', maybeOrAbsentE)
@@ -33,8 +30,6 @@ import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
     amountStringEncoder, currencyStringDecoder, currencyStringEncoder,
     dateTimeStringDecoder, dateTimeStringEncoder)
 import Web.ConsumerData.Au.Api.Types.Tag
-    -- (OB, tagOB)
-
 
 
 newtype BulkTransactions = BulkTransactions { unBulkTransactions :: [BulkTransaction] } deriving (Eq, Show)
@@ -50,7 +45,6 @@ instance JsonDecode OB BulkTransactions where
 
 instance JsonEncode OB BulkTransactions where
   mkEncoder = tagOb bulkTransactionsEncoder
-
 
 
 data BulkTransaction = BulkTransaction

@@ -9,7 +9,7 @@ module Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
   ( module Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
   ) where
 
-import           Control.Lens               (Prism', prism, (#))
+import           Control.Lens               (Prism', prism, ( # ))
 import           Data.Functor.Contravariant ((>$<))
 import           Data.Text                  (Text)
 import           Servant.API
@@ -20,9 +20,10 @@ import qualified Waargonaut.Decode.Error    as D
 import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
-import           Waargonaut.Types                    (Json, MapLikeObj, WS)
+import           Waargonaut.Types           (Json, MapLikeObj, WS)
 
-import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
+import Waargonaut.Helpers
+    (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
     (AmountString, AsciiString, CurrencyString, DateTimeString,
     amountStringDecoder, amountStringEncoder, asciiStringDecoder,
