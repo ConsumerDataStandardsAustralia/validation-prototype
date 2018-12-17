@@ -1,0 +1,8 @@
+{
+  "payeeAccount$type": "account",
+  "account": {
+    "accountName": "string",
+    "bsb": "string",
+    "accountNumber": "string"
+  }
+}

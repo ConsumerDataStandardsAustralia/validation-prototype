@@ -29,3 +29,37 @@ test_roundTripPayeeDetail = roundTripTest
   (untag (mkEncoder :: (Tagged OB (Encoder Identity (StandardResponse PayeeDetail)))))
   "PayeeDetailRoundTrip"
   "tests/Web/ConsumerData/Au/Api/Types/Banking/PayeesTest/payeedetail.golden.json"
+
+test_roundSubPayeeDetail :: [TestTree]
+test_roundSubPayeeDetail =
+  [ roundTripTest
+    domesticPayeeDecoder
+    domesticPayeeEncoder
+    " DomesticPayeeRoundTrip"
+    "tests/Web/ConsumerData/Au/Api/Types/Banking/PayeesTest/domesticPayee.json"
+  , roundTripTest
+    domesticPayeeAccountDecoder
+    domesticPayeeAccountEncoder
+    "  DomesticPayeeAccountRoundTrip"
+    "tests/Web/ConsumerData/Au/Api/Types/Banking/PayeesTest/domesticPayeeAccount.json"
+  , roundTripTest
+    domesticPayeeCardDecoder
+    domesticPayeeCardEncoder
+    "  DomesticPayeeCardRoundTrip"
+    "tests/Web/ConsumerData/Au/Api/Types/Banking/PayeesTest/domesticPayeeCard.json"
+  , roundTripTest
+    domesticPayeePayIdDecoder
+    domesticPayeePayIdEncoder
+    "  DomesticPayeePayIdRoundTrip"
+    "tests/Web/ConsumerData/Au/Api/Types/Banking/PayeesTest/domesticPayeePayId.json"
+  , roundTripTest
+    internationalPayeeDecoder
+    internationalPayeeEncoder
+    " InternationalPayeeRoundTrip"
+    "tests/Web/ConsumerData/Au/Api/Types/Banking/PayeesTest/internationalPayee.json"
+  , roundTripTest
+    billerPayeeDecoder
+    billerPayeeEncoder
+    " BillerPayeeRoundTrip"
+    "tests/Web/ConsumerData/Au/Api/Types/Banking/PayeesTest/billerPayee.json"
+  ]
