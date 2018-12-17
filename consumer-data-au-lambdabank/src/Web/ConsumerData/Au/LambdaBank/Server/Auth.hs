@@ -22,5 +22,10 @@ authoriseServer ::
   -> Nonce
   -> Maybe State
   -> LambdaBankM (IdToken 'TokenUse)
-authoriseServer =
+authoriseServer clientId redirectUri scopes signedJwt nonce mstate =
+  -- scopes validated by FromJSON instance
+  -- required parameters handled by servant
+  -- TODO: check redirectUri validated by smart constructor in Text.URI
+  -- Ensure query param values match JWT values
+  -- Ensure client id is valid
   error "TODO: implement authorise server"
