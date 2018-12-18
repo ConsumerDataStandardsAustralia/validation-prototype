@@ -30,7 +30,7 @@ import Web.ConsumerData.Au.Api.Types.Banking.Common.ProductDetail as ProductDeta
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Products as Products
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransactions as AccountTransactions
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction as Transaction
-import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionDetail as TransactionsDetail
+import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionsDetail as TransactionsDetail
 import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionDetail as TransactionDetail
 import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionExtendedData as TransactionExtendedData
 import Web.ConsumerData.Au.Api.Types.Banking.Common.BulkTransaction as BulkTransaction
