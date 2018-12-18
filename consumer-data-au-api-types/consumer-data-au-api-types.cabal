@@ -24,6 +24,7 @@ library
                      , Data.GADT.Aeson.TH
                      , Data.GADT.Tag.TH
                      , Data.Time.Waargonaut
+                     , Data.Vector.V5
                      , Data.Vector.V6
                      , Waargonaut.Helpers
                      , Web.ConsumerData.Au.Api.Types
@@ -150,6 +151,7 @@ test-suite tasty
                      , country == 0.1.*
                      , dependent-map == 0.2.*
                      , dependent-sum == 0.4.*
+                     , digit == 0.7.*
                      , exceptions == 0.10.*
                      , hedgehog == 0.6.*
                      , http-client == 0.5.*
