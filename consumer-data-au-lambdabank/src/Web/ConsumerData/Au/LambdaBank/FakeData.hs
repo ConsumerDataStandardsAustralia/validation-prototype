@@ -107,7 +107,7 @@ testAccounts = Accounts
   ]
 
 testAccountTransactions :: AccountTransactions
-testAccountTransactions = AccountTransactions a12345 "name" "nick name" [testTransaction]
+testAccountTransactions = AccountTransactions a12345 "name" (Just "nick name") (Transactions [testTransaction])
 
 testTransaction :: Transaction
 testTransaction = Transaction
@@ -116,11 +116,14 @@ testTransaction = Transaction
 testTransactionDetail :: TransactionDetail
 testTransactionDetail = TransactionDetail Nothing TransactionStatusPosted "" Nothing Nothing Nothing Nothing "" Nothing
 
-testAccountsTransactions :: AccountsTransactions
-testAccountsTransactions = AccountsTransactions [testAccountTransaction]
+testAccountsTransactions :: BulkTransactions
+testAccountsTransactions = BulkTransactions [testBulkTransaction]
 
-testAccountTransactionDetail :: AccountTransactionDetail
-testAccountTransactionDetail = AccountTransactionDetail $ identified testTransactionDetail
+testBulkTransaction :: BulkTransaction
+testBulkTransaction = BulkTransaction a12345 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+
+testAccountTransactionsDetail :: TransactionsDetail
+testAccountTransactionsDetail = TransactionsDetail a12345 "" Nothing (TransactionDetails [testTransactionDetail])
 
 testDirectDebitAuthorisations :: DirectDebitAuthorisations
 testDirectDebitAuthorisations = DirectDebitAuthorisations
