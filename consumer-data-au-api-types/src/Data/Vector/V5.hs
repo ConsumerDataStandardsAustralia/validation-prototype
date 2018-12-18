@@ -41,10 +41,7 @@ v5CharDecoder =
     err = D.ConversionFailure "Wrong number of characters"
 
 v5CharEncoder :: Applicative f => Encoder f (V5 Char)
-v5CharEncoder = review v5List >$< stringE
-
-stringE :: Applicative f => Encoder f String
-stringE = Text.pack >$< E.text
+v5CharEncoder = Text.pack . review v5List >$< E.text
 
 v5ListEncoder :: Applicative f => Encoder f a -> Encoder f (V5 a)
 v5ListEncoder = contramap toList . E.list
@@ -57,4 +54,4 @@ v5DigitDecoder = v5CharDecoder >>=
     err c = throwError (D.ConversionFailure $ "'" <> Text.singleton c <> "' is not a valid digit")
 
 v5DigitEncoder :: Applicative f => Encoder f (V5 DecDigit)
-v5DigitEncoder = toList . fmap (review charDecimal) >$< stringE
+v5DigitEncoder = Text.pack . toList . fmap (review charDecimal) >$< E.text

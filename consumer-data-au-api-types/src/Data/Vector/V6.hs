@@ -41,10 +41,7 @@ v6CharDecoder =
     err = D.ConversionFailure "Wrong number of characters"
 
 v6CharEncoder :: Applicative f => Encoder f (V6 Char)
-v6CharEncoder = review v6List >$< stringE
-
-stringE :: Applicative f => Encoder f String
-stringE = Text.pack >$< E.text
+v6CharEncoder = Text.pack . review v6List >$< E.text
 
 v6ListEncoder :: Applicative f => Encoder f a -> Encoder f (V6 a)
 v6ListEncoder = contramap toList . E.list
@@ -57,4 +54,4 @@ v6DigitDecoder = v6CharDecoder >>=
     err c = throwError (D.ConversionFailure $ "'" <> Text.singleton c <> "' is not a valid digit")
 
 v6DigitEncoder :: Applicative f => Encoder f (V6 DecDigit)
-v6DigitEncoder = toList . fmap (review charDecimal) >$< stringE
+v6DigitEncoder = Text.pack . toList . fmap (review charDecimal) >$< E.text
