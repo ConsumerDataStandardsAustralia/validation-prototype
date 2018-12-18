@@ -1,7 +1,7 @@
 { mkDerivation, aeson, base, bytestring
 , consumer-data-au-api-client, consumer-data-au-api-types, country
-, digit, exceptions, free, hedgehog, http-client, jose, lens
-, modern-uri, mtl, profunctors, servant, servant-client
+, currency-codes, digit, exceptions, free, hedgehog, http-client
+, jose, lens, modern-uri, mtl, profunctors, servant, servant-client
 , servant-server, stdenv, tasty, tasty-discover, tasty-golden
 , tasty-hedgehog, tasty-hunit, text, time, transformers, wai, warp
 }:
@@ -13,9 +13,9 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     aeson base bytestring consumer-data-au-api-client
-    consumer-data-au-api-types country digit free jose lens modern-uri
-    mtl profunctors servant servant-server text time transformers wai
-    warp
+    consumer-data-au-api-types country currency-codes digit free jose
+    lens modern-uri mtl profunctors servant servant-server text time
+    transformers wai warp
   ];
   executableHaskellDepends = [ base ];
   testHaskellDepends = [
