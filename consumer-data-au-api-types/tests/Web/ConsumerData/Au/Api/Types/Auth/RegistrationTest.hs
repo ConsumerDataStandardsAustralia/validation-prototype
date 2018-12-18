@@ -6,7 +6,13 @@
 {-# OPTIONS_GHC -Wwarn #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest where
+import Test.Tasty (TestTree)
 
+test_request ::
+  [TestTree]
+test_request = []
+
+{--
 import           Control.Lens                             (( # ), (^?))
 import           Control.Monad                            ((<=<))
 import           Control.Monad.Catch
@@ -336,3 +342,4 @@ instance Exception BadAlgType
 
 data BadAuthMeth = BadAuthMeth  deriving (Show)
 instance Exception BadAuthMeth
+--}
