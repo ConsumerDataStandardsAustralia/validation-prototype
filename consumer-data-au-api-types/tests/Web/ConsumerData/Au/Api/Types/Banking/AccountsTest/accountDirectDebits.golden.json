@@ -1,0 +1,22 @@
+{
+  "data": {
+    "directDebitAuthorisations": [
+      {
+        "accountId": "string",
+        "lastDebitDateTime": "2018-11-01T05:33:52Z",
+        "lastDebitAmount": "300.56"
+      }
+    ]
+  },
+  "links": {
+    "self": "http://example.com/",
+    "first": "http://example.com/",
+    "prev": "http://example.com/",
+    "next": "http://example.com/",
+    "last": "http://example.com/"
+  },
+  "meta": {
+    "totalRecords": 6,
+    "totalPages": 2
+  }
+}

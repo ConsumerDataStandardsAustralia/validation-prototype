@@ -9,7 +9,7 @@
         ],
         "prefix": "prefix",
         "suffix": "suffix",
-        "occupationCode": "3399",
+        "occupationCode": "121322",
         "phoneNumbers": [
             {
                 "isPreferred": true,
@@ -17,7 +17,6 @@
                 "countryCode": "61",
                 "areaCode": "04",
                 "number": "88145427",
-                "extension": null,
                 "fullNumber": "+61488145427"
             }
         ],

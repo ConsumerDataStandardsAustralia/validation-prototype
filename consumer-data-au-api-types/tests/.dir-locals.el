@@ -2,4 +2,4 @@
 ;;; For more information see (info "(emacs) Directory Variables")
 
 ((haskell-mode
-  (dante-target . "tasty")))
+  (dante-target . "consumer-data-au-api-types:tasty")))

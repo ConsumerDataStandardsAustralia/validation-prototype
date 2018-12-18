@@ -1,18 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Web.ConsumerData.Au.Api.Types.Data.Gens
-  (amountStringGen, rateStringGen, asciiStringGen, physicalAddressGen)
+  (amountStringGen, rateStringGen, asciiStringGen, physicalAddressGen, currencyGen)
 where
 
-import Control.Applicative (liftA3)
-import Data.Foldable (Foldable (toList))
-import Data.Text (Text)
-import qualified Data.Text as Text
-import Hedgehog (Gen)
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+import           Control.Applicative (liftA3)
+import           Data.Currency       (Alpha)
+import           Data.Foldable       (Foldable (toList))
+import           Data.Text           (Text)
+import qualified Data.Text           as Text
+import           Hedgehog            (Gen)
+import qualified Hedgehog.Gen        as Gen
+import qualified Hedgehog.Range      as Range
 
-import Country.Gens (countryGen)
+import Country.Gens   (countryGen)
 import Data.Text.Gens (textGen)
 
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
@@ -49,6 +50,9 @@ rateStringGen = RateString <$> Gen.choice
 
 asciiStringGen :: Gen AsciiString
 asciiStringGen = AsciiString . Text.pack <$> Gen.list (Range.linear 1 50) Gen.ascii
+
+currencyGen :: Gen Alpha
+currencyGen = Gen.enumBounded
 
 physicalAddressGen ::  Gen PhysicalAddress
 physicalAddressGen =

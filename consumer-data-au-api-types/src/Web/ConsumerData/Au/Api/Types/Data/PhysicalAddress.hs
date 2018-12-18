@@ -21,6 +21,7 @@ import qualified Waargonaut.Decode.Error    as D
 import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Stub
     (emptyObjDecoder, emptyObjEncoder)
 import Web.ConsumerData.Au.Api.Types.SumTypeHelpers
@@ -109,25 +110,25 @@ data SimpleAddress = SimpleAddress
 
 simpleAddressEncoder :: Applicative f => Encoder f SimpleAddress
 simpleAddressEncoder = E.mapLikeObj $ \p ->
-  E.atKey' "mailingName" (E.maybeOrNull E.text) (_simpleAddressMailingName p) .
+  maybeOrAbsentE "mailingName" E.text (_simpleAddressMailingName p) .
   E.atKey' "addressLine1" E.text (_simpleAddressAddressLine1 p) .
-  E.atKey' "addressLine2" (E.maybeOrNull E.text) (_simpleAddressAddressLine2 p) .
-  E.atKey' "addressLine3" (E.maybeOrNull E.text) (_simpleAddressAddressLine3 p) .
-  E.atKey' "postcode" (E.maybeOrNull E.text) (_simpleAddressPostcode p) .
+  maybeOrAbsentE "addressLine2" E.text (_simpleAddressAddressLine2 p) .
+  maybeOrAbsentE "addressLine3" E.text (_simpleAddressAddressLine3 p) .
+  maybeOrAbsentE "postcode" E.text (_simpleAddressPostcode p) .
   E.atKey' "city" E.text (_simpleAddressCity p) .
   E.atKey' "state" addressStateEncoder (_simpleAddressState p) .
-  E.atKey' "country" (E.maybeOrNull countryAlphaThreeEncoder) (_simpleAddressCountry p)
+  maybeOrAbsentE "country" countryAlphaThreeEncoder (_simpleAddressCountry p)
 
 simpleAddressDecoder :: Monad f => Decoder f SimpleAddress
 simpleAddressDecoder = SimpleAddress
-    <$> (D.atKey "mailingName" $ D.maybeOrNull D.text)
-    <*> (D.atKey "addressLine1" D.text)
-    <*> (D.atKey "addressLine2" $ D.maybeOrNull D.text)
-    <*> (D.atKey "addressLine3" $ D.maybeOrNull D.text)
-    <*> (D.atKey "postcode" $ D.maybeOrNull D.text)
-    <*> (D.atKey "city" D.text)
-    <*> (D.atKey "state" addressStateDecoder)
-    <*> (D.atKey "country" $ D.maybeOrNull countryAlphaThreeDecoder)
+    <$> atKeyOptional' "mailingName" D.text
+    <*> D.atKey "addressLine1" D.text
+    <*> atKeyOptional' "addressLine2" D.text
+    <*> atKeyOptional' "addressLine3" D.text
+    <*> atKeyOptional' "postcode" D.text
+    <*> D.atKey "city" D.text
+    <*> D.atKey "state" addressStateDecoder
+    <*> atKeyOptional' "country" countryAlphaThreeDecoder
 
 -- | @AddressState@ If country is Australia then must be one of the values defined by the <https://www.iso.org/obp/ui/#iso:code:3166:AU ISO 3166:AU> standard.
 data AddressState =

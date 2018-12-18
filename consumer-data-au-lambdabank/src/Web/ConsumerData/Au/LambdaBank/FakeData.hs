@@ -8,6 +8,7 @@ and not all in one file. Don't be too upset
 that it looks heinous for now!
 --}
 
+import Data.Currency            (Alpha(AUD))
 import Country.Identifier       (australia)
 import Data.Profunctor          (lmap)
 import Data.List.NonEmpty       (NonEmpty((:|)))
@@ -23,7 +24,7 @@ a12345 = AccountId (AsciiString "12345")
 testBalances :: AccountBalances
 testBalances = AccountBalances
   [ AccountBalance a12345
-      (Deposits (CurrencyAmount (AmountString "400") Nothing) (CurrencyAmount (AmountString "350.75") Nothing))
+      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "400") Nothing) (CurrencyAmount (AmountString "350.75") Nothing)))
   ]
 
 testPerson :: Person
@@ -34,8 +35,7 @@ testPerson = Person
   ["Leigh"]
   "Mr"
   Nothing
-  (Just $ OccupationCode "261313 Software Engineer")
-
+  (Just $ OccupationCode (V6 DecDigit2 DecDigit6 DecDigit1 DecDigit3 DecDigit1 DecDigit3))
 testPhoneNumber :: PhoneNumber
 testPhoneNumber = PhoneNumber True PhoneNumberPurposeMobile (Just "+61") (Just "04") "88145427" Nothing "+61488145427"
 
@@ -94,7 +94,7 @@ testAccount :: Account
 testAccount =
   Account a12345 "acc12345" (Just "my savings")
     (MaskedAccountNumber "abcde") (Just PCTermDeposits) "saving"
-    (Deposits (CurrencyAmount (AmountString "201.30") Nothing) (CurrencyAmount (AmountString "198.80") Nothing))
+    (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "201.30") (Just $ CurrencyString AUD)) (CurrencyAmount (AmountString "198.80") Nothing)))
 
 testAccountDetail :: AccountDetail
 testAccountDetail = AccountDetail (Just testAccount) Nothing Nothing Nothing Nothing Nothing Nothing Nothing
@@ -150,6 +150,9 @@ testPayeeDetail = PayeeDetail testPayee $ PTDDomestic $ DPPayeeId $ DomesticPaye
 testProduct :: Product
 testProduct = Product (AsciiString "product-id-5") Nothing Nothing (DateTimeString (UTCTime (fromGregorian 2018 1 1) 0))
   PCTermDeposits "product name" "description" "fancy" Nothing Nothing True Nothing
+
+testProducts :: Products
+testProducts = Products [testProduct]
 
 testProductDetail :: ProductDetail
 testProductDetail = ProductDetail (Just testProduct) Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing

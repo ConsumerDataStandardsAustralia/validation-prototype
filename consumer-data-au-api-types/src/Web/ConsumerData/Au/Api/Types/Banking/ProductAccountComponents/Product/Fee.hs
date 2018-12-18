@@ -22,6 +22,7 @@ import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.AdditionalValue
     (additionalValueDecoder)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Discount
@@ -72,18 +73,17 @@ data ProductFee = ProductFee
   } deriving (Show, Eq)
 
 productFeeDecoder :: Monad f => Decoder f ProductFee
-productFeeDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+productFeeDecoder =
   ProductFee
-    <$> D.fromKey "name" D.text o
-    <*> D.focus productFeeTypeDecoder o
-    <*> D.fromKey "amount" (D.maybeOrNull amountStringDecoder) o
-    <*> D.fromKey "balanceRate" (D.maybeOrNull rateStringDecoder) o
-    <*> D.fromKey "transactionRate" (D.maybeOrNull rateStringDecoder) o
-    <*> D.fromKey "currency" (D.maybeOrNull currencyStringDecoder) o
-    <*> D.fromKey "additionalInfo" (D.maybeOrNull D.text) o
-    <*> D.fromKey "additionalInfoUri" (D.maybeOrNull uriDecoder) o
-    <*> D.fromKey "discounts" (D.maybeOrNull productDiscountsDecoder) o
+    <$> D.atKey "name" D.text
+    <*> productFeeTypeDecoder
+    <*> atKeyOptional' "amount" amountStringDecoder
+    <*> atKeyOptional' "balanceRate" rateStringDecoder
+    <*> atKeyOptional' "transactionRate" rateStringDecoder
+    <*> atKeyOptional' "currency" currencyStringDecoder
+    <*> atKeyOptional' "additionalInfo" D.text
+    <*> atKeyOptional' "additionalInfoUri" uriDecoder
+    <*> atKeyOptional' "discounts" productDiscountsDecoder
 
 instance JsonDecode OB ProductFee where
   mkDecoder = tagOb productFeeDecoder
@@ -92,13 +92,13 @@ productFeeEncoder :: Applicative f => Encoder f ProductFee
 productFeeEncoder = E.mapLikeObj $ \p ->
   E.atKey' "name" E.text (_productFeeName p) .
   productFeeTypeFields (_productFeeFeeType p) .
-  E.atKey' "amount" (E.maybeOrNull amountStringEncoder) (_productFeeAmount p) .
-  E.atKey' "balanceRate" (E.maybeOrNull rateStringEncoder) (_productFeeBalanceRate p) .
-  E.atKey' "transactionRate" (E.maybeOrNull rateStringEncoder) (_productFeeTransactionRate p) .
-  E.atKey' "currency" (E.maybeOrNull currencyStringEncoder) (_productFeeCurrency p) .
-  E.atKey' "additionalInfo" (E.maybeOrNull E.text) (_productFeeAdditionalInfo p) .
-  E.atKey' "additionalInfoUri" (E.maybeOrNull uriEncoder) (_productFeeAdditionalInfoUri p) .
-  E.atKey' "discounts" (E.maybeOrNull productDiscountsEncoder) (_productFeeDiscounts p)
+  maybeOrAbsentE "amount" amountStringEncoder (_productFeeAmount p) .
+  maybeOrAbsentE "balanceRate" rateStringEncoder (_productFeeBalanceRate p) .
+  maybeOrAbsentE "transactionRate" rateStringEncoder (_productFeeTransactionRate p) .
+  maybeOrAbsentE "currency" currencyStringEncoder (_productFeeCurrency p) .
+  maybeOrAbsentE "additionalInfo" E.text (_productFeeAdditionalInfo p) .
+  maybeOrAbsentE "additionalInfoUri" uriEncoder (_productFeeAdditionalInfoUri p) .
+  maybeOrAbsentE "discounts" productDiscountsEncoder (_productFeeDiscounts p)
 
 instance JsonEncode OB ProductFee where
   mkEncoder = tagOb productFeeEncoder
@@ -122,24 +122,22 @@ data ProductFeeType =
   deriving (Show, Eq)
 
 productFeeTypeDecoder :: Monad f => Decoder f ProductFeeType
-productFeeTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
-  feeType <- D.fromKey "feeType" D.text o
+productFeeTypeDecoder = do
+  feeType <- D.atKey "feeType" D.text
   additionalValue <- case feeType of
-    "PERIODIC" -> PFeePeriodicPeriodic <$> (additionalValueDecoder durationStringDecoder o)
-    "TRANSACTION" -> PFeePeriodicTransaction <$> (additionalValueDecoder D.text o)
+    "PERIODIC" -> PFeePeriodicPeriodic <$> (additionalValueDecoder durationStringDecoder)
+    "TRANSACTION" -> PFeePeriodicTransaction <$> (additionalValueDecoder D.text)
     "ESTABLISHMENT" -> pure PFeePeriodicEstablishment
     "EXIT" -> pure PFeePeriodicExit
     "OVERDRAW" -> pure PFeePeriodicOverdraw
-    "MIN_BALANCE" -> PFeePeriodicMinBalance <$> (additionalValueDecoder durationStringDecoder o)
+    "MIN_BALANCE" -> PFeePeriodicMinBalance <$> (additionalValueDecoder durationStringDecoder)
     "REDRAW" -> pure PFeePeriodicRedraw
     "CHEQUE_CASH" -> pure PFeePeriodicChequeCash
     "CHEQUE_STOP" -> pure PFeePeriodicChequeStop
     "CHEQUE_BOOK" -> pure PFeePeriodicChequeBook
     "CARD_REPLACE" -> pure PFeePeriodicCardReplace
     "PAPER_STATEMENT" -> pure PFeePeriodicPaperStatement
-    "OTHER_EVENT" -> PFeePeriodicOtherEvent <$> (additionalValueDecoder D.text o)
+    "OTHER_EVENT" -> PFeePeriodicOtherEvent <$> (additionalValueDecoder D.text)
     _ -> throwError D.KeyDecodeFailed
   pure additionalValue
 
@@ -195,8 +193,6 @@ productFeeTypeToType' (PFeePeriodicOtherEvent {}) = PFeePeriodicOtherEvent'
 
 productFeeTypeFields :: (Monoid ws, Semigroup ws) => ProductFeeType -> MapLikeObj ws Json -> MapLikeObj ws Json
 productFeeTypeFields pc =
--- productFeeTypeEncoder :: Applicative f => Encoder f ProductFeeType
--- productFeeTypeEncoder = E.mapLikeObj $ \pc -> do
   case pc of
     PFeePeriodicPeriodic v ->
       E.atKey' "feeType" productFeeType'Encoder (productFeeTypeToType' pc) .

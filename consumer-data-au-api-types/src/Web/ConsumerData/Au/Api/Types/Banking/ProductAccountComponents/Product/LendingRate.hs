@@ -22,6 +22,7 @@ import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.AdditionalValue
     (additionalValueDecoder)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
@@ -62,13 +63,12 @@ data ProductLendingRate = ProductLendingRate
   } deriving (Show, Eq)
 
 productLendingRateDecoder :: Monad f => Decoder f ProductLendingRate
-productLendingRateDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+productLendingRateDecoder =
   ProductLendingRate
-    <$> D.focus productLendingRateTypeDecoder o
-    <*> D.fromKey "rate" rateStringDecoder o
-    <*> D.fromKey "additionalInfo" (D.maybeOrNull D.text) o
-    <*> D.fromKey "additionalInfoUri" (D.maybeOrNull uriDecoder) o
+    <$> productLendingRateTypeDecoder
+    <*> D.atKey "rate" rateStringDecoder
+    <*> atKeyOptional' "additionalInfo" D.text
+    <*> atKeyOptional' "additionalInfoUri" uriDecoder
 
 instance JsonDecode OB ProductLendingRate where
   mkDecoder = tagOb productLendingRateDecoder
@@ -77,8 +77,8 @@ productLendingRateEncoder :: Applicative f => Encoder f ProductLendingRate
 productLendingRateEncoder = E.mapLikeObj $ \p ->
   productLendingRateTypeFields (_productLendingRateLendingRateType p) .
   E.atKey' "rate" rateStringEncoder (_productLendingRateRate p) .
-  E.atKey' "additionalInfo" (E.maybeOrNull E.text) (_productLendingRateAdditionalInfo p) .
-  E.atKey' "additionalInfoUri" (E.maybeOrNull uriEncoder) (_productLendingRateAdditionalInfoUri p)
+  maybeOrAbsentE "additionalInfo" E.text (_productLendingRateAdditionalInfo p) .
+  maybeOrAbsentE "additionalInfoUri" uriEncoder (_productLendingRateAdditionalInfoUri p)
 
 instance JsonEncode OB ProductLendingRate where
   mkEncoder = tagOb productLendingRateEncoder
@@ -99,21 +99,19 @@ data ProductLendingRateType =
   deriving (Show, Eq)
 
 productLendingRateTypeDecoder :: Monad f => Decoder f ProductLendingRateType
-productLendingRateTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
-  lendingRateType <- D.fromKey "lendingRateType" D.text o
+productLendingRateTypeDecoder = do
+  lendingRateType <- D.atKey "lendingRateType" D.text
   additionalValue <- case lendingRateType of
-    "FIXED" -> PLendingRateFixed <$> (additionalValueDecoder durationStringDecoder o)
-    "INTRODUCTORY" -> PLendingRateIntroductory <$> (additionalValueDecoder durationStringDecoder o)
-    "DISCOUNT" -> PLendingRateDiscount <$> (additionalValueDecoder D.text o)
-    "PENALTY" -> PLendingRatePenalty <$> (additionalValueDecoder D.text o)
-    "BUNDLE_DISCOUNT" -> PLendingRateBundleDiscount <$> (additionalValueDecoder D.text o)
-    "FLOATING" -> PLendingRateFloating <$> (additionalValueDecoder D.text o)
-    "MARKET_LINKED" -> PLendingRateMarketLinked <$> (additionalValueDecoder D.text o)
+    "FIXED" -> PLendingRateFixed <$> (additionalValueDecoder durationStringDecoder)
+    "INTRODUCTORY" -> PLendingRateIntroductory <$> (additionalValueDecoder durationStringDecoder)
+    "DISCOUNT" -> PLendingRateDiscount <$> (additionalValueDecoder D.text)
+    "PENALTY" -> PLendingRatePenalty <$> (additionalValueDecoder D.text)
+    "BUNDLE_DISCOUNT" -> PLendingRateBundleDiscount <$> (additionalValueDecoder D.text)
+    "FLOATING" -> PLendingRateFloating <$> (additionalValueDecoder D.text)
+    "MARKET_LINKED" -> PLendingRateMarketLinked <$> (additionalValueDecoder D.text)
     "CASH_ADVANCE" -> pure PLendingRateCashAdvance
     "VARIABLE" -> pure PLendingRateVariable
-    "COMPARISON" -> PLendingRateComparison <$> (additionalValueDecoder D.text o)
+    "COMPARISON" -> PLendingRateComparison <$> (additionalValueDecoder D.text)
     _ -> throwError D.KeyDecodeFailed
   pure additionalValue
 
@@ -161,8 +159,6 @@ productLendingRateTypeToType' (PLendingRateComparison {}) = PLendingRateComparis
 
 productLendingRateTypeFields :: (Monoid ws, Semigroup ws) => ProductLendingRateType -> MapLikeObj ws Json -> MapLikeObj ws Json
 productLendingRateTypeFields pc =
--- productLendingRateTypeEncoder :: Applicative f => Encoder f ProductLendingRateType
--- productLendingRateTypeEncoder = E.mapLikeObj $ \pc -> do
   case pc of
     PLendingRateFixed v ->
       E.atKey' "lendingRateType" productLendingRateType'Encoder (productLendingRateTypeToType' pc) .
@@ -170,7 +166,6 @@ productLendingRateTypeFields pc =
     PLendingRateIntroductory v ->
       E.atKey' "lendingRateType" productLendingRateType'Encoder (productLendingRateTypeToType' pc) .
       E.atKey' "additionalValue" durationStringEncoder v
-
     PLendingRateDiscount v ->
       E.atKey' "lendingRateType" productLendingRateType'Encoder (productLendingRateTypeToType' pc) .
       E.atKey' "additionalValue" E.text v

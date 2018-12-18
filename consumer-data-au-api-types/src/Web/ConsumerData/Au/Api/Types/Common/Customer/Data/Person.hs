@@ -8,10 +8,12 @@ module Web.ConsumerData.Au.Api.Types.Common.Customer.Data.Person
   ( module Web.ConsumerData.Au.Api.Types.Common.Customer.Data.Person
   ) where
 
+import           Data.Digit.Decimal
 import           Data.Functor.Contravariant ((>$<))
 import           Data.Text                  (Text)
 import           Data.Time                  (UTCTime)
 import           Data.Time.Waargonaut       (utcTimeDecoder, utcTimeEncoder)
+import           Data.Vector.V6
 import           GHC.Generics               (Generic)
 import           Waargonaut.Decode          (Decoder)
 import qualified Waargonaut.Decode          as D
@@ -20,6 +22,7 @@ import qualified Waargonaut.Encode          as E
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 
 -- | The individual who authorised the session.
 -- <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocCommonCommonSchemas CDR AU v0.1.0>
@@ -34,18 +37,17 @@ data Person = Person
   }
   deriving (Generic, Eq, Show)
 
-
 -- | Value should be a valid ANZCO v1.2 Standard Occupation classification.
 -- http://www.abs.gov.au/ANZSCO
 data OccupationCode =
-  OccupationCode {getOccupationCode :: Text}
+  OccupationCode { getOccupationCode :: V6 DecDigit }
   deriving (Generic, Eq, Show)
 
 occupationCodeDecoder :: Monad m => Decoder m OccupationCode
-occupationCodeDecoder = OccupationCode <$> D.text
+occupationCodeDecoder = OccupationCode <$> v6DigitDecoder
 
 occupationCodeEncoder :: Monad m => Encoder m OccupationCode
-occupationCodeEncoder = getOccupationCode >$< E.text
+occupationCodeEncoder = getOccupationCode >$< v6DigitEncoder
 
 personEncoder :: Applicative f => Encoder f Person
 personEncoder = E.mapLikeObj $ personFields
@@ -59,17 +61,16 @@ personFields p =
   E.atKey' "lastName" E.text (_personLastName p) .
   E.atKey' "middleNames" (E.list E.text) (_personMiddleNames p) .
   E.atKey' "prefix" E.text (_personPrefix p) .
-  E.atKey' "suffix" (E.maybeOrNull E.text) (_personSuffix p) .
-  E.atKey' "occupationCode" (E.maybeOrNull occupationCodeEncoder) (_personOccupationCode p)
+  maybeOrAbsentE "suffix" E.text (_personSuffix p) .
+  maybeOrAbsentE "occupationCode" occupationCodeEncoder (_personOccupationCode p)
 
 personDecoder :: Monad f => Decoder f Person
-personDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+personDecoder =
   Person
-    <$> (D.fromKey "lastUpdateTime" utcTimeDecoder o)
-    <*> (D.fromKey "firstName" D.text o)
-    <*> (D.fromKey "lastName" D.text o)
-    <*> (D.fromKey "middleNames" (D.list D.text) o)
-    <*> (D.fromKey "prefix" D.text o)
-    <*> (D.fromKey "suffix" (D.maybeOrNull D.text) o)
-    <*> (D.fromKey "occupationCode" (D.maybeOrNull occupationCodeDecoder) o)
+    <$> D.atKey "lastUpdateTime" utcTimeDecoder
+    <*> D.atKey "firstName" D.text
+    <*> D.atKey "lastName" D.text
+    <*> D.atKey "middleNames" (D.list D.text)
+    <*> D.atKey "prefix" D.text
+    <*> atKeyOptional' "suffix" D.text
+    <*> atKeyOptional' "occupationCode" occupationCodeDecoder

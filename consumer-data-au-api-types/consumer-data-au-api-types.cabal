@@ -7,7 +7,7 @@ synopsis:            Api Types for the Australian Consumer Data Rights Specifica
 description:         See https://github.com/ConsumerDataStandardsAustralia/standards for more details.
 license:             MIT
 license-file:        LICENSE
-author:              Queensland Functional Programming Lab, Data 61, CSIRO
+author:              Queensland Functional Programming Lab, Data61, CSIRO
 maintainer:          contact@qfpl.io
 copyright:           Commonwealth Science and Industrial Research Organisation, 2018
 category:            Web
@@ -17,20 +17,28 @@ tested-with:         GHC == 8.4.4
 
 library
   exposed-modules:
-                       Country.Waargonaut
+                       Aeson.Helpers
+                     , Country.Waargonaut
+                     , Crypto.JWT.Pretty
                      , Data.GADT.Aeson
                      , Data.GADT.Aeson.TH
                      , Data.GADT.Tag.TH
                      , Data.Time.Waargonaut
+                     , Data.Vector.V6
+                     , Waargonaut.Helpers
                      , Web.ConsumerData.Au.Api.Types
+                     , Web.ConsumerData.Au.Api.Types.Auth
+                     , Web.ConsumerData.Au.Api.Types.Auth.AuthApi
                      , Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
                      , Web.ConsumerData.Au.Api.Types.Auth.Common
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.AccessToken
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.Common
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.RefreshToken
-                     , Web.ConsumerData.Au.Api.Types.Auth.Registration
                      , Web.ConsumerData.Au.Api.Types.Auth.Error
+                     , Web.ConsumerData.Au.Api.Types.Auth.Registration
+                     , Web.ConsumerData.Au.Api.Types.Auth.Response
+                     , Web.ConsumerData.Au.Api.Types.Auth.TokenRequest
                      , Web.ConsumerData.Au.Api.Types.Banking
                      , Web.ConsumerData.Au.Api.Types.Banking.Accounts
                      , Web.ConsumerData.Au.Api.Types.Banking.Common
@@ -95,6 +103,7 @@ library
                      , dependent-map == 0.2.*
                      , dependent-sum == 0.4.*
                      , dependent-sum-template == 0.0.*
+                     , digit == 0.7.*
                      , errors == 2.*
                      , exceptions == 0.10.*
                      , ghc-prim == 0.5.*
@@ -118,7 +127,7 @@ library
                      , time >= 1.8 && < 1.10
                      , transformers == 0.5.*
                      , unordered-containers == 0.2.*
-                     , waargonaut == 0.4.*
+                     , waargonaut == 0.4.2.*
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -Werror
@@ -134,10 +143,12 @@ test-suite tasty
                      , consumer-data-au-api-types
                      , aeson == 1.3.*
                      , aeson-diff == 1.1.*
+                     , aeson-pretty == 0.8.*
                      , attoparsec == 0.13.*
                      , bytestring == 0.10.*
                      , containers == 0.5.*
                      , country == 0.1.*
+                     , currency-codes == 3.0.*
                      , dependent-map == 0.2.*
                      , dependent-sum == 0.4.*
                      , exceptions == 0.10.*
@@ -163,22 +174,30 @@ test-suite tasty
                      , time >= 1.8 && < 1.10
                      , transformers == 0.5.*
                      , wai == 3.2.*
-                     , waargonaut == 0.4.*
+                     , waargonaut == 0.4.2.*
                      , warp == 3.2.*
   other-modules:
-                       Country.Gens
+                       AesonGolden
+                     , Country.Gens
                      , Data.Text.Gens
                      , Data.Time.Gens
                      , Text.URI.Gens
+                     , Hedgehog.Helpers
                      , WaargoRoundTrip
                      , Web.ConsumerData.Au.Api.Types.Auth.Gens
+                     , Web.ConsumerData.Au.Api.Types.Auth.CommonTest
                      , Web.ConsumerData.Au.Api.Types.Auth.RequestTest
                      , Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest
+                     , Web.ConsumerData.Au.Api.Types.Banking.AccountsGens
                      , Web.ConsumerData.Au.Api.Types.Banking.AccountsTest
-                     , Web.ConsumerData.Au.Api.Types.Banking.Gens
+                     , Web.ConsumerData.Au.Api.Types.Banking.DirectDebitsGens
+                     , Web.ConsumerData.Au.Api.Types.Banking.PayeesGens
                      , Web.ConsumerData.Au.Api.Types.Banking.PayeesTest
+                     , Web.ConsumerData.Au.Api.Types.Banking.ProductsGens
+                     , Web.ConsumerData.Au.Api.Types.Banking.ProductsTest
                      , Web.ConsumerData.Au.Api.Types.Common.CustomerTest
                      , Web.ConsumerData.Au.Api.Types.Common.Gens
+                     , Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypesGens
                      , Web.ConsumerData.Au.Api.Types.Data.Gens
                      , Web.ConsumerData.Au.Api.Types.ResponseTest
                      , WaaaargonautTest

@@ -7,12 +7,3 @@ with-compiler: ghc-8.4.4
 
 haddock-css: ../haddock.css
 
-source-repository-package
-  type: git
-  location: https://github.com/qfpl/servant-waargonaut.git
-  tag: f2c530230cb9a0595f88900e41168ba9b0af55d4
-
-source-repository-package
-  type: git
-  location: https://github.com/qfpl/waargonaut.git
-  tag: d9759df1b1eaced87efab82bb9f92d7ee3c14024

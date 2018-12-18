@@ -22,6 +22,7 @@ import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.AdditionalValue
     (additionalValueDecoder)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
@@ -59,13 +60,12 @@ data ProductEligibility = ProductEligibility
   } deriving (Show, Eq)
 
 productEligibilityDecoder :: Monad f => Decoder f ProductEligibility
-productEligibilityDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+productEligibilityDecoder =
   ProductEligibility
-    <$> D.fromKey "description" D.text o
-    <*> D.focus productEligibilityTypeDecoder o
-    <*> D.fromKey "additionalInfo" (D.maybeOrNull D.text) o
-    <*> D.fromKey "additionalInfoUri" (D.maybeOrNull uriDecoder) o
+    <$> D.atKey "description" D.text
+    <*> productEligibilityTypeDecoder
+    <*> atKeyOptional' "additionalInfo" D.text
+    <*> atKeyOptional' "additionalInfoUri" uriDecoder
 
 instance JsonDecode OB ProductEligibility where
   mkDecoder = tagOb productEligibilityDecoder
@@ -74,8 +74,8 @@ productEligibilityEncoder :: Applicative f => Encoder f ProductEligibility
 productEligibilityEncoder = E.mapLikeObj $ \p ->
   E.atKey' "description" E.text (_productEligibilityDescription p) .
   productEligibilityTypeFields (_productEligibilityEligibilityType p) .
-  E.atKey' "additionalInfo" (E.maybeOrNull E.text) (_productEligibilityAdditionalInfo p) .
-  E.atKey' "additionalInfoUri" (E.maybeOrNull uriEncoder) (_productEligibilityAdditionalInfoUri p)
+  maybeOrAbsentE "additionalInfo" E.text (_productEligibilityAdditionalInfo p) .
+  maybeOrAbsentE "additionalInfoUri" uriEncoder (_productEligibilityAdditionalInfoUri p)
 
 instance JsonEncode OB ProductEligibility where
   mkEncoder = tagOb productEligibilityEncoder
@@ -98,22 +98,20 @@ data ProductEligibilityType =
 
 
 productEligibilityTypeDecoder :: Monad f => Decoder f ProductEligibilityType
-productEligibilityTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
-  depositRateType <- D.fromKey "eligibilityType" D.text o
-  additionalValue <- case depositRateType of
+productEligibilityTypeDecoder = do
+  eligibilityType <- D.atKey "eligibilityType" D.text
+  additionalValue <- case eligibilityType of
     "BUSINESS" -> pure PEligibilityBusiness
     "PENSION_RECIPIENT" -> pure PEligibilityPensionRecipient
-    "MIN_AGE" -> PEligibilityMinAge <$> (additionalValueDecoder D.int o)
-    "MAX_AGE" -> PEligibilityMaxAge <$> (additionalValueDecoder D.int o)
-    "MIN_INCOME" -> PEligibilityMinIncome <$> (additionalValueDecoder amountStringDecoder o)
-    "MIN_TURNOVER" -> PEligibilityMinTurnover <$> (additionalValueDecoder amountStringDecoder o)
+    "MIN_AGE" -> PEligibilityMinAge <$> (additionalValueDecoder D.int)
+    "MAX_AGE" -> PEligibilityMaxAge <$> (additionalValueDecoder D.int)
+    "MIN_INCOME" -> PEligibilityMinIncome <$> (additionalValueDecoder amountStringDecoder)
+    "MIN_TURNOVER" -> PEligibilityMinTurnover <$> (additionalValueDecoder amountStringDecoder)
     "STAFF" -> pure PEligibilityStaff
     "STUDENT" -> pure PEligibilityStudent
-    "EMPLOYMENT_STATUS" -> PEligibilityEmploymentStatus <$> (additionalValueDecoder D.text o)
-    "RESIDENCY_STATUS" -> PEligibilityResidencyStatus <$> (additionalValueDecoder D.text o)
-    "OTHER" -> PEligibilityOther <$> (additionalValueDecoder D.text o)
+    "EMPLOYMENT_STATUS" -> PEligibilityEmploymentStatus <$> (additionalValueDecoder D.text)
+    "RESIDENCY_STATUS" -> PEligibilityResidencyStatus <$> (additionalValueDecoder D.text)
+    "OTHER" -> PEligibilityOther <$> (additionalValueDecoder D.text)
     _ -> throwError D.KeyDecodeFailed
   pure additionalValue
 
@@ -163,8 +161,6 @@ productEligibilityTypeToType' (PEligibilityOther {})   = PEligibilityOther'
 
 productEligibilityTypeFields :: (Monoid ws, Semigroup ws) => ProductEligibilityType -> MapLikeObj ws Json -> MapLikeObj ws Json
 productEligibilityTypeFields pc =
--- productEligibilityTypeEncoder :: Applicative f => Encoder f ProductEligibilityType
--- productEligibilityTypeEncoder = E.mapLikeObj $ \pc -> do
   case pc of
     PEligibilityBusiness ->
       E.atKey' "eligibilityType" productEligibilityType'Encoder (productEligibilityTypeToType' pc)

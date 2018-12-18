@@ -8,6 +8,7 @@ import Country.Gens (countryGen)
 import Data.Text.Gens (textGen)
 import Data.Time.Gens (utcTimeGen)
 
+import Data.Vector.V6
 import Web.ConsumerData.Au.Api.Types.Common.Customer
 import Web.ConsumerData.Au.Api.Types.Data.Gens
 
@@ -29,7 +30,10 @@ personGen =
   <*> textGen <*> Gen.maybe textGen <*> Gen.maybe occupationCodeGen
 
 occupationCodeGen :: Gen OccupationCode
-occupationCodeGen = OccupationCode <$> textGen
+occupationCodeGen = OccupationCode <$> v6Gen Gen.enumBounded
+
+v6Gen :: Gen a -> Gen (V6 a)
+v6Gen a = sequenceA (V6 a a a a a a)
 
 organisationGen :: Gen Organisation
 organisationGen =

@@ -1,1 +1,15 @@
-cabal2nix . > consumer-data-au-api-types.nix && nix-shell --run 'rm -f .ghc* && ghcid -c "cabal new-repl test:tasty" -T "Main.main"'
+#! /usr/bin/env nix-shell
+#! nix-shell -p inotify-tools -i bash
+cabal2nix . > consumer-data-au-api-types.nix
+nix-shell --run '
+rm -f .ghc.environment*
+cabal new-test
+inotifywait -e close_write,moved_to,create -m -r --format "%w %f %e %T" --timefmt "%H%M%S" --exclude ".sw[px]\$" src tests |
+while read -r directory file events tm; do
+  current=$(date +"%H%M%S");
+  delta=`expr $current - $tm`;
+  if test $delta -lt 2 -a $delta -gt -2; then
+    cabal new-test
+  fi
+done
+'

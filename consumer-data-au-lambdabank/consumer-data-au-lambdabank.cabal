@@ -18,8 +18,13 @@ library
                    , Web.ConsumerData.Au.LambdaBank.FakeData
                    , Web.ConsumerData.Au.LambdaBank.Model
                    , Web.ConsumerData.Au.LambdaBank.Server
+                   , Web.ConsumerData.Au.LambdaBank.Server.Auth
                    , Web.ConsumerData.Au.LambdaBank.Server.Banking
+                   , Web.ConsumerData.Au.LambdaBank.Server.Banking.Accounts
+                   , Web.ConsumerData.Au.LambdaBank.Server.Banking.Payees
+                   , Web.ConsumerData.Au.LambdaBank.Server.Banking.Products
                    , Web.ConsumerData.Au.LambdaBank.Server.Common
+                   , Web.ConsumerData.Au.LambdaBank.Server.Common.Customer
                    , Web.ConsumerData.Au.LambdaBank.Server.Internal
   -- other-modules:
   -- We probably need to tweak these for more than just GHC 8.4 support.
@@ -30,7 +35,9 @@ library
                      , consumer-data-au-api-types
                      , consumer-data-au-api-client
                      , country == 0.1.*
+                     , currency-codes == 3.0.*
                      , free == 5.0.*
+                     , jose == 0.7.*
                      , lens == 4.16.*
                      , modern-uri == 0.2.*
                      , mtl == 2.2.*
@@ -83,6 +90,7 @@ test-suite tasty
                      , text == 1.2.*
   other-modules:  Web.ConsumerData.Au.LambdaBank.Banking.AccountsTest
                   Web.ConsumerData.Au.LambdaBank.Banking.PayeesTest
+                  Web.ConsumerData.Au.LambdaBank.Banking.ProductsTest
                   Web.ConsumerData.Au.LambdaBank.Common.CustomerTest
                   Web.ConsumerData.Au.LambdaBank.WithServer
 

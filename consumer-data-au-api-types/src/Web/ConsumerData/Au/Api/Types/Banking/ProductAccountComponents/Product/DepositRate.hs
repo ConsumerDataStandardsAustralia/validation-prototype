@@ -22,6 +22,7 @@ import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.AdditionalValue
     (additionalValueDecoder)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
@@ -62,13 +63,12 @@ data ProductDepositRate = ProductDepositRate
   } deriving (Show, Eq)
 
 productDepositRateDecoder :: Monad f => Decoder f ProductDepositRate
-productDepositRateDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+productDepositRateDecoder =
   ProductDepositRate
-    <$> D.focus productDepositRateTypeDecoder o
-    <*> D.fromKey "rate" rateStringDecoder o
-    <*> D.fromKey "additionalInfo" (D.maybeOrNull D.text) o
-    <*> D.fromKey "additionalInfoUri" (D.maybeOrNull uriDecoder) o
+    <$> productDepositRateTypeDecoder
+    <*> D.atKey "rate" rateStringDecoder
+    <*> atKeyOptional' "additionalInfo" D.text
+    <*> atKeyOptional' "additionalInfoUri" uriDecoder
 
 instance JsonDecode OB ProductDepositRate where
   mkDecoder = tagOb productDepositRateDecoder
@@ -77,8 +77,8 @@ productDepositRateEncoder :: Applicative f => Encoder f ProductDepositRate
 productDepositRateEncoder = E.mapLikeObj $ \p ->
   productDepositRateTypeFields (_productDepositRateDepositRateType p) .
   E.atKey' "rate" rateStringEncoder (_productDepositRateRate p) .
-  E.atKey' "additionalInfo" (E.maybeOrNull E.text) (_productDepositRateAdditionalInfo p) .
-  E.atKey' "additionalInfoUri" (E.maybeOrNull uriEncoder) (_productDepositRateAdditionalInfoUri p)
+  maybeOrAbsentE "additionalInfo" E.text (_productDepositRateAdditionalInfo p) .
+  maybeOrAbsentE "additionalInfoUri" uriEncoder (_productDepositRateAdditionalInfoUri p)
 
 instance JsonEncode OB ProductDepositRate where
   mkEncoder = tagOb productDepositRateEncoder
@@ -94,16 +94,14 @@ data ProductDepositRateType =
   deriving (Show, Eq)
 
 productDepositRateTypeDecoder :: Monad f => Decoder f ProductDepositRateType
-productDepositRateTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
-  depositRateType <- D.fromKey "depositRateType" D.text o
+productDepositRateTypeDecoder = do
+  depositRateType <- D.atKey "depositRateType" D.text
   additionalValue <- case depositRateType of
-    "FIXED" -> PDepositRateTypeFixed <$> (additionalValueDecoder durationStringDecoder o)
-    "BONUS" -> PDepositRateTypeBonus <$> (additionalValueDecoder D.text o)
-    "BUNDLE_BONUS" -> PDepositRateTypeBundleBonus <$> (additionalValueDecoder D.text o)
+    "FIXED" -> PDepositRateTypeFixed <$> (additionalValueDecoder durationStringDecoder)
+    "BONUS" -> PDepositRateTypeBonus <$> (additionalValueDecoder D.text)
+    "BUNDLE_BONUS" -> PDepositRateTypeBundleBonus <$> (additionalValueDecoder D.text)
     "VARIABLE" -> pure PDepositRateTypeVariable
-    "INTRODUCTORY" -> PDepositRateTypeIntroductory <$> (additionalValueDecoder durationStringDecoder o)
+    "INTRODUCTORY" -> PDepositRateTypeIntroductory <$> (additionalValueDecoder durationStringDecoder)
     _ -> throwError D.KeyDecodeFailed
   pure additionalValue
 
@@ -135,8 +133,6 @@ productDepositRateTypeToType' (PDepositRateTypeIntroductory {}) = PDepositRateTy
 
 productDepositRateTypeFields :: (Monoid ws, Semigroup ws) => ProductDepositRateType -> MapLikeObj ws Json -> MapLikeObj ws Json
 productDepositRateTypeFields pc =
--- productDepositRateTypeEncoder :: Applicative f => Encoder f ProductDepositRateType
--- productDepositRateTypeEncoder = E.mapLikeObj $ \pc -> do
   case pc of
     PDepositRateTypeFixed v ->
       E.atKey' "depositRateType" productDepositRateType'Encoder (productDepositRateTypeToType' pc) .

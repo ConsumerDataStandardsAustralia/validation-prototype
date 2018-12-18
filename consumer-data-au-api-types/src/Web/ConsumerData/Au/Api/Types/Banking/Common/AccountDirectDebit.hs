@@ -3,8 +3,6 @@
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
--- {-# LANGUAGE RankNTypes        #-}
--- {-# LANGUAGE TypeOperators     #-}
 module Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
   ( module Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
   ) where
@@ -16,6 +14,7 @@ import qualified Waargonaut.Encode                       as E
 import           Waargonaut.Generic
     (JsonDecode (..), JsonEncode (..))
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
     (AccountId, accountIdDecoder, accountIdEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AuthorisedEntity
@@ -35,13 +34,12 @@ data AccountDirectDebit = AccountDirectDebit
   } deriving (Eq, Show)
 
 accountDirectDebitDecoder :: Monad f => Decoder f AccountDirectDebit
-accountDirectDebitDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  accId <- D.fromKey "accountId" accountIdDecoder o
-  authEntity <- D.fromKey "authorisedEntity" (D.maybeOrNull authorisedEntityDecoder) o
-  lastDebitDT <- D.fromKey "lastDebitDateTime" (D.maybeOrNull dateTimeStringDecoder) o
-  amount <- D.fromKey "lastDebitAmount" (D.maybeOrNull amountStringDecoder) o
-  pure $ AccountDirectDebit accId authEntity lastDebitDT amount
+accountDirectDebitDecoder =
+  AccountDirectDebit
+    <$> D.atKey "accountId" accountIdDecoder
+    <*> atKeyOptional' "authorisedEntity" authorisedEntityDecoder
+    <*> atKeyOptional' "lastDebitDateTime" dateTimeStringDecoder
+    <*> atKeyOptional' "lastDebitAmount" amountStringDecoder
 
 instance JsonDecode OB AccountDirectDebit where
   mkDecoder = tagOb accountDirectDebitDecoder
@@ -49,21 +47,21 @@ instance JsonDecode OB AccountDirectDebit where
 accountDirectDebitEncoder :: Applicative f => Encoder f AccountDirectDebit
 accountDirectDebitEncoder = E.mapLikeObj $ \ p ->
   E.atKey' "accountId" accountIdEncoder (_accountDirectDebitAccountId p) .
-  E.atKey' "authorisedEntity" (E.maybeOrNull authorisedEntityEncoder) (_accountDirectDebitAuthorisedEntity p) .
-  E.atKey' "lastDebitDateTime" (E.maybeOrNull dateTimeStringEncoder) (_accountDirectDebitLastDebitDateTime p) .
-  E.atKey' "lastDebitAmount" (E.maybeOrNull amountStringEncoder) (_accountDirectDebitLastDebitAmount p)
+  maybeOrAbsentE "authorisedEntity" authorisedEntityEncoder (_accountDirectDebitAuthorisedEntity p) .
+  maybeOrAbsentE "lastDebitDateTime" dateTimeStringEncoder (_accountDirectDebitLastDebitDateTime p) .
+  maybeOrAbsentE "lastDebitAmount" amountStringEncoder (_accountDirectDebitLastDebitAmount p)
 
 instance JsonEncode OB AccountDirectDebit where
   mkEncoder = tagOb accountDirectDebitEncoder
 
-newtype DirectDebitAuthorisations
-  = DirectDebitAuthorisations { getAuthorisations :: [AccountDirectDebit] }
+newtype DirectDebitAuthorisations =
+  DirectDebitAuthorisations { getAuthorisations :: [AccountDirectDebit] }
+    deriving (Eq, Show)
 
 directDebitAuthorisationsDecoder :: Monad f => Decoder f DirectDebitAuthorisations
-directDebitAuthorisationsDecoder = D.withCursor $ \c -> do
-  o <- D.down c
-  auths <- D.fromKey "directDebitAuthorisations" (D.list accountDirectDebitDecoder) o
-  pure $ DirectDebitAuthorisations auths
+directDebitAuthorisationsDecoder =
+  DirectDebitAuthorisations
+    <$> D.atKey "directDebitAuthorisations" (D.list accountDirectDebitDecoder)
 
 directDebitAuthorisationsEncoder :: Applicative f => Encoder f DirectDebitAuthorisations
 directDebitAuthorisationsEncoder = E.mapLikeObj $ \dda ->

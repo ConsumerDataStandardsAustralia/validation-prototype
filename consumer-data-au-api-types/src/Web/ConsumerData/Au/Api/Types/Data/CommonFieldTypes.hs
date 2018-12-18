@@ -1,24 +1,27 @@
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE DeriveGeneric   #-}
-{-# LANGUAGE RankNTypes      #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeOperators   #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeOperators     #-}
 module Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
   ( module Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
   ) where
 
+import           Control.Lens                        (Prism', _Show)
 import           Data.Currency                       (Alpha)
 import           Data.Functor.Contravariant          ((>$<))
 import           Data.Text                           (Text)
+import           Data.Text.Lens                      (_Text)
 import           Data.Time                           (UTCTime)
 import           Data.Time.Waargonaut                (utcTimeDecoder, utcTimeEncoder)
 import           Servant.API
     (FromHttpApiData,ToHttpApiData, parseUrlPiece, toUrlPiece)
 import           Waargonaut.Decode                   (Decoder)
 import qualified Waargonaut.Decode                   as D
+import qualified Waargonaut.Decode.Error             as D
 import           Waargonaut.Encode                   (Encoder)
 import qualified Waargonaut.Encode                   as E
-
 
 -- | All types are from <https://consumerdatastandardsaustralia.github.io/standards/?swagger#common-field-types CDR AU v0.1.0 Common Field Types>
 
@@ -28,7 +31,7 @@ import qualified Waargonaut.Encode                   as E
 -- - No currency symbols should be supplied
 -- - At least 1 and up to a total of 16 significant digits before decimal point
 -- - Minimum 2 digits following a decimal point (more digits allowable but only if required)
--- - No additional formatting, eg thousand separating commas 	“0.01”
+-- - No additional formatting, eg thousand separating commas    “0.01”
 -- “10.00”
 -- “1234567.89”
 -- “-1001.23”
@@ -60,25 +63,31 @@ instance FromHttpApiData AsciiString where
   parseUrlPiece = fmap AsciiString . parseUrlPiece
 
 
--- | Standard 3 character currency codes as per ISO-4217 	“AUD”
+-- | Standard 3 character currency codes as per ISO-4217        “AUD”
 -- “USD”
 -- “GBP”
 data CurrencyString =
   CurrencyString { unCurrencyString :: Alpha }
   deriving (Show, Eq)
 
+currencyAlphaText :: Prism' Text Alpha
+currencyAlphaText = _Text . _Show
+
 currencyStringDecoder :: Monad f => Decoder f CurrencyString
-currencyStringDecoder = CurrencyString <$> D.text
+currencyStringDecoder = CurrencyString <$> D.prismDOrFail
+  (D.ConversionFailure "Invalid CurrencyString")
+  currencyAlphaText
+  D.text
 
 currencyStringEncoder :: Applicative f => Encoder f CurrencyString
-currencyStringEncoder = unCurrencyString >$< E.text
+currencyStringEncoder = unCurrencyString >$< E.prismE currencyAlphaText E.text
 
 
 -- | Date string as per RFC-3339 (labelled full-date in the RFC). UTC time should always be used
 -- “2007-05-01”
 -- “2012-12-25”
 data DateString =
-  DateString { unDateString :: Text } 
+  DateString { unDateString :: Text }
   deriving (Show, Eq)
 
 dateStringDecoder :: Monad f => Decoder f DateString
@@ -119,7 +128,7 @@ durationStringEncoder = unDurationString >$< E.text
 -- - A positive number (or zero)
 -- - At least 1 and up to a total of 16 significant digits before decimal point
 -- - Up to 16 digits following the decimal point
--- - No formatting, eg thousand separating commas 	“82”
+-- - No formatting, eg thousand separating commas       “82”
 -- “0.05”
 -- “12.3456789”
 -- “99.123456789123”

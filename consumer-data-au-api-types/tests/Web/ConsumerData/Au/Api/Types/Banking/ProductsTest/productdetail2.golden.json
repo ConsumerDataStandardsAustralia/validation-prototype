@@ -1,0 +1,83 @@
+{
+  "data": {
+    "productId": "string",
+    "effectiveFrom": "2018-11-01T05:33:52Z",
+    "effectiveTo": "2018-11-01T05:33:52Z",
+    "lastUpdated": "2018-11-01T05:33:52Z",
+    "productCategory": "PERS_AT_CALL_DEPOSITS",
+    "name": "string",
+    "brand": "missing",
+    "description": "string",
+    "applicationUri": "http://example.com/",
+    "isNegotiable": true,
+    "additionalInformation": {
+      "overviewUri": "http://example.com/",
+      "termsUri": "http://example.com/",
+      "eligibilityUri": "http://example.com/",
+      "feesAndPricingUri": "http://example.com/",
+      "bundleUri": "http://example.com/"
+    },
+    "features": [
+      {
+        "featureType": "ADDITIONAL_CARDS",
+        "additionalValue": 2
+      }
+    ],
+    "fees": [
+      {
+        "name": "string",
+        "feeType": "PERIODIC",
+        "amount": "0",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "discounts": [
+          {
+            "description": "string",
+            "discountType": "BALANCE",
+            "additionalValue": "100",
+            "amount": "100"
+          }
+        ],
+        "additionalValue": "DAILY"
+      }
+    ],
+    "depositRates": [
+      {
+        "rate": "string",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "depositRateType": "FIXED",
+        "additionalValue": "2018-11-01T05:33:52Z"
+      }
+    ],
+    "lendingRates": [
+      {
+        "rate": "string",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "lendingRateType": "FIXED",
+        "additionalValue": "2018-11-01T05:33:52Z"
+      }
+    ],
+    "constraints": [
+      {
+        "constraintType": "MIN_BALANCE",
+        "additionalValue": "0"
+      }
+    ],
+    "eligibility": [
+      {
+        "description": "string",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "eligibilityType": "MIN_AGE",
+        "additionalValue": 30
+      }
+    ]
+  },
+  "links": {
+    "self": "http://example.com/"
+  },
+  "meta": {
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "data": {
+    "accountId": "string",
+    "displayName": "string",
+    "nickname": "string",
+    "maskedNumber": "string",
+    "productCategory": "PERS_AT_CALL_DEPOSITS",
+    "providerType": "string",
+    "balance$type": "lending",
+    "lending": {
+      "accountBalance": {
+        "amount": "string",
+        "currency": "AUD"
+      },
+      "availableBalance": {
+        "amount": "string",
+        "currency": "AUD"
+      },
+      "creditLimit": {
+        "amount": "string",
+        "currency": "AUD"
+      },
+      "amortisedLimit": {
+        "amount": "string",
+        "currency": "AUD"
+      }
+    },
+    "bundleName": "string",
+    "specificAccount$type": "termDeposit",
+    "termDeposit": {
+      "lodgementDate": "string",
+      "maturityDate": "string",
+      "maturityAmount": "123.0",
+      "maturityCurrency": "AUD",
+      "maturityInstructions": "ROLLED_OVER"
+    },
+    "features": [
+      {
+        "featureType": "CARD_ACCESS"
+      },
+      {
+        "featureType": "ADDITIONAL_CARDS",
+        "additionalValue": 1
+      }
+    ],
+    "fees": [
+      {
+        "name": "string",
+        "feeType": "PERIODIC",
+        "amount": "string",
+        "balanceRate": "string",
+        "transactionRate": "string",
+        "currency": "AUD",
+        "additionalValue": "string",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/",
+        "discounts": [
+          {
+            "description": "string",
+            "discountType": "BALANCE",
+            "amount": "string",
+            "additionalValue": "string"
+          }
+        ]
+      }
+    ],
+    "depositRates": [
+      {
+        "depositRateType": "FIXED",
+        "rate": "0",
+        "additionalValue": "2018-11-01T05:33:52Z",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/"
+      }
+    ],
+    "lendingRates": [
+      {
+        "lendingRateType": "FIXED",
+        "rate": "0",
+        "additionalValue": "2018-11-01T05:33:52Z",
+        "additionalInfo": "string",
+        "additionalInfoUri": "http://example.com/"
+      }
+    ],
+    "address": {
+      "purpose": "WORK",
+      "address$type": "simple",
+      "simple": {
+        "mailingName": "string",
+        "addressLine1": "string",
+        "addressLine2": "string",
+        "addressLine3": "string",
+        "postcode": "1234",
+        "city": "string",
+        "state": "AU-QLD",
+        "country": "AUS"
+      }
+    }
+  },
+  "links": {
+    "self": "http://example.com/self"
+  },
+  "meta": {}
+}

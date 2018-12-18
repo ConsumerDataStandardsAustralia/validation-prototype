@@ -5,14 +5,18 @@
 {-# LANGUAGE TypeOperators   #-}
 module Web.ConsumerData.Au.Api.Types
   ( module Web.ConsumerData.Au.Api.Types
+  , module Auth
   , module Banking
   , module Common
   , module CommonFieldTypes
   , module PhysicalAddress
   , module Response
+  , module Data.Digit.Decimal
+  , module Data.Vector.V6
   ) where
 
 import Control.Lens        (Getter, to)
+import Data.Digit.Decimal  (DecDigit (..))
 import Data.Proxy          (Proxy (..))
 import GHC.Generics        (Generic)
 import Servant.API         ((:>), Link)
@@ -20,6 +24,8 @@ import Servant.API.Generic
     ((:-), AsApi, ToServant, ToServantApi, fromServant, genericApi)
 import Servant.Links       (AsLink, allFieldLinks)
 
+import Data.Vector.V6
+import Web.ConsumerData.Au.Api.Types.Auth                  as Auth
 import Web.ConsumerData.Au.Api.Types.Banking               as Banking
 import Web.ConsumerData.Au.Api.Types.Common                as Common
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes as CommonFieldTypes

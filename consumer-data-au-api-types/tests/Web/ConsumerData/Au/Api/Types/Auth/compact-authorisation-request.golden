@@ -1,0 +1,33 @@
+{
+    "payload": {
+        "prompt": "select_account",
+        "state": "r4nd0m",
+        "redirect_uri": "https://functionalfinance.io/auth",
+        "client_id": "functionalfinance.io",
+        "claims": {
+            "userinfo": null,
+            "id_token": {
+                "sub": {
+                    "values": [
+                        "u12345"
+                    ],
+                    "essential": false
+                },
+                "acr": {
+                    "values": [
+                        "urn:cds.au:cdr:3"
+                    ],
+                    "essential": true
+                }
+            }
+        },
+        "iss": "functionalfinance.io",
+        "response_type": "code id_token",
+        "scope": "openid",
+        "aud": "https://lambdabank.io",
+        "nonce": "fhqwgad"
+    },
+    "header": {
+        "alg": "ES256"
+    }
+}

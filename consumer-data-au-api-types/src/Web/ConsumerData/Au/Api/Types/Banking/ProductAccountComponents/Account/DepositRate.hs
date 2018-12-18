@@ -22,6 +22,7 @@ import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.AdditionalValue
     (additionalValueDecoder)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
@@ -62,13 +63,12 @@ data AccountDepositRate = AccountDepositRate
   } deriving (Show, Eq)
 
 accountDepositRateDecoder :: Monad f => Decoder f AccountDepositRate
-accountDepositRateDecoder = D.withCursor $ \c -> do
-  o <- D.down c
+accountDepositRateDecoder =
   AccountDepositRate
-    <$> D.focus accountDepositRateTypeDecoder o
-    <*> D.fromKey "rate" rateStringDecoder o
-    <*> D.fromKey "additionalInfo" (D.maybeOrNull D.text) o
-    <*> D.fromKey "additionalInfoUri" (D.maybeOrNull uriDecoder) o
+    <$> accountDepositRateTypeDecoder
+    <*> D.atKey "rate" rateStringDecoder
+    <*> atKeyOptional' "additionalInfo" D.text
+    <*> atKeyOptional' "additionalInfoUri" uriDecoder
 
 instance JsonDecode OB AccountDepositRate where
   mkDecoder = tagOb accountDepositRateDecoder
@@ -77,8 +77,8 @@ accountDepositRateEncoder :: Applicative f => Encoder f AccountDepositRate
 accountDepositRateEncoder = E.mapLikeObj $ \p ->
   accountDepositRateTypeFields (_accountDepositRateDepositRateType p) .
   E.atKey' "rate" rateStringEncoder (_accountDepositRateRate p) .
-  E.atKey' "additionalInfo" (E.maybeOrNull E.text) (_accountDepositRateAdditionalInfo p) .
-  E.atKey' "additionalInfoUri" (E.maybeOrNull uriEncoder) (_accountDepositRateAdditionalInfoUri p)
+  maybeOrAbsentE "additionalInfo" E.text (_accountDepositRateAdditionalInfo p) .
+  maybeOrAbsentE "additionalInfoUri" uriEncoder (_accountDepositRateAdditionalInfoUri p)
 
 instance JsonEncode OB AccountDepositRate where
   mkEncoder = tagOb accountDepositRateEncoder
@@ -96,16 +96,14 @@ data AccountDepositRateType =
   deriving (Eq, Show)
 
 accountDepositRateTypeDecoder :: Monad f => Decoder f AccountDepositRateType
-accountDepositRateTypeDecoder = D.withCursor $ \c -> do
-  -- D.focus D.text c >>= \case
-  o <- D.down c
-  depositRateType <- D.fromKey "depositRateType" D.text o
+accountDepositRateTypeDecoder = do
+  depositRateType <- D.atKey "depositRateType" D.text
   additionalValue <- case depositRateType of
-    "FIXED" -> ADepositRateTypeFixed <$> (additionalValueDecoder dateTimeStringDecoder o)
-    "BONUS" -> ADepositRateTypeBonus <$> (additionalValueDecoder D.text o)
-    "BUNDLE_BONUS" -> ADepositRateTypeBundleBonus <$> (additionalValueDecoder D.text o)
+    "FIXED" -> ADepositRateTypeFixed <$> (additionalValueDecoder dateTimeStringDecoder)
+    "BONUS" -> ADepositRateTypeBonus <$> (additionalValueDecoder D.text)
+    "BUNDLE_BONUS" -> ADepositRateTypeBundleBonus <$> (additionalValueDecoder D.text)
     "VARIABLE" -> pure ADepositRateTypeVariable
-    "INTRODUCTORY" -> ADepositRateTypeIntroductory <$> (additionalValueDecoder dateTimeStringDecoder o)
+    "INTRODUCTORY" -> ADepositRateTypeIntroductory <$> (additionalValueDecoder dateTimeStringDecoder)
     _ -> throwError D.KeyDecodeFailed
   pure additionalValue
 
