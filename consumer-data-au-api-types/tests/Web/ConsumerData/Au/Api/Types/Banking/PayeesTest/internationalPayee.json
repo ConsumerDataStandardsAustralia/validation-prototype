@@ -1,0 +1,20 @@
+{
+  "beneficiaryDetails": {
+    "name": "string",
+    "country": "HUN",
+    "message": "string"
+  },
+  "bankDetails": {
+    "country": "AUS",
+    "accountNumber": "string",
+    "bankAddress": {
+      "name": "string",
+      "address": "string"
+    },
+    "beneficiaryBankBIC": "string",
+    "fedWireNumber": "string",
+    "sortCode": "string",
+    "chipNumber": "string",
+    "routingNumber": "string"
+  }
+}

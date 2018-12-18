@@ -1,0 +1,5 @@
+{
+  "accountName": "string",
+  "bsb": "string",
+  "accountNumber": "string"
+}
