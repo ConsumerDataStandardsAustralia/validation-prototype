@@ -20,8 +20,8 @@ import Web.ConsumerData.Au.Api.Types
 import Web.ConsumerData.Au.Api.Types.LinkTestHelpers (linkTest)
 import Web.ConsumerData.Au.Api.Types.Tag
 
-test_accountLinks :: [TestTree]
-test_accountLinks =
+test_payeesLinks :: [TestTree]
+test_payeesLinks =
   [ linkTest "Get Payees"
     (links^.bankingLinks.bankingPayeesLinks.payeesGet) [uri|http://localhost/banking/payees|]
   , linkTest "Get Payee Detail"

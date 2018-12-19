@@ -21,7 +21,7 @@ import Web.ConsumerData.Au.Api.Types.Tag
 test_productsLinks :: [TestTree]
 test_productsLinks =
   [ linkTest "Get Products"
-    (links^.bankingLinks.bankingProductsLinks.productsGet) [uri|http://localhost/banking/product|]
+    (links^.bankingLinks.bankingProductsLinks.productsGet) [uri|http://localhost/banking/products|]
   , linkTest "Get Product Detail"
     (links^.bankingLinks.bankingProductsLinks.productsByIdGet.to ($ ProductId (AsciiString "123"))) [uri|http://localhost/banking/products/123|]
   ]
