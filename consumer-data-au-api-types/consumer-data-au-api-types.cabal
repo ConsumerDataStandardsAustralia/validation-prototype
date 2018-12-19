@@ -82,7 +82,6 @@ library
                      , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.PersonDetail
                      , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.PhoneNumber
                      , Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
-                     , Web.ConsumerData.Au.Api.Types.Data.Currency
                      , Web.ConsumerData.Au.Api.Types.Data.PhysicalAddress
                      , Web.ConsumerData.Au.Api.Types.Response
                      , Web.ConsumerData.Au.Api.Types.Stub
@@ -99,6 +98,7 @@ library
                      , containers == 0.5.*
                      , contravariant == 1.4.*
                      , country == 0.1.*
+                     , currency-codes == 3.0.*
                      , cryptonite == 0.25.*
                      , dependent-map == 0.2.*
                      , dependent-sum == 0.4.*
@@ -148,6 +148,7 @@ test-suite tasty
                      , bytestring == 0.10.*
                      , containers == 0.5.*
                      , country == 0.1.*
+                     , currency-codes == 3.0.*
                      , dependent-map == 0.2.*
                      , dependent-sum == 0.4.*
                      , exceptions == 0.10.*
