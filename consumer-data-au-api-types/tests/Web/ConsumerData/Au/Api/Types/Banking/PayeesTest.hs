@@ -5,16 +5,28 @@
 
 module Web.ConsumerData.Au.Api.Types.Banking.PayeesTest where
 
+import Control.Lens
+
 import Data.Functor.Identity (Identity)
 import Data.Tagged           (Tagged)
 import Test.Tasty            (TestTree)
+import Text.URI.QQ           (uri)
 import Waargonaut.Decode     (Decoder)
 import Waargonaut.Encode     (Encoder)
 import Waargonaut.Generic    (mkDecoder, mkEncoder, untag)
 import WaargoRoundTrip       (roundTripTest)
 
 import Web.ConsumerData.Au.Api.Types
+import Web.ConsumerData.Au.Api.Types.LinkTestHelpers (linkTest)
 import Web.ConsumerData.Au.Api.Types.Tag
+
+test_accountLinks :: [TestTree]
+test_accountLinks =
+  [ linkTest "Get Payees"
+    (links^.bankingLinks.bankingPayeesLinks.payeesGet) [uri|http://localhost/banking/payees|]
+  , linkTest "Get Payee Detail"
+    (links^.bankingLinks.bankingPayeesLinks.payeesByIdGet.to ($ PayeeId "123")) [uri|http://localhost/banking/payees/123|]
+  ]
 
 test_roundTripPayees :: TestTree
 test_roundTripPayees = roundTripTest
