@@ -8,61 +8,56 @@
 module Web.ConsumerData.Au.Api.Types.Auth.RegistrationTest where
 import Test.Tasty (TestTree)
 
-test_request ::
-  [TestTree]
-test_request = []
-
-{--
-import           Control.Lens                             (( # ), (^?))
-import           Control.Monad                            ((<=<))
+import           Control.Lens                                    (( # ), (^?))
+import           Control.Monad                                   ((<=<))
 import           Control.Monad.Catch
     (Exception, MonadThrow, throwM)
+import           Control.Monad.Except
+    (ExceptT, MonadIO, liftIO, runExceptT)
 import           Crypto.JWT
     (Alg (..), Audience (Audience), NumericDate (..), StringOrURI,
     decodeCompact, encodeCompact, string, uri)
-import           Data.Aeson                               (eitherDecode, encode)
-import           Data.ByteString                          (ByteString)
-import qualified Data.ByteString.Lazy                     as LBS
-import           Data.Maybe                               (isNothing)
-import qualified Data.Set                                 as Set
-import           Data.Text                                (Text)
-import           Data.Time.Calendar                       (fromGregorian)
+import           Data.Aeson
+    (eitherDecode, encode)
+import           Data.ByteString                                 (ByteString)
+import qualified Data.ByteString.Lazy                            as LBS
+import           Data.Maybe                                      (isNothing)
+import qualified Data.Set                                        as Set
+import           Data.Text                                       (Text)
+import           Data.Time.Calendar                              (fromGregorian)
 import           Data.Time.Clock
 import           Hedgehog
     (MonadGen, Property, PropertyT, assert, evalEither, evalExceptT, property,
     (===))
-import qualified Hedgehog.Gen                             as Gen
-import           Hedgehog.Helpers                         (sampleT)
-import           Network.URI                              (parseURI)
-import           Prelude                                  hiding (exp)
+import qualified Hedgehog.Gen                                    as Gen
+import           Hedgehog.Helpers                                (sampleT)
+import           Hedgehog.Internal.Property                      (forAllT)
+import qualified Hedgehog.Range                                  as Range
+import           Network.URI                                     (parseURI)
+import           Prelude                                         hiding (exp)
+import           Test.Tasty                                      (TestTree)
+import           Test.Tasty.Hedgehog                             (testProperty)
 import           Text.URI
     (Authority (Authority), mkHost, mkScheme, renderStr)
 import           Text.URI.Gens
     (genAuthority, genScheme, genUri)
-import           Web.ConsumerData.Au.Api.Types.Auth.Error (Error)
--- `forAllT` should probs be public: https://github.com/hedgehogqa/haskell-hedgehog/issues/203
-import           Control.Monad.Except
-    (ExceptT, MonadIO, liftIO, runExceptT)
-import           Hedgehog.Internal.Property                      (forAllT)
-import qualified Hedgehog.Range                                  as Range
-import           Test.Tasty                                      (TestTree)
-import           Test.Tasty.Hedgehog                             (testProperty)
 import           Web.ConsumerData.Au.Api.Types.Auth.Common
     (ClientIss (..), FapiPermittedAlg (..), RedirectUri (RedirectUri),
     ResponseType (..), Scope (..), mkScopes, _FapiPermittedAlg)
+import           Web.ConsumerData.Au.Api.Types.Auth.Error        (Error)
 import           Web.ConsumerData.Au.Api.Types.Auth.Gens
 import           Web.ConsumerData.Au.Api.Types.Auth.Registration
 
 test_request ::
   [TestTree]
-test_request =
+test_request = undefined
+  {--
   [
   testProperty "The 'redirect_urls' smart constructor only accepts https  && !localhost hosts." redirectUrlsValid
   , testProperty "The 'redirect_urls' smart constructor rejects any non-https or localhost hosts." redirectUrlsInvalid
-  -- Until registration has been clarified in infosec, these properties won't be testable.
-  -- , testProperty "Claims round-trips to/from ClaimsMap." claimsRoundTrips
-  -- , testProperty "Redirect request round-trips to/from JSON." regoJsonRoundTrips
-  -- , testProperty "Redirect request round-trips to/from JWT." regoJwtRoundTrips
+  , testProperty "Claims round-trips to/from ClaimsMap." claimsRoundTrips
+  , testProperty "Redirect request round-trips to/from JSON." regoJsonRoundTrips
+  , testProperty "Redirect request round-trips to/from JWT." regoJwtRoundTrips
   ]
 
 redirectUrlsValid ::
@@ -74,10 +69,10 @@ redirectUrlsValid =
 
 redirectUrlsInvalid ::
   Property
-redirectUrlsInvalid =
-  property $ do
-    mRedirectUrl<- redirectUrls <$> forAllT genInvalidRedirectUris
-    assert (isNothing mRedirectUrl)
+redirectUrlsInvalid = undefined
+  -- property $ do
+  --   mRedirectUrl<- _RedirectUrls <$> forAllT genInvalidRedirectUris
+  --   assert (isNothing mRedirectUrl)
 
 claimsRoundTrips ::
   Property
@@ -97,23 +92,24 @@ regoJsonRoundTrips =
 
 regoJwtRoundTrips::
   Property
-regoJwtRoundTrips =
-  property $ do
-    rr <- forAllT genRegReq
-    (jwk,_) <- forAllT genJWK
-    let
-      ar2jwt :: RegistrationRequest -> ExceptT Error (PropertyT IO) LBS.ByteString
-      ar2jwt = fmap encodeCompact . regoReqToJwt jwk
-      jwt2ar =  jwtToRegoReq (const True) (const True) jwk <=< decodeCompact
-    (=== rr) <=< evalExceptT . (jwt2ar <=< ar2jwt) $ rr
+regoJwtRoundTrips = undefined
+  -- property $ do
+  --   rr <- forAllT genRegReq
+  --   (jwk,_) <- forAllT genJWK
+  --   let
+  --     ar2jwt :: RegistrationRequest -> ExceptT Error (PropertyT IO) LBS.ByteString
+  --     ar2jwt = fmap encodeCompact . regoReqToJwt jwk
+  --     jwt2ar =  jwtToRegoReq (const True) (const True) jwk <=< decodeCompact
+  --   (=== rr) <=< evalExceptT . (jwt2ar <=< ar2jwt) $ rr
 
 showround :: IO (Either Error RegistrationRequest)
 showround = do
   rr <- sampleT genRegReq
   (jwk,_) <- sampleT genJWK
-  let ar2jwt = fmap encodeCompact . regoReqToJwt jwk
-      jwt2ar =  jwtToRegoReq (const True) (const True) jwk <=< decodeCompact
-  runExceptT $ (jwt2ar <=< ar2jwt) rr
+  undefined
+  -- let ar2jwt = fmap encodeCompact . regoReqToJwt jwk
+  --     jwt2ar =  jwtToRegoReq (const True) (const True) jwk <=< decodeCompact
+  -- runExceptT $ (jwt2ar <=< ar2jwt) rr
 
 genRegReq::
   ( MonadGen n
@@ -130,7 +126,7 @@ genHeaders::
   , MonadIO n
   )
   => n JwsHeaders
-genHeaders =  JwsHeaders <$> genAlg <*> genKid <*> Gen.maybe genX5t
+genHeaders =  JwsHeaders <$> genAlg <*> genKid
 
 genRegClaims::
   ( MonadGen n
@@ -140,10 +136,10 @@ genRegClaims::
   => n JwsRegisteredClaims
 genRegClaims = do
   (i,exp) <- genIatExp
-  JwsRegisteredClaims <$> (Just . ClientIss <$> genStringOrUri) <*> (Just <$> genAud) <*> pure (Just i) <*> pure (Just exp) <*> (Just <$> genJti)
+  undefined
+  -- JwsRegisteredClaims <$> (Just . ClientIss <$> genStringOrUri) <*> (Just <$> genAud) <*> pure
 
-genStringOrUri::
-  ( MonadGen n
+genStringOrUri :: ( MonadGen n
   , MonadThrow n
   )
   => n StringOrURI
@@ -238,8 +234,8 @@ genAlg = m2e BadAlgType =<< ((^? _FapiPermittedAlg) <$> Gen.element [PS256,ES256
 genKid :: ( MonadGen n ) => n FapiKid
 genKid  = FapiKid <$> genText
 
-genX5t :: ( MonadGen n ) => n X509ThumbPrint
-genX5t  = Gen.choice [X5T256 <$> genBytes, X5T <$> genBytes]
+-- genX5t :: ( MonadGen n ) => n X509ThumbPrint
+-- genX5t  = Gen.choice [X5T256 <$> genBytes, X5T <$> genBytes]
 
 genGrantTypes :: ( MonadGen n , MonadThrow n ) => n FapiGrantTypes
 genGrantTypes = m2e BadGrantType $ fapiGrantTypes . GrantTypes . Set.fromList $ [Implicit,AuthorizationCode,RefreshToken]
