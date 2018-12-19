@@ -25,10 +25,10 @@ data AuthApi route =
       :> RQP "client_id" ClientId
       :> RQP "redirect_uri" RedirectUri
       :> RQP "scope" Scopes
-      :> RQP "request" SignedJWT
       :> RQP "nonce" Nonce
       :> RQP "state" State
       :> RQP "prompt" Prompt
+      :> RQP "request" SignedJWT
       :> Get302 '[WaargJSON Foo] (IdToken 'TokenUse)
 
   -- , token :: route :- "token"
