@@ -13,3 +13,11 @@ We use the [gitflow](https://danielkummer.github.io/git-flow-cheatsheet/) workfl
 1. Selectively squash out your WIP commits (`git rebase -i`), but don't feel obliged to squash everything.
 1. Merge the latest commits from `develop` into your feature.
 1. Create a PR for the branch.
+
+## Code Style
+
+We don't have a comprehensive style guide, however there are a few things we try to stick to:
+
+- Keep line lengths to <= 100 columns.
+- Use explicit or qualified imports.
+- Format imports with `stylish-haskell`.
