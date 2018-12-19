@@ -1,0 +1,1 @@
+module Web.ConsumerData.Au.LambdaBank.Server.Auth.Model where

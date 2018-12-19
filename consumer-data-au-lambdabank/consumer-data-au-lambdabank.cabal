@@ -34,6 +34,7 @@ library
                      , bytestring == 0.10.*
                      , consumer-data-au-api-types
                      , consumer-data-au-api-client
+                     , containers == 0.5.*
                      , country == 0.1.*
                      , free == 5.0.*
                      , jose == 0.7.*
