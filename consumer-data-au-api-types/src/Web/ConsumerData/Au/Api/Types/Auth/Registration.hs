@@ -1,16 +1,16 @@
 {-# OPTIONS_GHC -Wwarn #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.Registration
   ( RegistrationRequest(..)
@@ -79,94 +79,54 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
   , RegistrationResponse(..)
   ) where
 
-import Aeson.Helpers
-  ( _URI
-  , parseJSONWithPrism
-  , parseSpaceSeperatedSet
-  , toJsonSpaceSeperatedSet
-  )
-import Control.Applicative (liftA2)
-import Control.Lens
-  ( Lens'
-  , Prism'
-  , ( # )
-  , (&)
-  , (.~)
-  , (?~)
-  , (^.)
-  , (^?)
-  , _Right
-  , at
-  , makePrisms
-  , makeWrapped
-  , prism
-  , prism'
-  , to
-  )
-import Control.Lens.Wrapped (_Unwrapped)
-import Control.Monad.Error.Class (MonadError, throwError)
-import Control.Monad.Time (MonadTime)
-import qualified Crypto.JOSE.Error as JE
-import Crypto.JOSE.JWA.JWE (Enc)
-import qualified Crypto.JOSE.JWA.JWE as JWE
-import Crypto.JOSE.JWK (JWK)
-import Crypto.JOSE.JWS (HeaderParam(..), kid, newJWSHeader, x5t, x5tS256)
-import Crypto.JOSE.Types (Base64SHA1(..), Base64SHA256(..))
-import Crypto.JWT
-  ( AsJWTError
-  , Audience
-  , ClaimsSet
-  , NumericDate
-  , SignedJWT
-  , StringOrURI
-  , claimAud
-  , claimExp
-  , claimIat
-  , claimIss
-  , claimJti
-  , decodeCompact
-  , defaultJWTValidationSettings
-  , emptyClaimsSet
-  , encodeCompact
-  , issuerPredicate
-  , signClaims
-  , unregisteredClaims
-  , verifyClaims
-  )
-import Crypto.Random.Types (MonadRandom)
-import Data.Aeson (FromJSON(..), Result(..), ToJSON(..), Value(..), fromJSON)
-import Data.Bool (bool)
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Lazy as BSL (fromStrict, toStrict)
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as M
-import Data.Set (Set, isSubsetOf)
-import qualified Data.Set as Set
-import qualified Data.Text as T
-import Data.Text.Encoding as TE (decodeUtf8, encodeUtf8)
-import GHC.Generics (Generic)
-import Prelude hiding (exp)
-import Text.URI (URI, render)
-import qualified Text.URI as URI
-import Text.URI.Lens (authHost, uriAuthority, uriScheme)
-import Web.ConsumerData.Au.Api.Types.Auth.Common
-  ( ClientId
-  , ClientIss(..)
-  , FapiPermittedAlg
-  , HttpsUrl
-  , RedirectUri
-  , ResponseType
-  , Scopes
-  , _FapiPermittedAlg
-  , getRedirectUri
-  , responseTypeText
-  )
-import Web.ConsumerData.Au.Api.Types.Auth.Error
-  ( AsError
-  , Error
-  , _MissingClaim
-  , _ParseError
-  )
+import           Aeson.Helpers
+    (parseJSONWithPrism, parseSpaceSeperatedSet, toJsonSpaceSeperatedSet, _URI)
+import           Control.Applicative                       (liftA2)
+import           Control.Lens
+    (Lens', Prism', at, makePrisms, makeWrapped, prism, prism', to, ( # ), (&),
+    (.~), (?~), (^.), (^?), _Right)
+import           Control.Lens.Wrapped                      (_Unwrapped)
+import           Control.Monad.Error.Class
+    (MonadError, throwError)
+import           Control.Monad.Time                        (MonadTime)
+import qualified Crypto.JOSE.Error                         as JE
+import           Crypto.JOSE.JWA.JWE                       (Enc)
+import qualified Crypto.JOSE.JWA.JWE                       as JWE
+import           Crypto.JOSE.JWK                           (JWK)
+import           Crypto.JOSE.JWS
+    (HeaderParam (..), kid, newJWSHeader, x5t, x5tS256)
+import           Crypto.JOSE.Types
+    (Base64SHA1 (..), Base64SHA256 (..))
+import           Crypto.JWT
+    (AsJWTError, Audience, ClaimsSet, NumericDate, SignedJWT, StringOrURI,
+    claimAud, claimExp, claimIat, claimIss, claimJti, decodeCompact,
+    defaultJWTValidationSettings, emptyClaimsSet, encodeCompact,
+    issuerPredicate, signClaims, unregisteredClaims, verifyClaims)
+import           Crypto.Random.Types                       (MonadRandom)
+import           Data.Aeson
+    (FromJSON (..), Result (..), ToJSON (..), Value (..), fromJSON)
+import           Data.Bool                                 (bool)
+import           Data.ByteString                           (ByteString)
+import qualified Data.ByteString.Lazy                      as BSL
+    (fromStrict, toStrict)
+import           Data.HashMap.Strict                       (HashMap)
+import qualified Data.HashMap.Strict                       as M
+import           Data.Set                                  (Set, isSubsetOf)
+import qualified Data.Set                                  as Set
+import qualified Data.Text                                 as T
+import           Data.Text.Encoding                        as TE
+    (decodeUtf8, encodeUtf8)
+import           GHC.Generics                              (Generic)
+import           Prelude                                   hiding (exp)
+import           Text.URI                                  (URI, render)
+import qualified Text.URI                                  as URI
+import           Text.URI.Lens
+    (authHost, uriAuthority, uriScheme)
+import           Web.ConsumerData.Au.Api.Types.Auth.Common
+    (ClientId, ClientIss (..), FapiPermittedAlg, HttpsUrl, RedirectUri,
+    ResponseType, Scopes, getRedirectUri, responseTypeText, _FapiPermittedAlg)
+import           Web.ConsumerData.Au.Api.Types.Auth.Error
+    (AsError, Error, _MissingClaim, _ParseError)
 
 -- | The client registration endpoint is an OAuth 2.0 endpoint that is designed to allow a client to be dynamically registered with the authorization server. 'RegistrationRequest' represents a client request for registration containing meta-data elements specified in <https://tools.ietf.org/html/rfc7591 §RFC7591 - OAuth 2.0 Dynamic Client Registration Protocol> and <https://openid.net/specs/openid-connect-registration-1_0.html §OIDC registration>. Each request must contain a software statement assertion (a JWT is issued and signed by the OpenBanking Directory). Metadata values may be duplicated in the registration request, but if different, those in the software statement will take precedence and override those in the request.
 --
@@ -259,11 +219,11 @@ _X5T256 =
        _ -> Nothing)
 
 isX5t :: Lens' X509ThumbPrint Bool
-isX5t f o@(X5T a) = fmap (bool (X5T256 a) o) (f True)
+isX5t f o@(X5T a)    = fmap (bool (X5T256 a) o) (f True)
 isX5t f o@(X5T256 a) = fmap (bool o (X5T a)) (f False)
 
 x509ByteString :: Lens' X509ThumbPrint ByteString
-x509ByteString f (X5T a) = fmap X5T (f a)
+x509ByteString f (X5T a)    = fmap X5T (f a)
 x509ByteString f (X5T256 a) = fmap X5T256 (f a)
 
 data ApplicationType
@@ -360,8 +320,6 @@ _SubjectType =
     (\case
        "pairwise" -> Right Pairwise
        t -> Left t)
-
-# = undefined
 
 instance ToJSON SubjectType where
   toJSON = toJSON . (_SubjectType #)
@@ -615,9 +573,9 @@ newtype NotificationEndpoint =
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 data RegistrationRequest = RegistrationRequest
-  { _regoReqJwtHeaders :: JwsHeaders
-  , _regoReqRegClaims :: JwsRegisteredClaims
-  , _regReqClientMetaData :: ClientMetaData
+  { _regoReqJwtHeaders       :: JwsHeaders
+  , _regoReqRegClaims        :: JwsRegisteredClaims
+  , _regReqClientMetaData    :: ClientMetaData
   , _regReqsoftwareStatement :: RegoReqSoftwareStatement -- ^ A signed JWT containing metadata about the client software. RFC7591 mandates that this is a JWS.
   } deriving (Generic, Show, Eq)
 
@@ -630,51 +588,51 @@ newtype FapiKid = FapiKid
 -- makeWrapped ''FapiKid
 -- | These claims are JWS registered claims required for the registration requests.
 data JwsRegisteredClaims = JwsRegisteredClaims
-  { _iss :: ClientIss -- ^ The name of the RP. RFC7591 2.3 mandates issuer claim is present if supplied in a software statement.
-  , _aud :: Audience -- ^ The OP.
-  , _iat :: NumericDate -- ^ Issued at.
-  , _exp :: NumericDate -- ^ Expiration time.
-  , _jti :: JTI -- ^ JWT ID.
+  { _iss :: Maybe ClientIss -- ^ The name of the RP. RFC7591 2.3 mandates issuer claim is present if supplied in a software statement.
+  , _aud :: Maybe Audience -- ^ The OP.
+  , _iat :: Maybe NumericDate -- ^ Issued at.
+  , _exp :: Maybe NumericDate -- ^ Expiration time.
+  , _jti :: Maybe JTI -- ^ JWT ID.
   } deriving (Generic, Show, Eq)
 
 data JwsHeaders = JwsHeaders
-  { _alg :: FapiPermittedAlg -- ^ The JWK @alg@ to sign the request with.
-  , _kid :: FapiKid -- ^ @kid@ is a required header for <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header §CDR>.
+  { _alg    :: FapiPermittedAlg -- ^ The JWK @alg@ to sign the request with.
+  , _kid    :: FapiKid -- ^ @kid@ is a required header for <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header §CDR>.
   , _thumbs :: Maybe X509ThumbPrint -- ^ If present on the JWK, the X509 thumbprint must be included in the header.
   } deriving (Generic, Show, Eq)
 
 -- | The following claims are specified in <https://tools.ietf.org/html/rfc7591 §RFC7591: 3.1 Client Registration Request> to be used in both the registration request object and the software statement, all of them as optional. However, some fields are non-optional under FAPI, and even fewer are optional under <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration §CDR>
 data ClientMetaData = ClientMetaData
-  { _requestObjectSigningAlg :: FapiPermittedAlg -- The `alg` algorithm that must be used for signing request objects sent to the OP.
-  , _applicationType :: Maybe FapiApplicationType -- ^ Kind of the application. CDR mandates this to be just @web@ (i.e no @native@ apps are allowed).
-  , _tokenEndpointAuthMethod :: FapiTokenEndpointAuthMethod -- ^ Specifies which token endpoint authentication method the client will use, and also the algorithm (@token_endpoint_auth_signing_alg@) that must be used for signing if a JWT auth method is used.
-  , _grantTypes :: Maybe FapiGrantTypes -- ^ The set of grant types that a client will restrict itself to using (see <https://openid.net/specs/openid-connect-registration-1_0.html OIDC-R 2. Client Metadata> and <https://tools.ietf.org/html/rfc7591 §RFC7591 2. Client Metadata>). If omitted, the default is that the client will use only the `authorization_code` grant type.
-  , _clientName :: Maybe Script -- ^ Human-readable name of the client to be presented to the end user. Mandatory field according to CDR.
-  , _clientUri :: Maybe ScriptUri -- ^ URL of the home page of the client.
-  , _contacts :: Maybe RegistrationContacts -- ^ Array of e-mail addresses of people responsible for the client.
-  , _logoUri :: Maybe ScriptUri -- ^ URL that references a logo for the client application.
-  , _policyUri :: Maybe ScriptUri -- ^ URL that the client provides to the end user in order to read about the how the user data will be used.
-  , _tosUri :: Maybe ScriptUri -- ^ URL that the client provides to the end user to read about the client's terms of service.
-  , _subjectType :: Maybe SubjectType -- ^ Requested for responses to this client. Mandatory field according to CDR.
-  , _sectorIdentifierUri :: Maybe HttpsUrl -- ^ References an HTTPS URL of a remote file containing a single JSON array of @redirect_uri@ values.
-  , _keySet :: JwkSet -- ^ Either the @jwks_uri@ or @jwks@ parameter specifying client's JWKS.
-  , _requestUris :: Maybe RequestUris -- ^ Array of @request_uri@ values that are pre-registered by the RP for use at the OP, which may cache their contents and not retrieve them at the time they are used in a request.
-  , _redirectUris :: RedirectUrls -- ^ Non-empty array of redirection URI values used by the client to match against supplied @redirect_uri@ request parameter. If using @web@ scheme these must all be HTTPS, and must not use 'localhost' as hostname. Mandatory field, according to OIDC-R. FAPI restricts these to all be HTTPS.
-  , _requestObjectEncryption :: Maybe RequestObjectEncryption -- ^ The @request_object_encryption_alg@ and @request_object_encryption_enc@ parameters for specifying the JWS `alg` and `enc` algorithms (that might be) used when encrypting request objects. If both signed and encrypted, signing will occur first, and then encryption, with the result being a nested JWT. Warning: a RP can supply unencrypted requests, even if this is present, as this is only a declaration that the RP 'might' encrypt request objects. See 'RequestObjectEncryption' for more info.
-  , _userinfoSignedResponseAlg :: Maybe FapiPermittedAlg -- ^ The @userinfo_signed_response_alg@ parameter for specifying which JWS `alg` algorithm should be used for signing UserInfo responses.
-  , _idTokenEncryption :: IdTokenEncryption -- ^ The @id_token_encrypted_response_alg@ and @id_token_encrypted_response_enc@ values for specifying how the ID token should be encrypted; see 'IdTokenEncryption' for more information. Mandatory field according to CDR.
-  , _responseTypes :: Maybe FapiResponseTypes -- ^ JSON array containing a list of OAuth 2.0 @response_type@ values that the client will restrict itself to using; defaults to @code id_token@ if omitted. FAPI restricts these to be either `code id_token` or `code id_token token`.
-  , _defaultMaxAge :: Maybe DefaultMaxAge -- ^ Specifies that the end user must be actively authenticated if the end user was authenticated longer than the specified number of seconds ago; the @max_age@ request object parameter overides this.
-  , _requireAuthTime :: Maybe Bool -- ^ Whether the @auth_time@ claim in the ID token is required, defaults to False.
-  , _defaultAcrValues :: Maybe FapiAcrValues -- ^ Default 'Authentication Context Class Reference' (ACR) values for requests, values ordered by preference; defaults overridden by supplied values.
-  , _initiateLoginUri :: Maybe HttpsUrl -- ^ HTTS URL which can be used by a third-party to initiate a login by the RP.
-  , _userInfoEncryption :: Maybe UserInfoEncryption -- ^ The @userinfo_encrypted_response_alg@ and @userinfo_encrypted_response_enc@ values for specifying how UserInfo response should be encrypted; see 'UserInfoEncryption' for more information.
-  , _idTokenSignedResponseAlg :: FapiPermittedAlg -- ^ The `alg` for signing the ID token issued to this client. NB: OIDC-R allows this to be optional (see <https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>), but by using FAPI the implication is that it is mandatory (<https://openid.net/specs/openid-financial-api-part-2.html#public-client §FAPI RW - Section 5.2.3 >). Mandatory field according to CDR.
-  , _scope :: Maybe FapiScopes -- ^ A set of scopes, containing at least @openid@.
-  , _softwareId :: Maybe SoftwareId -- ^ Unique identifier string for the client, which should remain the same across all instances of the client software, and all versions of the client software. This must match the software ID in the SSA if supplied.
-  , _softwareVersion :: Maybe SoftwareVersion -- ^ The version number of the software should a TPP choose to register and / or maintain it.
+  { _requestObjectSigningAlg                :: FapiPermittedAlg -- The `alg` algorithm that must be used for signing request objects sent to the OP.
+  , _applicationType                        :: Maybe FapiApplicationType -- ^ Kind of the application. CDR mandates this to be just @web@ (i.e no @native@ apps are allowed).
+  , _tokenEndpointAuthMethod                :: FapiTokenEndpointAuthMethod -- ^ Specifies which token endpoint authentication method the client will use, and also the algorithm (@token_endpoint_auth_signing_alg@) that must be used for signing if a JWT auth method is used.
+  , _grantTypes                             :: Maybe FapiGrantTypes -- ^ The set of grant types that a client will restrict itself to using (see <https://openid.net/specs/openid-connect-registration-1_0.html OIDC-R 2. Client Metadata> and <https://tools.ietf.org/html/rfc7591 §RFC7591 2. Client Metadata>). If omitted, the default is that the client will use only the `authorization_code` grant type.
+  , _clientName                             :: Maybe Script -- ^ Human-readable name of the client to be presented to the end user. Mandatory field according to CDR.
+  , _clientUri                              :: Maybe ScriptUri -- ^ URL of the home page of the client.
+  , _contacts                               :: Maybe RegistrationContacts -- ^ Array of e-mail addresses of people responsible for the client.
+  , _logoUri                                :: Maybe ScriptUri -- ^ URL that references a logo for the client application.
+  , _policyUri                              :: Maybe ScriptUri -- ^ URL that the client provides to the end user in order to read about the how the user data will be used.
+  , _tosUri                                 :: Maybe ScriptUri -- ^ URL that the client provides to the end user to read about the client's terms of service.
+  , _subjectType                            :: Maybe SubjectType -- ^ Requested for responses to this client. Mandatory field according to CDR.
+  , _sectorIdentifierUri                    :: Maybe HttpsUrl -- ^ References an HTTPS URL of a remote file containing a single JSON array of @redirect_uri@ values.
+  , _keySet                                 :: JwkSet -- ^ Either the @jwks_uri@ or @jwks@ parameter specifying client's JWKS.
+  , _requestUris                            :: Maybe RequestUris -- ^ Array of @request_uri@ values that are pre-registered by the RP for use at the OP, which may cache their contents and not retrieve them at the time they are used in a request.
+  , _redirectUris                           :: RedirectUrls -- ^ Non-empty array of redirection URI values used by the client to match against supplied @redirect_uri@ request parameter. If using @web@ scheme these must all be HTTPS, and must not use 'localhost' as hostname. Mandatory field, according to OIDC-R. FAPI restricts these to all be HTTPS.
+  , _requestObjectEncryption                :: Maybe RequestObjectEncryption -- ^ The @request_object_encryption_alg@ and @request_object_encryption_enc@ parameters for specifying the JWS `alg` and `enc` algorithms (that might be) used when encrypting request objects. If both signed and encrypted, signing will occur first, and then encryption, with the result being a nested JWT. Warning: a RP can supply unencrypted requests, even if this is present, as this is only a declaration that the RP 'might' encrypt request objects. See 'RequestObjectEncryption' for more info.
+  , _userinfoSignedResponseAlg              :: Maybe FapiPermittedAlg -- ^ The @userinfo_signed_response_alg@ parameter for specifying which JWS `alg` algorithm should be used for signing UserInfo responses.
+  , _idTokenEncryption                      :: IdTokenEncryption -- ^ The @id_token_encrypted_response_alg@ and @id_token_encrypted_response_enc@ values for specifying how the ID token should be encrypted; see 'IdTokenEncryption' for more information. Mandatory field according to CDR.
+  , _responseTypes                          :: Maybe FapiResponseTypes -- ^ JSON array containing a list of OAuth 2.0 @response_type@ values that the client will restrict itself to using; defaults to @code id_token@ if omitted. FAPI restricts these to be either `code id_token` or `code id_token token`.
+  , _defaultMaxAge                          :: Maybe DefaultMaxAge -- ^ Specifies that the end user must be actively authenticated if the end user was authenticated longer than the specified number of seconds ago; the @max_age@ request object parameter overides this.
+  , _requireAuthTime                        :: Maybe Bool -- ^ Whether the @auth_time@ claim in the ID token is required, defaults to False.
+  , _defaultAcrValues                       :: Maybe FapiAcrValues -- ^ Default 'Authentication Context Class Reference' (ACR) values for requests, values ordered by preference; defaults overridden by supplied values.
+  , _initiateLoginUri                       :: Maybe HttpsUrl -- ^ HTTS URL which can be used by a third-party to initiate a login by the RP.
+  , _userInfoEncryption                     :: Maybe UserInfoEncryption -- ^ The @userinfo_encrypted_response_alg@ and @userinfo_encrypted_response_enc@ values for specifying how UserInfo response should be encrypted; see 'UserInfoEncryption' for more information.
+  , _idTokenSignedResponseAlg               :: FapiPermittedAlg -- ^ The `alg` for signing the ID token issued to this client. NB: OIDC-R allows this to be optional (see <https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>), but by using FAPI the implication is that it is mandatory (<https://openid.net/specs/openid-financial-api-part-2.html#public-client §FAPI RW - Section 5.2.3 >). Mandatory field according to CDR.
+  , _scope                                  :: Maybe FapiScopes -- ^ A set of scopes, containing at least @openid@.
+  , _softwareId                             :: Maybe SoftwareId -- ^ Unique identifier string for the client, which should remain the same across all instances of the client software, and all versions of the client software. This must match the software ID in the SSA if supplied.
+  , _softwareVersion                        :: Maybe SoftwareVersion -- ^ The version number of the software should a TPP choose to register and / or maintain it.
   , _mutualTlsSenderConstrainedAccessTokens :: Maybe MutualTlsSCAT -- ^ @mutual_tls_sender_constrained_access_tokens@ indicating the client's intention to use mutual TLS sender constrained access tokens; CDR required field that must always be `true`.
-  , _clientNotificationEndpoint :: Maybe NotificationEndpoint -- ^ @client_notification_endpoint@ - CDR required URI for CIBA callback.
+  , _clientNotificationEndpoint             :: Maybe NotificationEndpoint -- ^ @client_notification_endpoint@ - CDR required URI for CIBA callback.
   } deriving (Generic, Show, Eq)
 
 -- TODO: Add smart constructor to only allow supply of encoded SS, depending on the CDR spec
@@ -685,7 +643,7 @@ data RegoReqSoftwareStatement
 
 data SoftwareStatement = SoftwareStatement
   { _ssSigningData :: JwsRegisteredClaims
-  , _ssMetaData :: ClientMetaData -- ^ All the claims to include in the SSA; RFC7591 allows any/all that are included in the request object, however SSA claims take precedence over request object claims (3.1.1).
+  , _ssMetaData    :: ClientMetaData -- ^ All the claims to include in the SSA; RFC7591 allows any/all that are included in the request object, however SSA claims take precedence over request object claims (3.1.1).
   } deriving (Generic, Show, Eq)
   -- , _clientId            :: Maybe ClientId -- ^ The Client ID Registered at OB used to access OB resources.
   -- , _clientDescription   :: Maybe ClientDescription -- ^ Human-readable detailed description of the client.
@@ -738,11 +696,11 @@ newtype SoftwareVersion =
 
 -- | Response type for a dynamic registration request. NB: A successful response will return a HTTP 201 (<https://openid.net/specs/openid-connect-registration-1_0.html §3.2. Client Registration Response>)
 data RegistrationResponse = RegistrationResponse
-  { _clientId :: ClientId -- ^ OAuth 2.0 unique client identifier string. RFC7591 mandated.
-  , _clientSecret :: Maybe ClientSecret -- ^ OAuth 2.0 unique client secret string, used by confidential clients to authenticate to token end-point. NB: This will only ever be used by the `client_secret_jwt` client auth method.
-  , _clientIdIssuedAt :: Maybe ClientIdIssuedAt -- ^ Time at which the client identifier was issued.
-  , _regReqAccessToken :: Maybe RegReqAccessToken -- ^ URI and token to perform further operations if necessary.
-  , _regRespClientMetaData :: ClientMetaData -- ^ The rego server must return all registered metadata about the client (OIDC-R 3.2. Client Registration Response).
+  { _clientId                 :: ClientId -- ^ OAuth 2.0 unique client identifier string. RFC7591 mandated.
+  , _clientSecret             :: Maybe ClientSecret -- ^ OAuth 2.0 unique client secret string, used by confidential clients to authenticate to token end-point. NB: This will only ever be used by the `client_secret_jwt` client auth method.
+  , _clientIdIssuedAt         :: Maybe ClientIdIssuedAt -- ^ Time at which the client identifier was issued.
+  , _regReqAccessToken        :: Maybe RegReqAccessToken -- ^ URI and token to perform further operations if necessary.
+  , _regRespClientMetaData    :: ClientMetaData -- ^ The rego server must return all registered metadata about the client (OIDC-R 3.2. Client Registration Response).
   , _regRespSoftwareStatement :: SoftwareStatement -- ^ RFC7591 3.2.1 mandates software statement supplied in a request must be returned unmodified
   }
 
@@ -770,7 +728,7 @@ newtype ClientIdIssuedAt =
   ClientIdIssuedAt NumericDate
 
 data RegistrationError = RegistrationError
-  { _regError :: RegistrationErrorType
+  { _regError            :: RegistrationErrorType
   , _regErrorDescription :: Maybe RegistrationErrorDescription
   }
 
