@@ -9,6 +9,7 @@ import Data.Text.Gens (textGen)
 import Data.Time.Gens (utcTimeGen)
 
 import Data.Vector.V6
+import Data.Vector.V5
 import Web.ConsumerData.Au.Api.Types.Common.Customer
 import Web.ConsumerData.Au.Api.Types.Data.Gens
 
@@ -35,9 +36,12 @@ occupationCodeGen = OccupationCode <$> v6Gen Gen.enumBounded
 v6Gen :: Gen a -> Gen (V6 a)
 v6Gen a = sequenceA (V6 a a a a a a)
 
+v5Gen :: Gen a -> Gen (V5 a)
+v5Gen a = sequenceA (V5 a a a a a)
+
 organisationGen :: Gen Organisation
 organisationGen =
-  Organisation 
+  Organisation
     <$> utcTimeGen
     <*> Gen.maybe textGen
     <*> textGen
@@ -48,10 +52,13 @@ organisationGen =
     <*> Gen.maybe textGen
     <*> Gen.maybe textGen
     <*> Gen.maybe Gen.bool
-    <*> Gen.maybe textGen
+    <*> Gen.maybe industryCodeGen
     <*> Gen.maybe organisationTypeGen
     <*> Gen.maybe countryGen
     <*> Gen.maybe utcTimeGen
+
+industryCodeGen :: Gen IndustryCode
+industryCodeGen = IndustryCode <$> v5Gen Gen.enumBounded
 
 organisationTypeGen :: Gen OrganisationType
 organisationTypeGen = Gen.element

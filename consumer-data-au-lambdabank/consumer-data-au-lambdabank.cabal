@@ -35,6 +35,8 @@ library
                      , consumer-data-au-api-types
                      , consumer-data-au-api-client
                      , country == 0.1.*
+                     , currency-codes == 3.0.*
+                     , digit == 0.7.*
                      , free == 5.0.*
                      , jose == 0.7.*
                      , lens == 4.16.*

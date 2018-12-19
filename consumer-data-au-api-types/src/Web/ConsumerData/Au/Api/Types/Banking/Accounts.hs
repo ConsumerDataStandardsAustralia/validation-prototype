@@ -34,7 +34,7 @@ type AccountsBalancesPostRoute r = AccountsBalancesRoute r (Post '[WaargJSON OB]
 type AccountsTransactionsRoute r e = r :- "transactions" :> e
 type AccountsTransactionsGetRoute r = AccountsTransactionsRoute r (QueryParam "page" PageNumber :> Get '[WaargJSON OB] AccountsTransactionsResponse)
 type AccountsTransactionsPostRoute r = AccountsTransactionsRoute r (Post '[WaargJSON OB] AccountsTransactionsResponse)
-type AccountsDirectDebitsRoute r e = r :- "directdebits" :> e
+type AccountsDirectDebitsRoute r e = r :- "direct-debits" :> e
 type AccountsDirectDebitsGetRoute r = AccountsDirectDebitsRoute r (QueryParam "page" PageNumber :> Get '[WaargJSON OB] AccountDirectDebitsResponse)
 type AccountsDirectDebitsPostRoute r = AccountsDirectDebitsRoute r (Post '[WaargJSON OB] AccountDirectDebitsResponse)
 type AccountsByIdRoute r = r :- Capture "accountId" AccountId :> ToServant AccountApi AsApi
@@ -72,9 +72,10 @@ accountsByIdLinks :: Getter (AccountsApi (AsLink Link)) (AccountId -> AccountApi
 accountsByIdLinks = accountsById . to (\r i -> fromServant (r i))
 
 type AccountGetRoute r = r :- Get '[WaargJSON OB] AccountByIdResponse
-type AccountTransactionsGetRoute r = r :- Get '[WaargJSON OB] AccountTransactionsResponse
-type AccountTransactionByIdGetRoute r = r :- Capture "transactionId" TransactionId :> Get '[WaargJSON OB] AccountTransactionDetailResponse
-type AccountDirectDebitsGetRoute r = r :- Get '[WaargJSON OB] AccountDirectDebitsResponse
+type AccountTransactionRoute r e = r :- "transactions" :> e
+type AccountTransactionsGetRoute r = AccountTransactionRoute r (Get '[WaargJSON OB] AccountTransactionsResponse)
+type AccountTransactionByIdGetRoute r = AccountTransactionRoute r (Capture "transactionId" TransactionId :> Get '[WaargJSON OB] AccountTransactionDetailResponse)
+type AccountDirectDebitsGetRoute r = r :- "direct-debits" :> Get '[WaargJSON OB] AccountDirectDebitsResponse
 
 data AccountApi r = AccountApi
   { _accountGet                :: AccountGetRoute r

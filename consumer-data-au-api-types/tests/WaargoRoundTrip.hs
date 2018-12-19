@@ -42,7 +42,7 @@ showErr :: (DecodeError, CursorHistory) -> String
 showErr (e, ch) = "Waargonaut Decode Failed (" <> show e <> "): " <> show (ppCursorHistory ch)
 
 decodeBs :: Decoder Identity a -> BS.ByteString -> Either (DecodeError, CursorHistory) a
-decodeBs d = simpleDecode d (over _Left (const $ ParseFailed "") . eitherResult . parse parseWaargonaut)
+decodeBs d = simpleDecode d (over _Left (const $ ParseFailed "") . parseOnly parseWaargonaut)
 
 encodeBs :: Encoder' a -> a -> BS.ByteString
 encodeBs e = BL.toStrict . runIdentity . simpleEncodeNoSpaces e

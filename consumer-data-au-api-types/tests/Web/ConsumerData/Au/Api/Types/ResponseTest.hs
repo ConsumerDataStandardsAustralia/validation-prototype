@@ -29,10 +29,10 @@ test_linkToUri :: [TestTree]
 test_linkToUri =
   [ testCase "without prefix" $
     linkToUri (dummyLinkQualifier []) complexLink @?=
-    [uri|http://localhost:1337/banking/accounts/1337/13|]
+    [uri|http://localhost:1337/banking/accounts/1337/transactions/13|]
   , testCase "with prefix" $
     linkToUri (dummyLinkQualifier [[pathPiece|api|]]) complexLink @?=
-    [uri|http://localhost:1337/api/banking/accounts/1337/13|]
+    [uri|http://localhost:1337/api/banking/accounts/1337/transactions/13|]
   ]
 
 test_mkPaginatedResponse :: [TestTree]
