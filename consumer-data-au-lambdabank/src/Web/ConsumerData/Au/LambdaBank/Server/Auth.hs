@@ -33,3 +33,15 @@ authoriseServer clientId redirectUri scopes nonce state prompt signedJwt =
   -- Ensure client id is valid
 
   error "TODO: implement authorise server"
+
+checkQueryParamsMatchJwt ::
+  ResponseType
+  -> ClientId
+  -> RedirectUri
+  -> Scopes
+  -> SignedJWT
+  -> Nonce
+  -> Maybe State
+  -> Bool
+checkQueryParamsMatchJwt =
+  error "TODO: implement checkQueryParamsMatchJwt"
