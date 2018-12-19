@@ -11,6 +11,7 @@ that it looks heinous for now!
 import Data.Currency            (Alpha(AUD))
 import Country.Identifier       (australia)
 import Data.Profunctor          (lmap)
+import Data.Digit.Decimal
 import Data.List.NonEmpty       (NonEmpty((:|)))
 import Data.Maybe               (fromMaybe)
 import Data.Time (fromGregorian, UTCTime(..))
@@ -75,7 +76,7 @@ testOrganisation = Organisation
   (Just "abn123")
   (Just "acn123")
   (Just True)
-  (Just "icode")
+  (Just (IndustryCode (V5 x3 x3 x6 x6 x1)))
   (Just OrgTypeCompany)
   (Just australia)
   (Just $ UTCTime (fromGregorian 2015 8 1) 0)

@@ -11,7 +11,7 @@
         "abn": "string",
         "acn": "string",
         "isACNRegistered": true,
-        "industryCode": "string",
+        "industryCode": "12345",
         "organisationType": "SOLE_TRADER",
         "registeredCountry": "AUS",
         "establishmentDate": "2018-01-01T00:00:00Z"
