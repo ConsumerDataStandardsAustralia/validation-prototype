@@ -18,6 +18,6 @@ We use the [gitflow](https://danielkummer.github.io/git-flow-cheatsheet/) workfl
 
 We don't have a comprehensive style guide, however there are a few things we try to stick to:
 
-- Keep line lengths to <= 100 columns.
+- Keep line lengths to <= 80 columns.
 - Use explicit or qualified imports.
 - Format imports with `stylish-haskell`.
