@@ -201,6 +201,7 @@ test-suite tasty
                      , Web.ConsumerData.Au.Api.Types.Common.Gens
                      , Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypesGens
                      , Web.ConsumerData.Au.Api.Types.Data.Gens
+                     , Web.ConsumerData.Au.Api.Types.LinkTestHelpers
                      , Web.ConsumerData.Au.Api.Types.ResponseTest
                      , WaaaargonautTest
   default-language:    Haskell2010

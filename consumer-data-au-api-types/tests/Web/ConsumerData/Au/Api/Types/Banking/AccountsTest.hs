@@ -2,16 +2,53 @@
 {-# LANGUAGE QuasiQuotes       #-}
 module Web.ConsumerData.Au.Api.Types.Banking.AccountsTest where
 
+import Control.Lens
+
 import Data.Functor.Identity (Identity)
 import Test.Tasty            (TestTree)
 import Test.Tasty.HUnit      (testCase, (@?=))
+import Text.URI.QQ           (uri)
 import Waargonaut.Decode     (Decoder)
 import Waargonaut.Encode     (Encoder)
 import Waargonaut.Generic    (mkDecoder, mkEncoder, untag)
 import WaargoRoundTrip       (roundTripTest)
 
 import Web.ConsumerData.Au.Api.Types
+import Web.ConsumerData.Au.Api.Types.LinkTestHelpers
+    (linkTest, paginatedLinkTest)
 import Web.ConsumerData.Au.Api.Types.Tag
+
+
+-- TODO: Our routes don't take any query params or req bodies for the post.
+-- More to test here later once it is there.
+test_accountLinks :: [TestTree]
+test_accountLinks =
+  [ paginatedLinkTest "Get Accounts"
+    (alinks^.accountsGet) [uri|http://localhost/banking/accounts|]
+  , paginatedLinkTest "Get Bulk Balances"
+    (alinks^.accountsBalancesGet) [uri|http://localhost/banking/accounts/balances|]
+  , linkTest "Get Balances For Specific Accounts"
+    (alinks^.accountsBalancesPost) [uri|http://localhost/banking/accounts/balances|]
+  , paginatedLinkTest "Get Bulk Transactions"
+    (alinks^.accountsTransactionsGet) [uri|http://localhost/banking/accounts/transactions|]
+  , linkTest "Get Transactions for Specific Accounts"
+    (alinks^.accountsTransactionsPost) [uri|http://localhost/banking/accounts/transactions|]
+  , paginatedLinkTest "Get Bulk Direct Debits"
+    (alinks^.accountsDirectDebitsGet) [uri|http://localhost/banking/accounts/direct-debits|]
+  , linkTest "Get Direct Debits for Specific Accounts"
+    (alinks^.accountsDirectDebitsPost) [uri|http://localhost/banking/accounts/direct-debits|]
+  , linkTest "Get Account Detail"
+    (accLinks^.accountGet) [uri|http://localhost/banking/accounts/123|]
+  , linkTest "Get Transactions For Account"
+    (accLinks^.accountTransactionsGet) [uri|http://localhost/banking/accounts/123/transactions|]
+  , linkTest "Get Transaction Detail"
+    (accLinks^.accountTransactionByIdGet.to ($ TransactionId (AsciiString "456"))) [uri|http://localhost/banking/accounts/123/transactions/456|]
+  , linkTest "Get Direct Debits for Account"
+    (accLinks^.accountDirectDebitsGet) [uri|http://localhost/banking/accounts/123/direct-debits|]
+  ]
+  where
+    alinks   = links^.bankingLinks.bankingAccountsLinks
+    accLinks = alinks^.accountsByIdLinks.to ($ AccountId (AsciiString "123"))
 
 -- TODO This probably does what people expect, but it is poorly specified in the spec
 test_maskAccountId :: [TestTree]
