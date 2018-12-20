@@ -13,72 +13,72 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 module Web.ConsumerData.Au.Api.Types.Auth.Registration
-  (
-      RegistrationRequest(..)
-    , JwsRegisteredClaims (..)
-    , JwsHeaders (..)
-    , ClientMetaData (..)
+  ( RegistrationRequest(..)
+  , JwsRegisteredClaims(..)
+  , JwsHeaders(..)
+  , ClientMetaData(..)
     -- TODO: Not exporting data constructor for RegoReqSoftwareStatement --- use the smart constructor
-    , RegoReqSoftwareStatement (..)
-    , SoftwareStatement (..)
-    , JTI(..)
-    , RegReqAccessToken (..)
-    , FapiTokenEndpointAuthMethod (..)
-    , Script (..)
-    , Language (..)
-    , SubjectType (..)
-    , EmailAddress (..)
-    , ScriptUri (..)
-    , RegistrationContacts (..)
-    , JwkSet (..)
-    , RequestUris (..)
-    , FapiEnc (..)
-    , FapiResponseTypes (..)
-    , FapiApplicationType (..)
-    , FapiGrantTypes
-    , FapiAcrValues (..)
-    , FapiScopes (..)
-    , FapiKid (..)
-    , X509ThumbPrint (..)
-    , RedirectUrls (..)
-    , RequestObjectEncryption (..)
-    , IdTokenEncryption (..)
-    , DefaultMaxAge (..)
-    , UserInfoEncryption (..)
-    , MutualTlsSCAT (..)
-    , NotificationEndpoint (..)
-    , SoftwareId (..)
-    , SoftwareVersion (..)
-    , GrantType (..)
-    , _FapiApplicationType
-    , ApplicationType (..)
-    , TokenEndpointAuthMethod (..)
-    , RequestUri (..)
-    , _RedirectUrls
-    , aesonClaimsToMetaData
-    , metaDataToAesonClaims
-    , regoReqToJwt
-    , jwtToRegoReq
-    , JwksUri (..)
-    , _FapiTokenEndpointAuthMethod
-    , GrantTypes (..)
-    , isX5t
-    , _X5T
-    , _X5T256
-    , x509ByteString
-    , fapiEnc
-    , _MutualTlsSCAT
-    , _RegistrationErrorType
-    , RegistrationErrorDescription (..)
-    , RegistrationErrorType (..)
-    , RegistrationError (..)
-    , ClientIdIssuedAt (..)
-    , ClientSecretExpiresAt (..)
-    , ClientSecret (..)
-    , RegistrationClientUri (..)
-    , RegistrationAccessToken (..)
-    , RegistrationResponse (..)
-  ) where
+  , RegoReqSoftwareStatement(..)
+  , SoftwareStatement(..)
+  , JTI(..)
+  , RegReqAccessToken(..)
+  , FapiTokenEndpointAuthMethod(..)
+  , Script(..)
+  , Language(..)
+  , SubjectType(..)
+  , EmailAddress(..)
+  , ScriptUri(..)
+  , RegistrationContacts(..)
+  , JwkSet(..)
+  , RequestUris(..)
+  , FapiEnc(..)
+  , FapiResponseTypes(..)
+  , FapiApplicationType(..)
+  , FapiGrantTypes
+  , FapiAcrValues(..)
+  , FapiScopes(..)
+  , FapiKid(..)
+  , X509ThumbPrint(..)
+  , RedirectUrls(..)
+  , RequestObjectEncryption(..)
+  , IdTokenEncryption(..)
+  , DefaultMaxAge(..)
+  , UserInfoEncryption(..)
+  , MutualTlsSCAT(..)
+  , NotificationEndpoint(..)
+  , SoftwareId(..)
+  , SoftwareVersion(..)
+  , GrantType(..)
+  , _FapiApplicationType
+  , ApplicationType(..)
+  , TokenEndpointAuthMethod(..)
+  , RequestUri(..)
+  , _RedirectUrls
+  , aesonClaimsToMetaData
+  , metaDataToAesonClaims
+  , regoReqToJwt
+  , jwtToRegoReq
+  , JwksUri(..)
+  , _FapiTokenEndpointAuthMethod
+  , GrantTypes(..)
+  , isX5t
+  , _X5T
+  , _X5T256
+  , x509ByteString
+  , fapiEnc
+  , _MutualTlsSCAT
+  , _RegistrationErrorType
+  , RegistrationErrorDescription(..)
+  , RegistrationErrorType(..)
+  , RegistrationError(..)
+  , ClientIdIssuedAt(..)
+  , ClientSecretExpiresAt(..)
+  , ClientSecret(..)
+  , RegistrationClientUri(..)
+  , RegistrationAccessToken(..)
+  , RegistrationResponse(..)
+  )
+where
 
 import           Aeson.Helpers
     (parseJSONWithPrism, parseSpaceSeperatedSet, toJsonSpaceSeperatedSet, _URI)
@@ -139,20 +139,19 @@ import           Web.ConsumerData.Au.Api.Types.Auth.Error
 data GrantType = Implicit | AuthorizationCode | RefreshToken -- ClientCredentials
   deriving (Generic, Show, Eq, Ord)
 
-_GrantType ::
-  Prism' T.Text GrantType
-_GrantType =
-  prism (\case
-            Implicit -> "implicit"
-            AuthorizationCode  -> "authorization_code"
-            RefreshToken -> "refresh_token"
-        )
-        (\case
-            "implicit" -> Right Implicit
-            "authorization_code" -> Right AuthorizationCode
-            "refresh_token" -> Right RefreshToken
-            t -> Left t
-        )
+_GrantType :: Prism' T.Text GrantType
+_GrantType = prism
+  (\case
+    Implicit          -> "implicit"
+    AuthorizationCode -> "authorization_code"
+    RefreshToken      -> "refresh_token"
+  )
+  (\case
+    "implicit"           -> Right Implicit
+    "authorization_code" -> Right AuthorizationCode
+    "refresh_token"      -> Right RefreshToken
+    t                    -> Left t
+  )
 
 instance ToJSON GrantType where
   toJSON = toJSON . (_GrantType #)
@@ -182,11 +181,17 @@ _FapiGrantTypes :: Prism' GrantTypes FapiGrantTypes
 _FapiGrantTypes = prism'
   (\(FapiGrantTypes f) -> f)
   (\(GrantTypes grantTypes) ->
-    if grantTypes `isSubsetOf` permittedGrantTypes && requiredGrantTypes `isSubsetOf` grantTypes then Just . FapiGrantTypes . GrantTypes $ grantTypes else Nothing
+    if grantTypes
+         `isSubsetOf` permittedGrantTypes
+         &&           requiredGrantTypes
+         `isSubsetOf` grantTypes
+      then Just . FapiGrantTypes . GrantTypes $ grantTypes
+      else Nothing
   )
-      where
-        permittedGrantTypes = Set.fromList [Implicit,AuthorizationCode,RefreshToken]
-        requiredGrantTypes = Set.fromList [Implicit,AuthorizationCode]
+ where
+  permittedGrantTypes =
+    Set.fromList [Implicit, AuthorizationCode, RefreshToken]
+  requiredGrantTypes = Set.fromList [Implicit, AuthorizationCode]
 
 -- | The X.509 Certificate Thumbprint (SHA-1) field (@x5t@) must be included in the headers if present on the JWK, as must the @x5t#S256@ header (SHA-256). See <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header §CDR spec>, <https://tools.ietf.org/html/rfc7515#section-4.1.7 §RFC7515 4.1.7> has further details.
 -- TODO: check if we can borrow Jose types
@@ -195,42 +200,43 @@ data X509ThumbPrint = X5T ByteString | X5T256 ByteString
 
 -- TODO: NB: this may be being used instead of the KID
 _X5T :: Prism' X509ThumbPrint ByteString
-_X5T = prism' X5T
-         (\case
-             X5T a -> Just a
-             _ -> Nothing
-         )
+_X5T = prism'
+  X5T
+  (\case
+    X5T a -> Just a
+    _     -> Nothing
+  )
 
 _X5T256 :: Prism' X509ThumbPrint ByteString
-_X5T256 = prism' X5T256
-         (\case
-             X5T256 a -> Just a
-             _ -> Nothing
-         )
+_X5T256 = prism'
+  X5T256
+  (\case
+    X5T256 a -> Just a
+    _        -> Nothing
+  )
 
 isX5t :: Lens' X509ThumbPrint Bool
-isX5t f o@(X5T a)    = fmap (bool (X5T256 a) o) (f True)
+isX5t f o@(X5T    a) = fmap (bool (X5T256 a) o) (f True)
 isX5t f o@(X5T256 a) = fmap (bool o (X5T a)) (f False)
 
 x509ByteString :: Lens' X509ThumbPrint ByteString
-x509ByteString f (X5T a)    = fmap X5T (f a)
+x509ByteString f (X5T    a) = fmap X5T (f a)
 x509ByteString f (X5T256 a) = fmap X5T256 (f a)
 
 data ApplicationType = Web | Native
   deriving (Generic, Show, Eq)
 
-_ApplicationType ::
-  Prism' T.Text ApplicationType
-_ApplicationType =
-  prism (\case
-            Web -> "web"
-            Native -> "native"
-        )
-        (\case
-            "web" -> Right Web
-            "native" -> Right Native
-            t -> Left t
-        )
+_ApplicationType :: Prism' T.Text ApplicationType
+_ApplicationType = prism
+  (\case
+    Web    -> "web"
+    Native -> "native"
+  )
+  (\case
+    "web"    -> Right Web
+    "native" -> Right Native
+    t        -> Left t
+  )
 
 instance ToJSON ApplicationType where
   toJSON = toJSON . (_ApplicationType #)
@@ -246,10 +252,12 @@ instance FromJSON FapiApplicationType where
 
 -- | Smart constructor for producing FAPI permitted @application_type@s. In the current version of CDR, only @web@ is allowed.
 _FapiApplicationType :: Prism' ApplicationType FapiApplicationType
-_FapiApplicationType = prism' (\(FapiApplicationType a) -> a)
-                              (\case
-                                 Web -> Just . FapiApplicationType $ Web
-                                 _   -> Nothing)
+_FapiApplicationType = prism'
+  (\(FapiApplicationType a) -> a)
+  (\case
+    Web -> Just . FapiApplicationType $ Web
+    _   -> Nothing
+  )
 
 newtype EmailAddress = EmailAddress {
     fromEmailAddress :: T.Text
@@ -290,16 +298,15 @@ instance FromJSON ScriptUri where
 data SubjectType = Pairwise -- `Public` type not supported
   deriving (Generic, Show, Eq)
 
-_SubjectType ::
-  Prism' T.Text SubjectType
-_SubjectType =
-  prism (\case
-            Pairwise -> "pairwise"
-        )
-        (\case
-            "pairwise" -> Right Pairwise
-            t -> Left t
-        )
+_SubjectType :: Prism' T.Text SubjectType
+_SubjectType = prism
+  (\case
+    Pairwise -> "pairwise"
+  )
+  (\case
+    "pairwise" -> Right Pairwise
+    t          -> Left t
+  )
 
 instance ToJSON SubjectType where
   toJSON = toJSON . (_SubjectType #)
@@ -351,48 +358,44 @@ data TokenEndpointAuthMethod = ClientSecretPost
                              | None
   deriving (Generic, Show, Eq)
 
-_TokenEndpointAuthMethod ::
-  Prism' AesonClaims TokenEndpointAuthMethod
-_TokenEndpointAuthMethod =
-  prism tokEndPtMethMap
-        (\m -> either (const $ Left m) Right (getTokEndPtMeth m))
+_TokenEndpointAuthMethod :: Prism' AesonClaims TokenEndpointAuthMethod
+_TokenEndpointAuthMethod = prism
+  tokEndPtMethMap
+  (\m -> either (const $ Left m) Right (getTokEndPtMeth m))
 
 tokEndPtMethMap :: TokenEndpointAuthMethod -> AesonClaims
 tokEndPtMethMap = \case
-            ClientSecretPost ->
-              setApm' "client_secret_post"
-            ClientSecretBasic ->
-              setApm' "client_secret_basic"
-            ClientSecretJwt j ->
-              setApm ("token_endpoint_auth_method","client_secret_jwt"::T.Text)
-              <> setApm ("token_endpoint_auth_signing_alg",j)
-            PrivateKeyJwt j ->
-              setApm ("token_endpoint_auth_method","private_key_jwt"::T.Text)
-              <> setApm ("token_endpoint_auth_signing_alg",j)
-            TlsClientAuth t ->
-              setApm ("token_endpoint_auth_method","tls_client_auth"::T.Text)
-              <> setApm ("tls_client_auth_subject_dn",t)
-            None ->
-              setApm' "none"
-        where
-          setApm :: ToJSON a => (T.Text,a) -> AesonClaims
-          setApm (k,a) = M.empty & at k ?~ toJSON a
-          setApm' a = M.empty & at "token_endpoint_auth_method" ?~ toJSON (a::T.Text)
+  ClientSecretPost  -> setApm' "client_secret_post"
+  ClientSecretBasic -> setApm' "client_secret_basic"
+  ClientSecretJwt j ->
+    setApm ("token_endpoint_auth_method", "client_secret_jwt" :: T.Text)
+      <> setApm ("token_endpoint_auth_signing_alg", j)
+  PrivateKeyJwt j ->
+    setApm ("token_endpoint_auth_method", "private_key_jwt" :: T.Text)
+      <> setApm ("token_endpoint_auth_signing_alg", j)
+  TlsClientAuth t ->
+    setApm ("token_endpoint_auth_method", "tls_client_auth" :: T.Text)
+      <> setApm ("tls_client_auth_subject_dn", t)
+  None -> setApm' "none"
+ where
+  setApm :: ToJSON a => (T.Text, a) -> AesonClaims
+  setApm (k, a) = M.empty & at k ?~ toJSON a
+  setApm' a = M.empty & at "token_endpoint_auth_method" ?~ toJSON (a :: T.Text)
 
 getTokEndPtMeth :: AesonClaims -> Either Error TokenEndpointAuthMethod
 getTokEndPtMeth m = do
-                      meth <- getClaim m "token_endpoint_auth_method"
-                      case meth::T.Text of
-                        "client_secret_post" -> pure ClientSecretPost
-                        "client_secret_basic" -> pure ClientSecretBasic
-                        "client_secret_jwt" -> ClientSecretJwt <$>
-                          getClaim m "token_endpoint_auth_signing_alg"
-                        "private_key_jwt" -> PrivateKeyJwt <$>
-                          getClaim m "token_endpoint_auth_signing_alg"
-                        "tls_client_auth" -> TlsClientAuth <$>
-                          getClaim m "tls_client_auth_subject_dn"
-                        "none" -> Right None
-                        _ -> throwError $ _ParseError # "Invalid token_endpoint_auth_method"
+  meth <- getClaim m "token_endpoint_auth_method"
+  case meth :: T.Text of
+    "client_secret_post"  -> pure ClientSecretPost
+    "client_secret_basic" -> pure ClientSecretBasic
+    "client_secret_jwt" ->
+      ClientSecretJwt <$> getClaim m "token_endpoint_auth_signing_alg"
+    "private_key_jwt" ->
+      PrivateKeyJwt <$> getClaim m "token_endpoint_auth_signing_alg"
+    "tls_client_auth" ->
+      TlsClientAuth <$> getClaim m "tls_client_auth_subject_dn"
+    "none" -> Right None
+    _      -> throwError $ _ParseError # "Invalid token_endpoint_auth_method"
 
 instance ToJSON TokenEndpointAuthMethod where
   toJSON = toJSON . (_TokenEndpointAuthMethod #)
@@ -408,16 +411,18 @@ newtype TlsClientAuthSubjectDn = TlsClientAuthSubjectDn T.Text
 newtype FapiTokenEndpointAuthMethod = FapiTokenEndpointAuthMethod TokenEndpointAuthMethod
   deriving (Generic, Show, Eq)
 
-_FapiTokenEndpointAuthMethod :: Prism' TokenEndpointAuthMethod FapiTokenEndpointAuthMethod
-_FapiTokenEndpointAuthMethod = prism (\case
-          FapiTokenEndpointAuthMethod f -> f
-      )
-      (\case
+_FapiTokenEndpointAuthMethod
+  :: Prism' TokenEndpointAuthMethod FapiTokenEndpointAuthMethod
+_FapiTokenEndpointAuthMethod = prism
+  (\case
+    FapiTokenEndpointAuthMethod f -> f
+  )
+  (\case
           -- ClientSecretJwt f -> Right . FapiTokenEndpointAuthMethod . ClientSecretJwt $ f -- Not supported in CDR.
-          PrivateKeyJwt f -> Right . FapiTokenEndpointAuthMethod . PrivateKeyJwt $ f
-          TlsClientAuth f -> Right . FapiTokenEndpointAuthMethod . TlsClientAuth $ f
-          e -> Left e
-      )
+    PrivateKeyJwt f -> Right . FapiTokenEndpointAuthMethod . PrivateKeyJwt $ f
+    TlsClientAuth f -> Right . FapiTokenEndpointAuthMethod . TlsClientAuth $ f
+    e               -> Left e
+  )
 
 -- | FAPI accepted algorithms for content encryption, based on <https://tools.ietf.org/html/rfc7518 §RFC 7518 5. Cryptographic Algorithms for Content Encryption>.
 data FapiEnc =
@@ -431,24 +436,24 @@ data FapiEnc =
 
 -- TODO: make iso if all enc's supported
 fapiEnc :: Prism' Enc FapiEnc
-fapiEnc =
-   prism' (\case
-            A128CBC_HS256 -> JWE.A128CBC_HS256 -- Unsure if the CBC ciphers are acceptable
-            A192CBC_HS384 -> JWE.A192CBC_HS384
-            A256CBC_HS512 -> JWE.A256CBC_HS512
-            A128GCM -> JWE.A128GCM
-            A192GCM -> JWE.A192GCM
-            A256GCM -> JWE.A256GCM
-         )
-         (\case
-            JWE.A128CBC_HS256 -> Just A128CBC_HS256
-            JWE.A192CBC_HS384->  Just A192CBC_HS384
-            JWE.A256CBC_HS512-> Just   A256CBC_HS512
-            JWE.A128GCM -> Just   A128GCM
-            JWE.A192GCM -> Just  A192GCM
-            JWE.A256GCM -> Just  A256GCM
+fapiEnc = prism'
+  (\case
+    A128CBC_HS256 -> JWE.A128CBC_HS256 -- Unsure if the CBC ciphers are acceptable
+    A192CBC_HS384 -> JWE.A192CBC_HS384
+    A256CBC_HS512 -> JWE.A256CBC_HS512
+    A128GCM       -> JWE.A128GCM
+    A192GCM       -> JWE.A192GCM
+    A256GCM       -> JWE.A256GCM
+  )
+  (\case
+    JWE.A128CBC_HS256 -> Just A128CBC_HS256
+    JWE.A192CBC_HS384 -> Just A192CBC_HS384
+    JWE.A256CBC_HS512 -> Just A256CBC_HS512
+    JWE.A128GCM       -> Just A128GCM
+    JWE.A192GCM       -> Just A192GCM
+    JWE.A256GCM       -> Just A256GCM
             -- e -> Left e
-         )
+  )
 
 -- | @default_max_age@, in seconds.
 newtype DefaultMaxAge  = DefaultMaxAge Int
@@ -487,14 +492,16 @@ instance FromJSON RedirectUrls where
 
 -- | Constructor for @redirect_url@ array; all URLs must be HTTPS, none may be localhost, as mandated by CDR.
 _RedirectUrls :: Prism' (Set RedirectUri) RedirectUrls
-_RedirectUrls = prism' (\(RedirectUrls r) -> r)
-                       (\uris ->
-                         if
-                            not (null uris) && allValid uris
-                         then
-                            Just . RedirectUrls $ uris else Nothing)
-                       where
-  isValidHost uri = and $ liftA2 (/=) (URI.mkHost "localhost") (uri ^? uriAuthority . _Right . authHost)
+_RedirectUrls = prism'
+  (\(RedirectUrls r) -> r)
+  (\uris -> if not (null uris) && allValid uris
+    then Just . RedirectUrls $ uris
+    else Nothing
+  )
+ where
+  isValidHost uri = and $ liftA2 (/=)
+                                 (URI.mkHost "localhost")
+                                 (uri ^? uriAuthority . _Right . authHost)
   isHttps uri = and $ liftA2 (==) (URI.mkScheme "https") (uri ^. uriScheme)
   allValid = all (liftA2 (&&) isValidHost isHttps . getRedirectUri)
 
@@ -521,10 +528,12 @@ newtype MutualTlsSCAT = MutualTlsSCAT Bool
 
 -- | Smart constructor for @mutual_tls_sender_constrained_access_tokens@, which can only have the value of True.
 _MutualTlsSCAT :: Prism' Bool MutualTlsSCAT
-_MutualTlsSCAT = prism' (\(MutualTlsSCAT a)-> a)
-                        (\case
-                          True -> Just $ MutualTlsSCAT True
-                          _ -> Nothing)
+_MutualTlsSCAT = prism'
+  (\(MutualTlsSCAT a) -> a)
+  (\case
+    True -> Just $ MutualTlsSCAT True
+    _    -> Nothing
+  )
 
 newtype NotificationEndpoint = NotificationEndpoint HttpsUrl
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
@@ -689,118 +698,146 @@ data RegistrationErrorType = INVALID_REDIRECT_URI -- ^  The value of one or more
 newtype RegistrationErrorDescription = RegistrationErrorDescription T.Text
 
 
-_RegistrationErrorType ::
-  Prism' T.Text RegistrationErrorType
-_RegistrationErrorType =
-  prism (\case
-            INVALID_REDIRECT_URI -> "invalid_redirect_uri"
-            INVALID_CLIENT_METADATA -> "invalid_client_metadata"
-            INVALID_SOFTWARE_STATEMENT -> "invalid_software_statement"
-            UNAPPROVED_SOFTWARE_STATEMENT -> "unapproved_software_statement"
-        )
-        (\case
-            "invalid_redirect_uri" -> Right INVALID_REDIRECT_URI
-            "invalid_client_metadata" -> Right INVALID_CLIENT_METADATA
-            "invalid_software_statement" -> Right INVALID_SOFTWARE_STATEMENT
-            "unapproved_software_statement" -> Right UNAPPROVED_SOFTWARE_STATEMENT
-            e -> Left e
-        )
+_RegistrationErrorType :: Prism' T.Text RegistrationErrorType
+_RegistrationErrorType = prism
+  (\case
+    INVALID_REDIRECT_URI          -> "invalid_redirect_uri"
+    INVALID_CLIENT_METADATA       -> "invalid_client_metadata"
+    INVALID_SOFTWARE_STATEMENT    -> "invalid_software_statement"
+    UNAPPROVED_SOFTWARE_STATEMENT -> "unapproved_software_statement"
+  )
+  (\case
+    "invalid_redirect_uri"          -> Right INVALID_REDIRECT_URI
+    "invalid_client_metadata"       -> Right INVALID_CLIENT_METADATA
+    "invalid_software_statement"    -> Right INVALID_SOFTWARE_STATEMENT
+    "unapproved_software_statement" -> Right UNAPPROVED_SOFTWARE_STATEMENT
+    e                               -> Left e
+  )
 
 type AesonClaims = HashMap T.Text Value
 
 -- Jose needs JWT claims to be supplied as Aeson Values
-metaDataToAesonClaims ::
-  ClientMetaData
-  -> AesonClaims
-metaDataToAesonClaims ClientMetaData{..} =
+metaDataToAesonClaims :: ClientMetaData -> AesonClaims
+metaDataToAesonClaims ClientMetaData {..} =
   M.empty
-    & at "client_name"?~ toJSON _clientName
-    & at "client_uri".~ (toJSON <$> _clientUri)
-    & at "contacts".~ (toJSON <$> _contacts)
-    & at "logo_uri".~ (toJSON <$> _logoUri)
-    & at "policy_uri".~ (toJSON <$> _policyUri)
-    & at "tos_uri".~ (toJSON <$> _tosUri)
-    & at "subject_type"?~ toJSON _subjectType
-    & at "sector_identifier_uri".~ (toJSON <$> _sectorIdentifierUri)
+    &  at "client_name"
+    ?~ toJSON _clientName
+    &  at "client_uri"
+    .~ (toJSON <$> _clientUri)
+    &  at "contacts"
+    .~ (toJSON <$> _contacts)
+    &  at "logo_uri"
+    .~ (toJSON <$> _logoUri)
+    &  at "policy_uri"
+    .~ (toJSON <$> _policyUri)
+    &  at "tos_uri"
+    .~ (toJSON <$> _tosUri)
+    &  at "subject_type"
+    ?~ toJSON _subjectType
+    &  at "sector_identifier_uri"
+    .~ (toJSON <$> _sectorIdentifierUri)
     -- TODO: The spec on this is going to change, awaiting.
     -- Either the jwks or the jwks_uri must be supplied.
     -- & at "jwks".~ (toJSON <$> _keySet)
     -- & at "jwks_uri".~ (toJSON <$> _keySet)
-    & at "request_uris".~ (toJSON <$> _requestUris)
-    & at "redirect_uris" ?~ toJSON _redirectUris
-    & at "request_object_encryption_alg".~ (toJSON  . reqObjAlg <$> _requestObjectEncryption)
-    & at "request_object_encryption_enc".~ (toJSON  <$> (reqObjEnc =<< _requestObjectEncryption))
-    & at "userinfo_signed_response_alg".~ (toJSON <$> _userinfoSignedResponseAlg)
+    &  at "request_uris"
+    .~ (toJSON <$> _requestUris)
+    &  at "redirect_uris"
+    ?~ toJSON _redirectUris
+    &  at "request_object_encryption_alg"
+    .~ (toJSON . reqObjAlg <$> _requestObjectEncryption)
+    &  at "request_object_encryption_enc"
+    .~ (toJSON <$> (reqObjEnc =<< _requestObjectEncryption))
+    &  at "userinfo_signed_response_alg"
+    .~ (toJSON <$> _userinfoSignedResponseAlg)
     -- TODO: The spec on this is going to change, awaiting.
     -- & at "id_token_encrypted_response_alg".~ (toJSON . idTokenAlg <$> _idTokenEncryption)
     -- & at "id_token_encrypted_response_enc".~ (toJSON <$> (idTokenEnc =<< _idTokenEncryption))
-    & at "response_types".~ (toJSON <$> _responseTypes)
-    & at "default_max_age".~ (toJSON <$> _defaultMaxAge)
-    & at "require_auth_time".~ (toJSON <$> _requireAuthTime)
-    & at "default_acr_values".~ (toJSON <$> _defaultAcrValues)
-    & at "initiate_login_uri".~ (toJSON <$> _initiateLoginUri)
-    & at "user_info_encrypted_response_alg".~ (toJSON . userInfoAlg <$> _userInfoEncryption)
-    & at "user_info_encrypted_response_enc".~ (toJSON <$> (userInfoEnc =<< _userInfoEncryption))
-    & at "id_token_signed_response_alg"?~ toJSON _idTokenSignedResponseAlg
-    & at "request_object_signing_alg"?~ toJSON _requestObjectSigningAlg
-    & at "grant_types" .~ (toJSON <$> _grantTypes)
-    & at "application_type"?~ toJSON _applicationType
-    & (<> (_TokenEndpointAuthMethod . _FapiTokenEndpointAuthMethod # _tokenEndpointAuthMethod))
-    & at "scope".~ (toJSON <$> _scope)
-    & at "software_id".~ (toJSON <$> _softwareId)
-    & at "software_version".~ (toJSON <$> _softwareVersion)
+    &  at "response_types"
+    .~ (toJSON <$> _responseTypes)
+    &  at "default_max_age"
+    .~ (toJSON <$> _defaultMaxAge)
+    &  at "require_auth_time"
+    .~ (toJSON <$> _requireAuthTime)
+    &  at "default_acr_values"
+    .~ (toJSON <$> _defaultAcrValues)
+    &  at "initiate_login_uri"
+    .~ (toJSON <$> _initiateLoginUri)
+    &  at "user_info_encrypted_response_alg"
+    .~ (toJSON . userInfoAlg <$> _userInfoEncryption)
+    &  at "user_info_encrypted_response_enc"
+    .~ (toJSON <$> (userInfoEnc =<< _userInfoEncryption))
+    &  at "id_token_signed_response_alg"
+    ?~ toJSON _idTokenSignedResponseAlg
+    &  at "request_object_signing_alg"
+    ?~ toJSON _requestObjectSigningAlg
+    &  at "grant_types"
+    .~ (toJSON <$> _grantTypes)
+    &  at "application_type"
+    ?~ toJSON _applicationType
+    &  (<> ( _TokenEndpointAuthMethod
+           . _FapiTokenEndpointAuthMethod
+           # _tokenEndpointAuthMethod
+           )
+       )
+    &  at "scope"
+    .~ (toJSON <$> _scope)
+    &  at "software_id"
+    .~ (toJSON <$> _softwareId)
+    &  at "software_version"
+    .~ (toJSON <$> _softwareVersion)
 
 -- | Currently all meta-data is included in the software statement.
-ssToAesonClaims ::
-  SoftwareStatement
-  -> AesonClaims
+ssToAesonClaims :: SoftwareStatement -> AesonClaims
 ssToAesonClaims = metaDataToAesonClaims . _ssMetaData
 
 -- | Sign a registration request for sending to OP.
-regoReqToJwt ::
-  ( MonadRandom m
-  , MonadError e m
-  , AsError e
-  , JE.AsError e
-  )
+regoReqToJwt
+  :: (MonadRandom m, MonadError e m, AsError e, JE.AsError e)
   => JWK
   -> RegistrationRequest
   -> m SignedJWT
 regoReqToJwt jwk rr =
-  let
-    mkCs h m = emptyClaimsSet & setRegisteredClaims h & unregisteredClaims .~ m
-    ssClaims ssreg = mkCs (_ssSigningData ssreg) (ssToAesonClaims ssreg)
-    reqAcm = metaDataToAesonClaims . _regReqClientMetaData $ rr
-    reqClaims ssb64 = mkCs (_regoReqRegClaims rr) (reqAcm & at "software_statement" ?~ ssb64)
-    rrh = _regoReqJwtHeaders rr
-    jwsHead = newJWSHeader ((), _FapiPermittedAlg # _alg rrh)
-              & kid ?~ HeaderParam () (getFapiKid $ _kid rrh)
-              & x5t .~ (HeaderParam () . Base64SHA1 . (^. _X5T) <$> _thumbs rrh)
-              & x5tS256 .~ (HeaderParam () . Base64SHA256 . (^. _X5T256) <$> _thumbs rrh)
-  in do
+  let mkCs h m =
+        emptyClaimsSet & setRegisteredClaims h & unregisteredClaims .~ m
+      ssClaims ssreg = mkCs (_ssSigningData ssreg) (ssToAesonClaims ssreg)
+      reqAcm = metaDataToAesonClaims . _regReqClientMetaData $ rr
+      reqClaims ssb64 =
+        mkCs (_regoReqRegClaims rr) (reqAcm & at "software_statement" ?~ ssb64)
+      rrh = _regoReqJwtHeaders rr
+      jwsHead =
+        newJWSHeader ((), _FapiPermittedAlg # _alg rrh)
+          &  kid
+          ?~ HeaderParam () (getFapiKid $ _kid rrh)
+          &  x5t
+          .~ (HeaderParam () . Base64SHA1 . (^. _X5T) <$> _thumbs rrh)
+          &  x5tS256
+          .~ (HeaderParam () . Base64SHA256 . (^. _X5T256) <$> _thumbs rrh)
+  in  do
     -- get the b64 SSA as an aeson Value
-    ssb64 <- case _regReqsoftwareStatement rr of
-                  EncodedSs ss -> return $ toJSON ss
-                  DecodedSs ss -> jwtToJson <$> signClaims jwk jwsHead (ssClaims ss)
-    -- .. and now sign the rego request
-    signClaims jwk jwsHead (reqClaims ssb64)
+        ssb64 <- case _regReqsoftwareStatement rr of
+          EncodedSs ss -> return $ toJSON ss
+          DecodedSs ss -> jwtToJson <$> signClaims jwk jwsHead (ssClaims ss)
+        -- .. and now sign the rego request
+        signClaims jwk jwsHead (reqClaims ssb64)
 
 setRegisteredClaims :: JwsRegisteredClaims -> ClaimsSet -> ClaimsSet
-setRegisteredClaims h claims = claims
-      & claimIss .~ (getClientIss <$>_iss h)
-      & claimAud .~ _aud h
-      & claimIat .~ _iat h
-      & claimJti .~ (getJTI <$> _jti h)
-      & claimExp .~ _exp h
+setRegisteredClaims h claims =
+  claims
+    &  claimIss
+    .~ (getClientIss <$> _iss h)
+    &  claimAud
+    .~ _aud h
+    &  claimIat
+    .~ _iat h
+    &  claimJti
+    .~ (getJTI <$> _jti h)
+    &  claimExp
+    .~ _exp h
 
 -- | Convert a signed JWT received by the OP into a registration request, verifying the request JWT, and extract the software statement JWT from the claims, and verify that as well.
-jwtToRegoReq  ::
-  ( MonadError e m
-  , AsError e
-  , AsJWTError e
-  , JE.AsError e
-  , MonadTime m
-  )
+jwtToRegoReq
+  :: (MonadError e m, AsError e, AsJWTError e, JE.AsError e, MonadTime m)
   => (StringOrURI -> Bool)
   -> (StringOrURI -> Bool)
   -> JWK
@@ -809,110 +846,118 @@ jwtToRegoReq  ::
 jwtToRegoReq audPred issPred jwk jwt = do
   let
     -- TODO: seperate predicates here for the JWT?
-    validationSettings = defaultJWTValidationSettings audPred & issuerPredicate .~ issPred
-    c2m c = c ^. unregisteredClaims . to aesonClaimsToMetaData
-    jwsHead = undefined
+      validationSettings =
+        defaultJWTValidationSettings audPred & issuerPredicate .~ issPred
+      c2m c = c ^. unregisteredClaims . to aesonClaimsToMetaData
+      jwsHead = undefined
   claims <- verifyClaims validationSettings jwk jwt
-  ssjwt <- decodeCompact =<< BSL.fromStrict . TE.encodeUtf8 <$> claims ^. unregisteredClaims . to (`getClaim` "software_statement")
+  ssjwt  <-
+    decodeCompact
+    =<< BSL.fromStrict
+    .   TE.encodeUtf8
+    <$> claims
+    ^.  unregisteredClaims
+    .   to (`getClaim` "software_statement")
   ssclaims <- verifyClaims validationSettings jwk ssjwt
   -- Get the `software_statement` (ie a JWT), extract the headers and the claims
-  ss <-  SoftwareStatement <$> getRegisteredClaims ssclaims <*> c2m ssclaims
+  ss <- SoftwareStatement <$> getRegisteredClaims ssclaims <*> c2m ssclaims
   -- ... putting that inside the software statement in the RegistrationRequest
-  RegistrationRequest <$> jwsHead <*> getRegisteredClaims claims <*>  c2m claims <*> pure (DecodedSs ss)
+  RegistrationRequest
+    <$> jwsHead
+    <*> getRegisteredClaims claims
+    <*> c2m claims
+    <*> pure (DecodedSs ss)
 
-getRegisteredClaims :: (  MonadError e m
-                    , AsError e
-                    , AsJWTError e
-                    , JE.AsError e
-                    , MonadTime m
-                    ) => ClaimsSet -> m JwsRegisteredClaims
+getRegisteredClaims
+  :: (MonadError e m, AsError e, AsJWTError e, JE.AsError e, MonadTime m)
+  => ClaimsSet
+  -> m JwsRegisteredClaims
 getRegisteredClaims claims = do
   iss <- getRegClaim claimIss "iss" claims
   aud <- getRegClaim claimAud "aud" claims
   iat <- getRegClaim claimIat "iat" claims
   jti <- getRegClaim claimJti "jti" claims
   exp <- getRegClaim claimExp "exp" claims
-  return $ JwsRegisteredClaims (Just $ ClientIss iss) (Just aud) (Just iat) (Just exp) (Just $ JTI jti) where
-    getRegClaim g name cs = cs ^. g & maybeErrors (_MissingClaim # name)
+  return $ JwsRegisteredClaims (Just $ ClientIss iss)
+                               (Just aud)
+                               (Just iat)
+                               (Just exp)
+                               (Just $ JTI jti)
+  where getRegClaim g name cs = cs ^. g & maybeErrors (_MissingClaim # name)
 
 -- convert a signed jwt to base64 then make it a json Value (for a claim)
 jwtToJson :: SignedJWT -> Value
 jwtToJson = toJSON . TE.decodeUtf8 . BSL.toStrict . encodeCompact
 
-getClaim :: forall e m a.
-  ( AsError e
-  , MonadError e m
-  , FromJSON a
-  ) =>
- AesonClaims -> T.Text -> m a
-getClaim m n = m ^. at n & (>>=fromVal) . maybeErrors (_MissingClaim # n)
+getClaim
+  :: forall e m a
+   . (AsError e, MonadError e m, FromJSON a)
+  => AesonClaims
+  -> T.Text
+  -> m a
+getClaim m n = m ^. at n & (>>= fromVal) . maybeErrors (_MissingClaim # n)
 
-getmClaim :: forall e m a.
-  ( AsError e
-  , MonadError e m
-  , FromJSON a
-  ) =>
- AesonClaims -> T.Text -> m (Maybe a)
+getmClaim
+  :: forall e m a
+   . (AsError e, MonadError e m, FromJSON a)
+  => AesonClaims
+  -> T.Text
+  -> m (Maybe a)
 getmClaim m n = m ^. at n & traverse fromVal
 
-fromVal :: forall e m a.
-  ( AsError e
-  , MonadError e m
-  , FromJSON a
-  ) => Value -> m a
-fromVal = rToM . fromJSON where
- rToM = \case
-         Error s -> throwError . (_ParseError #) $ s
-         Success a -> pure a
+fromVal
+  :: forall e m a . (AsError e, MonadError e m, FromJSON a) => Value -> m a
+fromVal = rToM . fromJSON
+ where
+  rToM = \case
+    Error   s -> throwError . (_ParseError #) $ s
+    Success a -> pure a
 
 maybeErrors :: (AsError e, MonadError e m) => e -> Maybe a -> m a
 maybeErrors e = maybe (throwError e) pure
 
-aesonClaimsToMetaData :: forall e m.
-  ( AsError e
-  , MonadError e m
-  ) =>
- AesonClaims -> m ClientMetaData
+aesonClaimsToMetaData
+  :: forall e m . (AsError e, MonadError e m) => AesonClaims -> m ClientMetaData
 aesonClaimsToMetaData m = do
-  _clientName         <- getClaim m "client_name"
-  _clientUri         <- getmClaim m "client_uri"
-  _contacts         <- getmClaim m "contacts"
-  _logoUri         <- getmClaim m "logo_uri"
-  _policyUri         <- getmClaim m "policy_uri"
-  _tosUri         <- getmClaim m "tos_uri"
+  _clientName          <- getClaim m "client_name"
+  _clientUri           <- getmClaim m "client_uri"
+  _contacts            <- getmClaim m "contacts"
+  _logoUri             <- getmClaim m "logo_uri"
+  _policyUri           <- getmClaim m "policy_uri"
+  _tosUri              <- getmClaim m "tos_uri"
   _subjectType         <- getClaim m "subject_type"
-  _sectorIdentifierUri         <- getmClaim m "sector_identifier_uri"
+  _sectorIdentifierUri <- getmClaim m "sector_identifier_uri"
   -- TODO: The spec on this is going to change, awaiting.
   -- mjwks         <- getmClaim m "jwks"
   -- mjwksUri       <- getmClaim m "jwks_uri"
   -- Fail if neither jwks or jwks_uri are supplied
   --_keySet <- maybeErrors (_MissingClaim "jwks or jwks_uri required.") (mjwks <|> mjwksUri)
   let _keySet = undefined
-  _requestUris         <- getmClaim m "request_uris"
-  _redirectUris         <- getClaim m "redirect_uris"
-  ra <- getmClaim m "request_object_encryption_alg"
-  re <- getmClaim m "request_object_encryption_enc"
+  _requestUris  <- getmClaim m "request_uris"
+  _redirectUris <- getClaim m "redirect_uris"
+  ra            <- getmClaim m "request_object_encryption_alg"
+  re            <- getmClaim m "request_object_encryption_enc"
   let _requestObjectEncryption = RequestObjectEncryption <$> ra <*> pure re
-  _userinfoSignedResponseAlg         <- getmClaim m "userinfo_signed_response_alg"
-  ia <- getClaim m "id_token_encrypted_response_alg"
-  ie <- getClaim m "id_token_encrypted_response_enc"
+  _userinfoSignedResponseAlg <- getmClaim m "userinfo_signed_response_alg"
+  ia                         <- getClaim m "id_token_encrypted_response_alg"
+  ie                         <- getClaim m "id_token_encrypted_response_enc"
   let _idTokenEncryption = IdTokenEncryption ia ie
-  _responseTypes         <- getmClaim m "response_types"
-  _defaultMaxAge         <- getmClaim m "default_max_age"
-  _requireAuthTime         <- getmClaim m "require_auth_time"
-  _defaultAcrValues         <- getmClaim m "default_acr_values"
-  _initiateLoginUri         <- getmClaim m "initiate_login_uri"
-  ua          <- getmClaim m "user_info_encrypted_response_alg"
-  ue         <- getmClaim m "user_info_encrypted_response_enc"
-  let _userInfoEncryption  = UserInfoEncryption <$> ua <*> pure ue
-  _idTokenSignedResponseAlg         <- getClaim m "id_token_signed_response_alg"
-  _requestObjectSigningAlg         <- getClaim m "request_object_signing_alg"
-  _grantTypes         <- getmClaim m "grant_types"
-  _applicationType         <- getClaim m "application_type"
+  _responseTypes    <- getmClaim m "response_types"
+  _defaultMaxAge    <- getmClaim m "default_max_age"
+  _requireAuthTime  <- getmClaim m "require_auth_time"
+  _defaultAcrValues <- getmClaim m "default_acr_values"
+  _initiateLoginUri <- getmClaim m "initiate_login_uri"
+  ua                <- getmClaim m "user_info_encrypted_response_alg"
+  ue                <- getmClaim m "user_info_encrypted_response_enc"
+  let _userInfoEncryption = UserInfoEncryption <$> ua <*> pure ue
+  _idTokenSignedResponseAlg   <- getClaim m "id_token_signed_response_alg"
+  _requestObjectSigningAlg    <- getClaim m "request_object_signing_alg"
+  _grantTypes                 <- getmClaim m "grant_types"
+  _applicationType            <- getClaim m "application_type"
   --_tokenEndpointAuthMethod         <- getClaim m "token_endpoint_auth_method"
-  _scope         <- getmClaim m "scope"
-  _softwareId         <- getmClaim m "software_id"
-  _softwareVersion         <- getmClaim m "software_version"
+  _scope                      <- getmClaim m "scope"
+  _softwareId                 <- getmClaim m "software_id"
+  _softwareVersion            <- getmClaim m "software_version"
   _mutualTlsSenderConstrainedAccessTokens <- getClaim m "software_version"
   _clientNotificationEndpoint <- getClaim m "software_version"
   pure ClientMetaData {..}
