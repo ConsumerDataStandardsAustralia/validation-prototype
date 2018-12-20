@@ -132,10 +132,10 @@ import           Web.ConsumerData.Au.Api.Types.Auth.Error
 -- | The client registration endpoint is an OAuth 2.0 endpoint that is designed to
 -- allow a client to be dynamically registered with the authorization server.
 -- 'RegistrationRequest' represents a client request for registration containing
--- meta-data elements specified in <https://tools.ietf.org/html/rfc7591 §RFC7591
--- - OAuth 2.0 Dynamic Client Registration Protocol> and
--- <https://openid.net/specs/openid-connect-registration-1_0.html §OIDC
--- registration>. Each request must contain a software statement assertion (a
+-- meta-data elements specified in
+-- <https://tools.ietf.org/html/rfc7591 §RFC7591 - OAuth 2.0 Dynamic Client Registration Protocol>
+-- and <https://openid.net/specs/openid-connect-registration-1_0.html §OIDC registration>.
+-- Each request must contain a software statement assertion (a
 -- JWT is issued and signed by the OpenBanking Directory). Metadata values may
 -- be duplicated in the registration request, but if different, those in the
 -- software statement will take precedence and override those in the request. A
@@ -144,17 +144,16 @@ import           Web.ConsumerData.Au.Api.Types.Auth.Error
 -- JWT signed by the RP [UK OB mandates this] and include the signed software
 -- statement assertion as a JWT claim. Full details of CDR dynamic client
 -- registration can be found in the
--- <https://consumerdatastandardsaustralia.github.io/infosec/#discovery-and-registration
--- §CDR infosec standards>.
+-- <https://consumerdatastandardsaustralia.github.io/infosec/#discovery-and-registration §CDR infosec standards>.
 
 -- | Determines the set of credentials that will be used by a client when
 -- accessing /token endpoint. OIDC requires a restricted subset of the allowed
--- OAuth values (<https://openid.net/specs/openid-connect-registration-1_0.html
--- §2. Client Metadata>). Also, because OZ OB only supports @code id_token@
+-- OAuth values (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>).
+-- Also, because OZ OB only supports @code id_token@
 -- (i.e. the `hybrid` flow), this means @grant_types@ must contain at least
 -- @authorization_code@ and @implicit@, as per the OIDC Registration spec
--- (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client
--- Metadata>). NB: For UK OB, @client_credentials@ is required as a grant type,
+-- (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>).
+-- NB: For UK OB, @client_credentials@ is required as a grant type,
 -- as is it needed for the client to submit a JWT to the /token endpoint to
 -- obtain a consent ID / payment ID before sending the request to /payments.
 data GrantType = Implicit | AuthorizationCode | RefreshToken -- ClientCredentials
@@ -217,9 +216,9 @@ _FapiGrantTypes = prism'
 -- | The X.509 Certificate Thumbprint (SHA-1) field (@x5t@) must be included in
 -- the headers if present on the JWK, as must the @x5t#S256@ header (SHA-256).
 -- See
--- <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header
--- §CDR spec>, <https://tools.ietf.org/html/rfc7515#section-4.1.7 §RFC7515
--- 4.1.7> has further details.
+-- <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header §CDR spec>,
+-- <https://tools.ietf.org/html/rfc7515#section-4.1.7 §RFC7515 4.1.7> has
+-- further details.
 
 -- TODO: check if we can borrow Jose types
 data X509ThumbPrint = X5T ByteString | X5T256 ByteString
@@ -323,10 +322,8 @@ instance ToJSON ScriptUri where
 instance FromJSON ScriptUri where
   parseJSON = fmap (ScriptUri DefaultLang) . parseJSON
 
--- @subject_type@ requested for responses to the client; only @pairwise@ is
--- supported in
--- <https://consumerdatastandardsaustralia.github.io/infosec/#data-holder-metadata
--- §CDR>
+-- | @subject_type@ requested for responses to the client; only @pairwise@ is
+-- supported in <https://consumerdatastandardsaustralia.github.io/infosec/#data-holder-metadata §CDR>
 data SubjectType = Pairwise -- `Public` type not supported
   deriving (Generic, Show, Eq)
 
@@ -461,11 +458,11 @@ newtype TlsClientAuthSubjectDn = TlsClientAuthSubjectDn T.Text
 -- @token_endpoint_auth_signing_alg@ is required if using @PrivateKeyJwt@
 -- @token_endpoint_auth_method@, and @tls_client_auth_subject_dn@ must be
 -- supplied if using @tls_client_auth@ (as per
--- <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration
--- §CDR Registration>). All token requests will be rejected by the server if
--- they are not signed by the algorithm specified in @alg@, or if they are
--- signed with @none@, or if the subject distinguished name of the certificate
--- does not match that of the MTLS certificate.
+-- <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration §CDR Registration>).
+-- All token requests will be rejected by the server if they are not signed by
+-- the algorithm specified in @alg@, or if they are signed with @none@, or if
+-- the subject distinguished name of the certificate does not match that of the
+-- MTLS certificate.
 newtype FapiTokenEndpointAuthMethod = FapiTokenEndpointAuthMethod TokenEndpointAuthMethod
   deriving (Generic, Show, Eq)
 
@@ -483,8 +480,7 @@ _FapiTokenEndpointAuthMethod = prism
   )
 
 -- | FAPI accepted algorithms for content encryption, based on
--- <https://tools.ietf.org/html/rfc7518 §RFC 7518 5. Cryptographic Algorithms
--- for Content Encryption>.
+-- <https://tools.ietf.org/html/rfc7518 §RFC 7518 5. Cryptographic Algorithms for Content Encryption>.
 data FapiEnc =
       A128CBC_HS256
     | A192CBC_HS384
@@ -619,8 +615,8 @@ data RegistrationRequest = RegistrationRequest {
 -- is published on the same date, the kid must consist of the following format
 -- YYYY-MM-DD.<V> where <V> represents an increasing version number and positive
 -- integer. See the
--- <https://consumerdatastandardsaustralia.github.io/infosec/#json-web-key-sets
--- §infosec spec> for more info.
+-- <https://consumerdatastandardsaustralia.github.io/infosec/#json-web-key-sets §infosec spec>
+-- for more info.
 newtype FapiKid = FapiKid {
   getFapiKid :: T.Text }
   deriving (Generic, Show, Eq)
@@ -655,13 +651,12 @@ data JwsHeaders = JwsHeaders
   , _thumbs :: Maybe X509ThumbPrint
 } deriving (Generic, Show, Eq)
 
--- | The following claims are specified in <https://tools.ietf.org/html/rfc7591
--- §RFC7591: 3.1 Client Registration Request> to be used in both the
--- registration request object and the software statement, all of them as
--- optional. However, some fields are non-optional under FAPI, and even fewer
--- are optional under
--- <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration
--- §CDR>
+-- | The following claims are specified in
+-- <https://tools.ietf.org/html/rfc7591 §RFC7591: 3.1 Client Registration Request>
+-- to be used in both the registration request object and the software
+-- statement, all of them as optional. However, some fields are non-optional
+-- under FAPI, and even fewer are optional under
+-- <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration §CDR>
 data ClientMetaData = ClientMetaData {
   -- | The `alg` algorithm that must be used for signing request objects sent to
   -- the OP.
@@ -677,10 +672,10 @@ data ClientMetaData = ClientMetaData {
   , _tokenEndpointAuthMethod                :: FapiTokenEndpointAuthMethod
 
   -- | The set of grant types that a client will restrict itself to using (see
-  -- <https://openid.net/specs/openid-connect-registration-1_0.html OIDC-R 2.
-  -- Client Metadata> and <https://tools.ietf.org/html/rfc7591 §RFC7591 2.
-  -- Client Metadata>). If omitted, the default is that the client will use only
-  -- the `authorization_code` grant type.
+  -- <https://openid.net/specs/openid-connect-registration-1_0.html OIDC-R 2. Client Metadata>
+  -- and <https://tools.ietf.org/html/rfc7591 §RFC7591 2. -- Client Metadata>).
+  -- If omitted, the default is that the client will use only the
+  -- `authorization_code` grant type.
   , _grantTypes                             :: Maybe FapiGrantTypes
 
   -- | Human-readable name of the client to be presented to the end user.
@@ -772,10 +767,10 @@ data ClientMetaData = ClientMetaData {
 
   -- | The `alg` for signing the ID token issued to this client. NB: OIDC-R allows
   -- this to be optional (see
-  -- <https://openid.net/specs/openid-connect-registration-1_0.html §2. Client
-  -- Metadata>), but by using FAPI the implication is that it is mandatory
-  -- (<https://openid.net/specs/openid-financial-api-part-2.html#public-client
-  -- §FAPI RW - Section 5.2.3 >). Mandatory field according to CDR.
+  -- <https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>),
+  -- but by using FAPI the implication is that it is mandatory
+  -- (<https://openid.net/specs/openid-financial-api-part-2.html#public-client §FAPI RW - Section 5.2.3 >).
+  -- Mandatory field according to CDR.
   , _idTokenSignedResponseAlg               :: FapiPermittedAlg 
 
   -- | A set of scopes, containing at least @openid@.
@@ -860,8 +855,7 @@ newtype SoftwareVersion = SoftwareVersion T.Text
 
 -- | Response type for a dynamic registration request. NB: A successful response
 -- will return a HTTP 201
--- (<https://openid.net/specs/openid-connect-registration-1_0.html §3.2. Client
--- Registration Response>)
+-- (<https://openid.net/specs/openid-connect-registration-1_0.html §3.2. Client Registration Response>)
 data RegistrationResponse = RegistrationResponse
   {
   -- | OAuth 2.0 unique client identifier string. RFC7591 mandated.
