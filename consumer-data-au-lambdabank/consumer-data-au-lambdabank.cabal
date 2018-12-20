@@ -26,6 +26,7 @@ library
                    , Web.ConsumerData.Au.LambdaBank.Server.Common
                    , Web.ConsumerData.Au.LambdaBank.Server.Common.Customer
                    , Web.ConsumerData.Au.LambdaBank.Server.Internal
+                   , Web.ConsumerData.Au.LambdaBank.Server.State
   -- other-modules:
   -- We probably need to tweak these for more than just GHC 8.4 support.
   build-depends:

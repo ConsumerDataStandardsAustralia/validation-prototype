@@ -5,10 +5,11 @@ import Servant.Links                 (Link)
 import Web.ConsumerData.Au.Api.Types
     (LinkQualifier, PaginatedResponse, Paginator, StandardResponse,
     mkPaginatedResponse, mkStandardResponse)
+import Web.ConsumerData.Au.LambdaBank.Server.State (LbState)
 
 import Web.ConsumerData.Au.LambdaBank.Model
 
-type LambdaBankM = ReaderT LinkQualifier ModelM
+type LambdaBankM = ReaderT LbState ModelM
 
 bankStandardResponse :: a -> Link -> LambdaBankM (StandardResponse a)
 bankStandardResponse a l = asks $ \lq -> mkStandardResponse a lq l
