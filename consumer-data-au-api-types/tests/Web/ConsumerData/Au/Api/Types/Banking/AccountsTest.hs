@@ -39,7 +39,7 @@ test_accountLinks =
     (alinks^.accountsDirectDebitsPost) [uri|http://localhost/banking/accounts/direct-debits|]
   , linkTest "Get Account Detail"
     (accLinks^.accountGet) [uri|http://localhost/banking/accounts/123|]
-  , linkTest "Get Transactions For Account"
+  , paginatedLinkTest "Get Transactions For Account"
     (accLinks^.accountTransactionsGet) [uri|http://localhost/banking/accounts/123/transactions|]
   , linkTest "Get Transaction Detail"
     (accLinks^.accountTransactionByIdGet.to ($ TransactionId (AsciiString "456"))) [uri|http://localhost/banking/accounts/123/transactions/456|]

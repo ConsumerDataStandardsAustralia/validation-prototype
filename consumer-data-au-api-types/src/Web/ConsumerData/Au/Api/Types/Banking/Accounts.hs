@@ -73,7 +73,7 @@ accountsByIdLinks = accountsById . to (\r i -> fromServant (r i))
 
 type AccountGetRoute r = r :- Get '[WaargJSON OB] AccountByIdResponse
 type AccountTransactionRoute r e = r :- "transactions" :> e
-type AccountTransactionsGetRoute r = AccountTransactionRoute r (Get '[WaargJSON OB] AccountTransactionsResponse)
+type AccountTransactionsGetRoute r = AccountTransactionRoute r (QueryParam "page" PageNumber :> Get '[WaargJSON OB] AccountTransactionsResponse)
 type AccountTransactionByIdGetRoute r = AccountTransactionRoute r (Capture "transactionId" TransactionId :> Get '[WaargJSON OB] AccountTransactionDetailResponse)
 type AccountDirectDebitsGetRoute r = r :- "direct-debits" :> Get '[WaargJSON OB] AccountDirectDebitsResponse
 
