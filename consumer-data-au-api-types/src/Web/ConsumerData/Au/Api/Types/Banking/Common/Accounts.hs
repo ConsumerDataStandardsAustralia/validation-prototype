@@ -108,6 +108,21 @@ balanceTypeFields = \case
     fields = typeTaggedField "balance$type"
 
 
+newtype AccountIds = AccountIds { unAccountIds :: [AccountId] } deriving (Eq, Show)
+
+accountIdsDecoder :: Monad f => Decoder f AccountIds
+accountIdsDecoder = D.atKey "accountIds" (AccountIds <$> D.list accountIdDecoder)
+
+accountIdsEncoder :: Applicative f => Encoder f AccountIds
+accountIdsEncoder = E.mapLikeObj $ E.atKey' "accountIds" (E.list accountIdEncoder) . unAccountIds
+
+instance JsonDecode OB AccountIds where
+  mkDecoder = tagOb accountIdsDecoder
+
+instance JsonEncode OB AccountIds where
+  mkEncoder = tagOb accountIdsEncoder
+
+
 newtype AccountId = AccountId { unAccountId :: AsciiString } deriving (Eq, Show)
 
 accountIdDecoder :: Monad f => Decoder f AccountId
