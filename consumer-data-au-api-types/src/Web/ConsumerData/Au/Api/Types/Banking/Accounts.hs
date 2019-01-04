@@ -16,11 +16,14 @@ import Servant.API.ContentTypes.Waargonaut (WaargJSON)
 import Servant.API.Generic                 ((:-), AsApi, ToServant, fromServant)
 import Servant.Links                       (AsLink, Link)
 
-import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDetail
-import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransaction
-import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit (DirectDebitAuthorisations)
-import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionBasic
+import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
+    (DirectDebitAuthorisations)
+import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
+import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransactions
+import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction (TransactionId)
+import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionsDetail
+import Web.ConsumerData.Au.Api.Types.Banking.Common.BulkTransaction
 import Web.ConsumerData.Au.Api.Types.Response
 import Web.ConsumerData.Au.Api.Types.Tag
 
@@ -70,7 +73,7 @@ accountsByIdLinks = accountsById . to (\r i -> fromServant (r i))
 
 type AccountGetRoute r = r :- Get '[WaargJSON OB] AccountByIdResponse
 type AccountTransactionRoute r e = r :- "transactions" :> e
-type AccountTransactionsGetRoute r = AccountTransactionRoute r (Get '[WaargJSON OB] AccountTransactionsResponse)
+type AccountTransactionsGetRoute r = AccountTransactionRoute r (QueryParam "page" PageNumber :> Get '[WaargJSON OB] AccountTransactionsResponse)
 type AccountTransactionByIdGetRoute r = AccountTransactionRoute r (Capture "transactionId" TransactionId :> Get '[WaargJSON OB] AccountTransactionDetailResponse)
 type AccountDirectDebitsGetRoute r = r :- "direct-debits" :> Get '[WaargJSON OB] AccountDirectDebitsResponse
 
@@ -95,6 +98,6 @@ type AccountByIdResponse = StandardResponse AccountDetail
 type AccountBulkBalanceResponse = PaginatedResponse AccountBalances
 type AccountBalanceByIdsResponse = StandardResponse AccountBalances
 type AccountDirectDebitsResponse = PaginatedResponse DirectDebitAuthorisations
-type AccountTransactionDetailResponse = StandardResponse AccountTransactionDetail
 type AccountTransactionsResponse = PaginatedResponse AccountTransactions
-type AccountsTransactionsResponse = PaginatedResponse AccountsTransactions
+type AccountTransactionDetailResponse = StandardResponse TransactionsDetail
+type AccountsTransactionsResponse = PaginatedResponse BulkTransactions

@@ -39,7 +39,7 @@ test_accountLinks =
     (alinks^.accountsDirectDebitsPost) [uri|http://localhost/banking/accounts/direct-debits|]
   , linkTest "Get Account Detail"
     (accLinks^.accountGet) [uri|http://localhost/banking/accounts/123|]
-  , linkTest "Get Transactions For Account"
+  , paginatedLinkTest "Get Transactions For Account"
     (accLinks^.accountTransactionsGet) [uri|http://localhost/banking/accounts/123/transactions|]
   , linkTest "Get Transaction Detail"
     (accLinks^.accountTransactionByIdGet.to ($ TransactionId (AsciiString "456"))) [uri|http://localhost/banking/accounts/123/transactions/456|]
@@ -77,7 +77,7 @@ test_roundTripAccountTransactionsResponse :: TestTree
 test_roundTripAccountTransactionsResponse = roundTripTest
   (untag (mkDecoder :: (Tagged OB (Decoder Identity AccountTransactionsResponse))))
   (untag (mkEncoder :: (Tagged OB (Encoder Identity AccountTransactionsResponse))))
-  "AccountTransactionResponseRoundtrip"
+  "AccountTransactionsResponseRoundtrip"
   "tests/Web/ConsumerData/Au/Api/Types/Banking/AccountsTest/accountTransactionsResponse.golden.json"
 
 test_roundTripAccountTransactionDetailResponse :: TestTree
@@ -86,6 +86,15 @@ test_roundTripAccountTransactionDetailResponse = roundTripTest
   (untag (mkEncoder :: (Tagged OB (Encoder Identity AccountTransactionDetailResponse))))
   "AccountTransactionDetailResponseRoundtrip"
   "tests/Web/ConsumerData/Au/Api/Types/Banking/AccountsTest/accountTransactionDetailResponse.golden.json"
+
+test_roundTripAccountsTransactionsResponse :: TestTree
+test_roundTripAccountsTransactionsResponse = roundTripTest
+  (untag (mkDecoder :: (Tagged OB (Decoder Identity AccountsTransactionsResponse))))
+  (untag (mkEncoder :: (Tagged OB (Encoder Identity AccountsTransactionsResponse))))
+  "AccountsTransactionsResponseRoundtrip"
+  "tests/Web/ConsumerData/Au/Api/Types/Banking/AccountsTest/accountBulkTransactionsResponse.golden.json"
+
+
 
 test_roundTripAccountDirectDebitsResponse :: TestTree
 test_roundTripAccountDirectDebitsResponse = roundTripTest

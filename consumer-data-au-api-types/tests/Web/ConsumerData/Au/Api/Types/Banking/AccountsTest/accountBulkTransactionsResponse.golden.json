@@ -1,17 +1,15 @@
 {
   "data": {
-    "accountId": "string",
-    "displayName": "string",
-    "nickname": "string",
     "transactions": [
       {
+        "accountId": "string",
         "transactionId": "string",
         "isDetailAvailable": true,
         "status": "PENDING",
         "description": "string",
         "postDateTime": "2018-11-01T05:33:52Z",
         "executionDateTime": "2018-11-01T05:33:52Z",
-        "amount": "300.56",
+        "amount": "300.42",
         "currency": "AUD",
         "reference": "string"
       }

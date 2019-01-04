@@ -39,10 +39,9 @@ accountsServer = genericServerT AccountsApi
       { _accountGet                = getAccountById accountId >>= \ad -> bankStandardResponse
         ad
         (links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountGet)
-      , _accountTransactionsGet    = getTransactionsForAccount accountId >>= \xacts -> bankPaginatedResponse
+      , _accountTransactionsGet    = \pMay -> getTransactionsForAccount accountId >>= \xacts -> bankPaginatedResponse
         xacts
-        (fakePaginator Nothing
-          (const $ links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountTransactionsGet))
+        (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountTransactionsGet))
       , _accountTransactionByIdGet = \transactionId ->
           getTransactionDetailForAccountTransaction accountId transactionId >>= \xacts -> bankStandardResponse
             xacts
