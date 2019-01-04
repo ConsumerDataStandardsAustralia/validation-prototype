@@ -41,13 +41,13 @@ test_mkPaginatedResponse =
     (mkPaginatedResponse
      True
      (dummyLinkQualifier [])
-     (Paginator (PageNumber 1) (PageNumber 1) 10 (lmap Just accountsLink))
+     (Paginator (PageNumber 1) (PageNumber 1) (Just $ PageSize 10) 10 (lmap Just accountsLink))
     )
     @?=
     (Response
      True
      (LinksPaginated
-      [uri|http://localhost:1337/banking/accounts?page=1|]
+      [uri|http://localhost:1337/banking/accounts?page=1&page-size=10|]
       Nothing
       Nothing
       Nothing
@@ -59,17 +59,17 @@ test_mkPaginatedResponse =
     (mkPaginatedResponse
      True
      (dummyLinkQualifier [])
-     (Paginator (PageNumber 1) (PageNumber 5) 120 (lmap Just accountsLink))
+     (Paginator (PageNumber 1) (PageNumber 5) (Just $ PageSize 10) 120 (lmap Just accountsLink))
     )
     @?=
     (Response
      True
      (LinksPaginated
-      [uri|http://localhost:1337/banking/accounts?page=1|]
+      [uri|http://localhost:1337/banking/accounts?page=1&page-size=10|]
       Nothing
       Nothing
-      (Just [uri|http://localhost:1337/banking/accounts?page=2|])
-      (Just [uri|http://localhost:1337/banking/accounts?page=5|])
+      (Just [uri|http://localhost:1337/banking/accounts?page=2&page-size=10|])
+      (Just [uri|http://localhost:1337/banking/accounts?page=5&page-size=10|])
      )
      (MetaPaginated 120 5)
     )
@@ -77,17 +77,17 @@ test_mkPaginatedResponse =
     (mkPaginatedResponse
      True
      (dummyLinkQualifier [])
-     (Paginator (PageNumber 3) (PageNumber 5) 120 (lmap Just accountsLink))
+     (Paginator (PageNumber 3) (PageNumber 5) (Just $ PageSize 10) 120 (lmap Just accountsLink))
     )
     @?=
     (Response
      True
      (LinksPaginated
-      [uri|http://localhost:1337/banking/accounts?page=3|]
-      (Just [uri|http://localhost:1337/banking/accounts?page=1|])
-      (Just [uri|http://localhost:1337/banking/accounts?page=2|])
-      (Just [uri|http://localhost:1337/banking/accounts?page=4|])
-      (Just [uri|http://localhost:1337/banking/accounts?page=5|])
+      [uri|http://localhost:1337/banking/accounts?page=3&page-size=10|]
+      (Just [uri|http://localhost:1337/banking/accounts?page=1&page-size=10|])
+      (Just [uri|http://localhost:1337/banking/accounts?page=2&page-size=10|])
+      (Just [uri|http://localhost:1337/banking/accounts?page=4&page-size=10|])
+      (Just [uri|http://localhost:1337/banking/accounts?page=5&page-size=10|])
      )
      (MetaPaginated 120 5)
     )
@@ -95,15 +95,15 @@ test_mkPaginatedResponse =
     (mkPaginatedResponse
      True
      (dummyLinkQualifier [])
-     (Paginator (PageNumber 5) (PageNumber 5) 120 (lmap Just accountsLink))
+     (Paginator (PageNumber 5) (PageNumber 5) (Just $ PageSize 10) 120 (lmap Just accountsLink))
     )
     @?=
     (Response
      True
      (LinksPaginated
-      [uri|http://localhost:1337/banking/accounts?page=5|]
-      (Just [uri|http://localhost:1337/banking/accounts?page=1|])
-      (Just [uri|http://localhost:1337/banking/accounts?page=4|])
+      [uri|http://localhost:1337/banking/accounts?page=5&page-size=10|]
+      (Just [uri|http://localhost:1337/banking/accounts?page=1&page-size=10|])
+      (Just [uri|http://localhost:1337/banking/accounts?page=4&page-size=10|])
       Nothing
       Nothing
      )
@@ -111,8 +111,8 @@ test_mkPaginatedResponse =
     )
   ]
 
-accountsLink :: Maybe PageNumber -> Link
-accountsLink pn = links ^.bankingLinks.bankingAccountsLinks.accountsGet.to ($ pn)
+accountsLink :: Maybe PageNumber -> Maybe PageSize -> Link
+accountsLink = (links ^.bankingLinks.bankingAccountsLinks.accountsGet) Nothing Nothing Nothing
 
 complexLink :: Link
 complexLink = links

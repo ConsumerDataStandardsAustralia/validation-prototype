@@ -8,20 +8,22 @@ module Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
   ( module Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
   ) where
 
-import           Control.Lens                        (Prism', _Show)
-import           Data.Currency                       (Alpha)
-import           Data.Functor.Contravariant          ((>$<))
-import           Data.Text                           (Text)
-import           Data.Text.Lens                      (_Text)
-import           Data.Time                           (UTCTime)
-import           Data.Time.Waargonaut                (utcTimeDecoder, utcTimeEncoder)
-import           Servant.API
-    (FromHttpApiData,ToHttpApiData, parseUrlPiece, toUrlPiece)
-import           Waargonaut.Decode                   (Decoder)
-import qualified Waargonaut.Decode                   as D
-import qualified Waargonaut.Decode.Error             as D
-import           Waargonaut.Encode                   (Encoder)
-import qualified Waargonaut.Encode                   as E
+import           Control.Lens               (Prism', _Show)
+import           Data.Currency              (Alpha)
+import           Data.Functor.Contravariant ((>$<))
+import           Data.Text                  (Text, pack, unpack)
+import           Data.Text.Lens             (_Text)
+import           Data.Time                  (UTCTime)
+import           Data.Time.Format
+    (defaultTimeLocale, formatTime, parseTimeM)
+import           Data.Time.Waargonaut
+    (utcTimeDecoder, utcTimeEncoder, utcTimeFormatString)
+import           Servant.API (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece)
+import           Waargonaut.Decode          (Decoder)
+import qualified Waargonaut.Decode          as D
+import qualified Waargonaut.Decode.Error    as D
+import           Waargonaut.Encode          (Encoder)
+import qualified Waargonaut.Encode          as E
 
 -- | All types are from <https://consumerdatastandardsaustralia.github.io/standards/?swagger#common-field-types CDR AU v0.1.0 Common Field Types>
 
@@ -45,6 +47,11 @@ amountStringDecoder = AmountString <$> D.text
 
 amountStringEncoder :: Applicative f => Encoder f AmountString
 amountStringEncoder = unAmountString >$< E.text
+
+instance ToHttpApiData AmountString where
+  toUrlPiece (AmountString t) = toUrlPiece t
+instance FromHttpApiData AmountString where
+  parseUrlPiece = fmap AmountString . parseUrlPiece
 
 -- | Standard UTF-8 string but limited to the ASCII character set.
 data AsciiString =
@@ -111,6 +118,10 @@ dateTimeStringDecoder = DateTimeString <$> utcTimeDecoder
 dateTimeStringEncoder :: Applicative f => Encoder f DateTimeString
 dateTimeStringEncoder = unDateTimeString >$< utcTimeEncoder
 
+instance ToHttpApiData DateTimeString where
+  toUrlPiece (DateTimeString t) = pack $ formatTime defaultTimeLocale utcTimeFormatString t
+instance FromHttpApiData DateTimeString where
+  parseUrlPiece = fmap DateTimeString . parseTimeM True defaultTimeLocale utcTimeFormatString . unpack
 
 -- | Duration (period of time) formatted according to <https://en.wikipedia.org/wiki/ISO_8601#Durations ISO 8601 Durations>
 data DurationString =

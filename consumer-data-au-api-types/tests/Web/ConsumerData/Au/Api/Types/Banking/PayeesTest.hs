@@ -17,13 +17,15 @@ import Waargonaut.Generic    (mkDecoder, mkEncoder, untag)
 import WaargoRoundTrip       (roundTripTest)
 
 import Web.ConsumerData.Au.Api.Types
-import Web.ConsumerData.Au.Api.Types.LinkTestHelpers (linkTest)
+import Web.ConsumerData.Au.Api.Types.LinkTestHelpers (linkTest, paginatedLinkTest)
 import Web.ConsumerData.Au.Api.Types.Tag
 
 test_payeesLinks :: [TestTree]
 test_payeesLinks =
-  [ linkTest "Get Payees"
-    (links^.bankingLinks.bankingPayeesLinks.payeesGet) [uri|http://localhost/banking/payees|]
+  [ paginatedLinkTest "Get Payees no params"
+    ((links^.bankingLinks.bankingPayeesLinks.payeesGet) Nothing) [uri|http://localhost/banking/payees|]
+  , paginatedLinkTest "Get Payees all params"
+    ((links^.bankingLinks.bankingPayeesLinks.payeesGet) (Just International)) [uri|http://localhost/banking/payees?type=INTERNATIONAL|]
   , linkTest "Get Payee Detail"
     (links^.bankingLinks.bankingPayeesLinks.payeesByIdGet.to ($ PayeeId "123")) [uri|http://localhost/banking/payees/123|]
   ]

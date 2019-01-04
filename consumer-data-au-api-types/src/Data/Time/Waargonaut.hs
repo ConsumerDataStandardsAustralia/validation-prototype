@@ -15,13 +15,16 @@ import qualified Waargonaut.Decode as D
 import qualified Waargonaut.Decode.Error as D
 import qualified Waargonaut.Encode as E
 
+utcTimeFormatString :: String
+utcTimeFormatString = "%FT%T%QZ"
+
 utcTimeDecoder :: Monad f => Decoder f UTCTime
 utcTimeDecoder = D.withCursor $ \c -> D.focus D.string c >>=
     foldResult (throwError . D.ConversionFailure . T.pack) pure .
-    parseTimeM True defaultTimeLocale "%FT%T%QZ"
+    parseTimeM True defaultTimeLocale utcTimeFormatString
 
 utcTimeEncoder :: Applicative f => Encoder f UTCTime
-utcTimeEncoder = T.pack . formatTime defaultTimeLocale "%FT%T%QZ" >$< E.text
+utcTimeEncoder = T.pack . formatTime defaultTimeLocale utcTimeFormatString >$< E.text
 
 -- | A 'MonadFail' that gives you access to the failure string
 data Result a = Fail String | Win a deriving (Show, Eq)
