@@ -1,31 +1,47 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TypeOperators         #-}
 module Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionDetail
   ( module Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionDetail
   ) where
 
-import           Data.Text         (Text)
-import           GHC.Generics      (Generic)
-import           Waargonaut.Decode (Decoder)
-import qualified Waargonaut.Decode as D
-import           Waargonaut.Encode (Encoder')
-import qualified Waargonaut.Encode as E
+import           Data.Functor.Contravariant ((>$<))
+import           Data.Text                  (Text)
+import           GHC.Generics               (Generic)
+import           Waargonaut.Decode          (Decoder)
+import qualified Waargonaut.Decode          as D
+import           Waargonaut.Encode          (Encoder)
+import qualified Waargonaut.Encode          as E
 
-import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
-import Web.ConsumerData.Au.Api.Types.Banking.Common.ExtendedTransactionData
-    (ExtendedTransactionData, extendedTransactionDataDecoder,
-    extendedTransactionDataEncoder)
-import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionBasic
+import Waargonaut.Helpers
+    (atKeyOptional', maybeOrAbsentE)
+import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
     (TransactionId, TransactionStatus, transactionIdDecoder,
     transactionIdEncoder, transactionStatusDecoder, transactionStatusEncoder)
+import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionExtendedData
+    (TransactionExtendedData, transactionExtendedDataDecoder,
+    transactionExtendedDataEncoder)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
     (AmountString, CurrencyString, DateTimeString, amountStringDecoder,
     amountStringEncoder, currencyStringDecoder, currencyStringEncoder,
     dateTimeStringDecoder, dateTimeStringEncoder)
+
+
+newtype TransactionDetails = TransactionDetails
+  { unTransactionDetails :: [TransactionDetail] }
+  deriving (Eq, Show)
+
+transactionDetailsDecoder :: Monad f => Decoder f TransactionDetails
+transactionDetailsDecoder =
+  TransactionDetails <$> D.list transactionDetailDecoder
+
+transactionDetailsEncoder :: Applicative f => Encoder f TransactionDetails
+transactionDetailsEncoder =
+  unTransactionDetails >$< E.list transactionDetailEncoder
 
 
 -- | TransactionDetail <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schematransactiondetail CDR AU v0.1.0 TransactionDetail>
@@ -38,7 +54,7 @@ data TransactionDetail = TransactionDetail
   , _transactionDetailAmount            :: Maybe AmountString -- ^ The value of the transaction. Negative values mean money was outgoing.
   , _transactionDetailCurrency          :: Maybe CurrencyString -- ^ The currency for the transaction amount. AUD assumed if not present.
   , _transactionDetailReference         :: Text -- ^ The reference for the transaction provided by the originating institution.
-  , _transactionDetailExtendedData      :: Maybe ExtendedTransactionData -- ^ Contains more detailed information specific to transactions originated via NPP.
+  , _transactionDetailExtendedData      :: Maybe TransactionExtendedData -- ^ Contains more detailed information specific to transactions originated via NPP.
   } deriving (Generic, Show, Eq)
 
 transactionDetailDecoder :: Monad f => Decoder f TransactionDetail
@@ -52,9 +68,9 @@ transactionDetailDecoder =
     <*> atKeyOptional' "amount" amountStringDecoder
     <*> atKeyOptional' "currency" currencyStringDecoder
     <*> D.atKey "reference" D.text
-    <*> atKeyOptional' "extendedData" extendedTransactionDataDecoder
+    <*> atKeyOptional' "extendedData" transactionExtendedDataDecoder
 
-transactionDetailEncoder :: Encoder' TransactionDetail
+transactionDetailEncoder ::  Applicative f => Encoder f TransactionDetail
 transactionDetailEncoder = E.mapLikeObj $ \(TransactionDetail tid ts desc pdt edt amt cur ref ed) ->
   maybeOrAbsentE "transactionId" transactionIdEncoder tid .
   E.atKey' "status" transactionStatusEncoder ts .
@@ -64,4 +80,4 @@ transactionDetailEncoder = E.mapLikeObj $ \(TransactionDetail tid ts desc pdt ed
   maybeOrAbsentE "amount" amountStringEncoder amt .
   maybeOrAbsentE "currency" currencyStringEncoder cur .
   E.atKey' "reference" E.text ref .
-  maybeOrAbsentE "extendedData" extendedTransactionDataEncoder ed
+  maybeOrAbsentE "extendedData" transactionExtendedDataEncoder ed
