@@ -31,11 +31,11 @@ test_accountLinks =
     (alinks^.accountsBalancesPost) [uri|http://localhost/banking/accounts/balances|]
   , paginatedLinkTest "Get Bulk Transactions"
     (alinks^.accountsTransactionsGet) [uri|http://localhost/banking/accounts/transactions|]
-  , linkTest "Get Transactions for Specific Accounts"
+  , paginatedLinkTest "Get Transactions for Specific Accounts"
     (alinks^.accountsTransactionsPost) [uri|http://localhost/banking/accounts/transactions|]
   , paginatedLinkTest "Get Bulk Direct Debits"
     (alinks^.accountsDirectDebitsGet) [uri|http://localhost/banking/accounts/direct-debits|]
-  , linkTest "Get Direct Debits for Specific Accounts"
+  , paginatedLinkTest "Get Direct Debits for Specific Accounts"
     (alinks^.accountsDirectDebitsPost) [uri|http://localhost/banking/accounts/direct-debits|]
   , linkTest "Get Account Detail"
     (accLinks^.accountGet) [uri|http://localhost/banking/accounts/123|]

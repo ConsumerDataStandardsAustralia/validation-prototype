@@ -20,21 +20,21 @@ accountsServer = genericServerT AccountsApi
     , _accountsBalancesGet = \pMay -> getBalancesAll >>= \bs -> bankPaginatedResponse
       bs
       (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsBalancesGet))
-    , _accountsBalancesPost = getBalancesForAccounts (error "TODO") >>= \bs -> bankStandardResponse
+    , _accountsBalancesPost = \request -> getBalancesForAccounts (_requestData request) >>= \bs -> bankStandardResponse
       bs
       (links^.bankingLinks.bankingAccountsLinks.accountsBalancesPost)
     , _accountsTransactionsGet = \pMay -> getTransactionsAll >>= \as -> bankPaginatedResponse
       as
       (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsTransactionsGet))
-    , _accountsTransactionsPost = getTransactionsForAccounts (error "TODO") >>= \as -> bankPaginatedResponse
+    , _accountsTransactionsPost = \request -> \pMay -> getTransactionsForAccounts (_requestData request) >>= \as -> bankPaginatedResponse
       as
-      (fakePaginator Nothing (const $ links^.bankingLinks.bankingAccountsLinks.accountsTransactionsPost))
+      (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsTransactionsPost))
     , _accountsDirectDebitsGet = \pMay -> getDirectDebitsAll >>= \dds -> bankPaginatedResponse
       dds
       (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsDirectDebitsGet))
-    , _accountsDirectDebitsPost = getDirectDebitsForAccounts (error "TODO") >>= \dds -> bankPaginatedResponse
+    , _accountsDirectDebitsPost = \request -> \pMay -> getDirectDebitsForAccounts (_requestData request) >>= \dds -> bankPaginatedResponse
       dds
-      (fakePaginator Nothing (const $ links^.bankingLinks.bankingAccountsLinks.accountsDirectDebitsPost))
+      (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsDirectDebitsPost))
     , _accountsById = \accountId -> genericServerT AccountApi
       { _accountGet                = getAccountById accountId >>= \ad -> bankStandardResponse
         ad

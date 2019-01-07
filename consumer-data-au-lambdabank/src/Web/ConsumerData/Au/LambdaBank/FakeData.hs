@@ -22,10 +22,21 @@ import Web.ConsumerData.Au.Api.Types
 a12345 :: AccountId
 a12345 = AccountId (AsciiString "12345")
 
+a12346 :: AccountId
+a12346 = AccountId (AsciiString "12346")
+
+a12347 :: AccountId
+a12347 = AccountId (AsciiString "12347")
+
+
 testBalances :: AccountBalances
 testBalances = AccountBalances
   [ AccountBalance a12345
-      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "400") Nothing) (CurrencyAmount (AmountString "350.75") Nothing)))
+      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "500") Nothing) (CurrencyAmount (AmountString "550.55") Nothing)))
+  , AccountBalance a12346
+      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "600") Nothing) (CurrencyAmount (AmountString "650.65") Nothing)))
+  , AccountBalance a12347
+      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "700") Nothing) (CurrencyAmount (AmountString "750.75") Nothing)))
   ]
 
 testPerson :: Person
@@ -91,6 +102,12 @@ fakePaginator pMay = Paginator p p 0 . (lmap Just)
   where
     p = fromMaybe (PageNumber 1) pMay
 
+testAccountIds :: AccountIds
+testAccountIds = AccountIds
+  [ a12345
+  , a12347
+  ]
+
 testAccount :: Account
 testAccount =
   Account a12345 "acc12345" (Just "my savings")
@@ -119,10 +136,21 @@ testTransactionDetail :: TransactionDetail
 testTransactionDetail = TransactionDetail Nothing TransactionStatusPosted "" Nothing Nothing Nothing Nothing "" Nothing
 
 testAccountsTransactions :: BulkTransactions
-testAccountsTransactions = BulkTransactions [testBulkTransaction]
+testAccountsTransactions = BulkTransactions
+  [ testBulkTransaction5
+  , testBulkTransaction6
+  , testBulkTransaction7
+  ]
 
-testBulkTransaction :: BulkTransaction
-testBulkTransaction = BulkTransaction a12345 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+testBulkTransaction5 :: BulkTransaction
+testBulkTransaction5 = BulkTransaction a12345 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+
+testBulkTransaction6 :: BulkTransaction
+testBulkTransaction6 = BulkTransaction a12346 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+
+testBulkTransaction7 :: BulkTransaction
+testBulkTransaction7 = BulkTransaction a12347 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+
 
 testAccountTransactionsDetail :: TransactionsDetail
 testAccountTransactionsDetail = TransactionsDetail a12345 "" Nothing (TransactionDetails [testTransactionDetail])
@@ -134,6 +162,16 @@ testDirectDebitAuthorisations = DirectDebitAuthorisations
       (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
       Nothing
       (Just (AmountString "50.00"))
+  , AccountDirectDebit
+      a12346
+      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
+      Nothing
+      (Just (AmountString "60.00"))
+  , AccountDirectDebit
+      a12347
+      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
+      Nothing
+      (Just (AmountString "70.00"))
   ]
 
 testPayee :: Payee

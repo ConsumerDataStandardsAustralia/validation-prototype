@@ -18,11 +18,11 @@ data ModelF next where
   GetCustomerDetail                         :: (CustomerDetailResponse     -> next) -> ModelF next
   GetAccounts                               :: (Accounts  -> next) -> ModelF next
   GetBalancesAll                            :: (AccountBalances -> next) -> ModelF next
-  GetBalancesForAccounts                    :: [AccountId] -> (AccountBalances -> next) -> ModelF next
+  GetBalancesForAccounts                    :: AccountIds -> (AccountBalances -> next) -> ModelF next
   GetTransactionsAll                        :: (BulkTransactions -> next) -> ModelF next
-  GetTransactionsForAccounts                :: [AccountId] -> (BulkTransactions -> next) -> ModelF next
+  GetTransactionsForAccounts                :: AccountIds -> (BulkTransactions -> next) -> ModelF next
   GetDirectDebitsAll                        :: (DirectDebitAuthorisations -> next) -> ModelF next
-  GetDirectDebitsForAccounts                :: [AccountId] -> (DirectDebitAuthorisations -> next) -> ModelF next
+  GetDirectDebitsForAccounts                :: AccountIds -> (DirectDebitAuthorisations -> next) -> ModelF next
   GetAccountById                            :: AccountId -> (AccountDetail -> next) -> ModelF next
   GetTransactionsForAccount                 :: AccountId -> (AccountTransactions -> next) -> ModelF next
   GetTransactionDetailForAccountTransaction :: AccountId -> TransactionId -> (TransactionsDetail -> next) -> ModelF next
@@ -46,19 +46,19 @@ getAccounts = liftF $ GetAccounts id
 getBalancesAll :: MonadFree ModelF m => m AccountBalances
 getBalancesAll = liftF $ GetBalancesAll id
 
-getBalancesForAccounts :: MonadFree ModelF m => [AccountId] -> m AccountBalances
+getBalancesForAccounts :: MonadFree ModelF m => AccountIds -> m AccountBalances
 getBalancesForAccounts aIds = liftF $ GetBalancesForAccounts aIds id
 
 getTransactionsAll :: MonadFree ModelF m => m BulkTransactions
 getTransactionsAll = liftF $ GetTransactionsAll id
 
-getTransactionsForAccounts :: MonadFree ModelF m => [AccountId] -> m BulkTransactions
+getTransactionsForAccounts :: MonadFree ModelF m => AccountIds -> m BulkTransactions
 getTransactionsForAccounts aIds = liftF $ GetTransactionsForAccounts aIds id
 
 getDirectDebitsAll :: MonadFree ModelF m => m DirectDebitAuthorisations
 getDirectDebitsAll = liftF $ GetDirectDebitsAll id
 
-getDirectDebitsForAccounts :: MonadFree ModelF m => [AccountId] -> m DirectDebitAuthorisations
+getDirectDebitsForAccounts :: MonadFree ModelF m => AccountIds -> m DirectDebitAuthorisations
 getDirectDebitsForAccounts aIds = liftF $ GetDirectDebitsForAccounts aIds id
 
 getAccountById :: MonadFree ModelF m => AccountId -> m AccountDetail
@@ -85,6 +85,21 @@ getProductsAll = liftF $ GetProductsAll id
 getProductDetail :: MonadFree ModelF m => ProductId -> m ProductDetail
 getProductDetail pId = liftF $ GetProductDetail pId id
 
+
+filterBalancesByAccountIds :: AccountIds -> AccountBalances -> AccountBalances
+filterBalancesByAccountIds (AccountIds aIds) (AccountBalances balances) =
+  AccountBalances $ filter (\balance -> elem (_accountBalanceAccountId balance) aIds) balances
+  -- AccountBalances $ (filter (\balance -> elem (_accountBalanceAccountId balance) (unAccountIds aIds)) (getBalances balances))
+
+filterTransactionsByAccountIds :: AccountIds -> BulkTransactions -> BulkTransactions
+filterTransactionsByAccountIds (AccountIds aIds) (BulkTransactions transactions) =
+  BulkTransactions $ filter (\transaction -> elem (_bulkTransactionAccountId transaction) aIds) transactions
+
+filterDirectDebitsByAccountIds :: AccountIds -> DirectDebitAuthorisations -> DirectDebitAuthorisations
+filterDirectDebitsByAccountIds (AccountIds aIds) (DirectDebitAuthorisations dds) =
+  DirectDebitAuthorisations $ filter (\dd -> elem (_accountDirectDebitAccountId dd) aIds) dds
+
+
 type ModelM = F ModelF
 
 -- This will have to take some kind of config later and the calls should actually
@@ -96,11 +111,11 @@ runModelM = iterM $ \case
   (GetCustomerDetail next) -> next (CustomerDetailPerson testPersonDetail)
   (GetAccounts next) -> next testAccounts
   (GetBalancesAll next) -> next testBalances
-  (GetBalancesForAccounts _ next) -> next testBalances
+  (GetBalancesForAccounts aIds next) -> next (filterBalancesByAccountIds aIds testBalances)
   (GetTransactionsAll next) -> next testAccountsTransactions
-  (GetTransactionsForAccounts _ next) -> next testAccountsTransactions
+  (GetTransactionsForAccounts aIds next) -> next (filterTransactionsByAccountIds aIds testAccountsTransactions)
   (GetDirectDebitsAll next) -> next testDirectDebitAuthorisations
-  (GetDirectDebitsForAccounts _ next) -> next testDirectDebitAuthorisations
+  (GetDirectDebitsForAccounts aIds next) -> next (filterDirectDebitsByAccountIds aIds testDirectDebitAuthorisations)
   (GetAccountById _ next) -> next testAccountDetail
   (GetTransactionsForAccount _ next) -> next testAccountTransactions
   (GetTransactionDetailForAccountTransaction _ _ next) -> next testAccountTransactionsDetail

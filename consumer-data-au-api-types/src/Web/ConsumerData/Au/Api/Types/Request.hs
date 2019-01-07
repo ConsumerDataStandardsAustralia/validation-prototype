@@ -14,44 +14,17 @@
 
 module Web.ConsumerData.Au.Api.Types.Request where
 
--- import Control.Lens
-
--- import Control.Error (note)
--- import           Control.Lens.TH            (makeLenses, makeWrapped)
--- import           Control.Monad              ((<=<))
--- import           Control.Monad.Error.Lens   (throwing)
--- import           Data.Bifoldable            (Bifoldable (..))
--- import           Data.Bifunctor             (Bifunctor (..))
--- import           Data.Bitraversable
---     (Bitraversable (..), bifoldMapDefault, bimapDefault)
--- import           Data.Bool                  (bool)
--- import           Data.Functor.Contravariant ((>$<))
 import           Data.Functor.Identity      (Identity)
--- import           Data.List.NonEmpty         (nonEmpty)
--- import           Data.Maybe                 (fromJust)
--- import           Data.Number.Nat            (Nat, fromNat, toNat)
--- import           Data.Number.Nat1           (Nat1, fromNat1, toNat1)
 import           Data.Proxy                 (Proxy (..))
 import           Data.Tagged                (Tagged, tagWith, untag)
--- import           Data.Text                  (Text, pack)
--- import           Data.Text.Lens             (_Text)
 import           GHC.Generics               (Generic)
--- import           Servant.API
---     (FromHttpApiData, ToHttpApiData, parseQueryParam, toQueryParam)
--- import           Servant.Links              (Link, linkURI)
--- import           Text.URI
---     (Authority, RText, RTextLabel (PathPiece, Scheme),
---     URI (uriAuthority, uriPath, uriScheme), mkURI, render)
 import           Waargonaut.Decode          (Decoder)
 import qualified Waargonaut.Decode          as D
--- import           Waargonaut.Decode.Error    (_ConversionFailure)
 import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 
--- import Waargonaut.Helpers                   (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Tag
--- import Web.ConsumerData.Au.Api.Types.Request (MetaStandard)
 
 
 type StandardRequest = Request Meta

@@ -39,12 +39,14 @@ type AccountsTransactionsRoute r e = r :- "transactions" :> e
 type AccountsTransactionsGetRoute r = AccountsTransactionsRoute r (QueryParam "page" PageNumber :> Get '[WaargJSON OB] AccountsTransactionsResponse)
 type AccountsTransactionsPostRoute r = AccountsTransactionsRoute r
   ( ReqBody '[WaargJSON OB] RequestAccountIds
+  :> QueryParam "page" PageNumber
   :> (Post '[WaargJSON OB] AccountsTransactionsResponse)
   )
 type AccountsDirectDebitsRoute r e = r :- "direct-debits" :> e
 type AccountsDirectDebitsGetRoute r = AccountsDirectDebitsRoute r (QueryParam "page" PageNumber :> Get '[WaargJSON OB] AccountDirectDebitsResponse)
 type AccountsDirectDebitsPostRoute r = AccountsDirectDebitsRoute r
   ( ReqBody '[WaargJSON OB] RequestAccountIds
+  :> QueryParam "page" PageNumber
   :> (Post '[WaargJSON OB] AccountDirectDebitsResponse)
   )
 type AccountsByIdRoute r = r :- Capture "accountId" AccountId :> ToServant AccountApi AsApi
