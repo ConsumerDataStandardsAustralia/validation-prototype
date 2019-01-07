@@ -15,10 +15,10 @@ import Web.ConsumerData.Au.LambdaBank.Server.Internal
 
 productsServer :: ToServant ProductsApi (AsServerT LambdaBankM)
 productsServer = genericServerT ProductsApi
-  { _productsGet = getProductsAll >>= \ps -> bankPaginatedResponse
-    ps
-    (fakePaginator Nothing (const $ links^.bankingLinks.bankingProductsLinks.productsGet))
-  , _productsByIdGet = \productId -> getProductDetail productId >>= \pd -> bankStandardResponse
-    pd
-    (links^.bankingLinks.bankingProductsLinks.productsByIdGet $ productId)
+  { _productsGet = \pe dts t pc pn ps -> do
+      products <- getProductsAll pe dts t pc pn ps
+      bankPaginatedResponse products (fakePaginator pn ps (links^.bankingLinks.bankingProductsLinks.productsGet.to (\f -> f pe dts t pc)))
+  , _productsByIdGet = \productId -> do
+      pd <- getProductDetail productId
+      bankStandardResponse pd (links^.bankingLinks.bankingProductsLinks.productsByIdGet $ productId)
   }
