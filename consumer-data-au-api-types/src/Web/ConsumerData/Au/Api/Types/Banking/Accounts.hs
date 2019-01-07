@@ -23,9 +23,12 @@ import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
     (DirectDebitAuthorisations)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransactions
-import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction (TransactionId)
-import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionsDetail
 import Web.ConsumerData.Au.Api.Types.Banking.Common.BulkTransaction
+import Web.ConsumerData.Au.Api.Types.Banking.Common.Products
+import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
+    (TransactionId)
+import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionsDetail
+import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
 import Web.ConsumerData.Au.Api.Types.Response
 import Web.ConsumerData.Au.Api.Types.Tag
 
