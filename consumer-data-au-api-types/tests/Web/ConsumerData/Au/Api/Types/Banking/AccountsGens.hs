@@ -11,6 +11,10 @@ import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypesGens
     dateTimeStringGen)
 
 
+accountIdsGen :: Gen AccountIds
+accountIdsGen = AccountIds
+  <$> Gen.list (Range.linear 0 3) accountIdGen
+
 accountIdGen :: Gen AccountId
 accountIdGen = AccountId <$> asciiStringGen
 
