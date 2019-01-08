@@ -46,7 +46,6 @@ payeeDetailDecoder =
 payeeDetailEncoder :: Applicative f => Encoder f PayeeDetail
 payeeDetailEncoder = E.mapLikeObj $ \(PayeeDetail p td) ->
   payeeMLO p .
-  E.atKey' "type" (payeeTypeEncoder True) (payeeType td) .
   payeeFields td
     where
       payeeFields = \case

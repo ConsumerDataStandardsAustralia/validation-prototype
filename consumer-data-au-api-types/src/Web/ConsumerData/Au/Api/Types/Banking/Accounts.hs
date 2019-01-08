@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -8,7 +9,9 @@ module Web.ConsumerData.Au.Api.Types.Banking.Accounts
   ( module Web.ConsumerData.Au.Api.Types.Banking.Accounts
   ) where
 
-import Control.Lens                        (Getter, to)
+import Control.Error                       (note)
+import Control.Lens
+    (Getter, Prism', prism', to, ( # ), (^?))
 import Data.Text                           (Text)
 import GHC.Generics                        (Generic)
 import Servant.API
@@ -33,31 +36,45 @@ import Web.ConsumerData.Au.Api.Types.Request
 import Web.ConsumerData.Au.Api.Types.Response
 import Web.ConsumerData.Au.Api.Types.Tag
 
-data AccountOpenStatus = AccountOpen | AccountClosed | AccountOpenStatusAll deriving (Eq)
+data AccountOpenStatus = AccountOpen | AccountClosed | AccountOpenStatusAll deriving (Eq, Show, Enum, Bounded)
+_AccountOpenStatus :: Prism' Text AccountOpenStatus
+_AccountOpenStatus = prism' toT fromT
+  where
+    toT = \case
+      AccountOpen          -> "OPEN"
+      AccountClosed        -> "CLOSED"
+      AccountOpenStatusAll -> "ALL"
+    fromT = \case
+      "OPEN"   -> Just AccountOpen
+      "CLOSED" -> Just AccountClosed
+      "ALL"    -> Just AccountOpenStatusAll
+      _        -> Nothing
 
 instance ToHttpApiData AccountOpenStatus where
-  toQueryParam AccountOpen          = "OPEN"
-  toQueryParam AccountClosed        = "CLOSED"
-  toQueryParam AccountOpenStatusAll = "ALL"
+  toQueryParam = (_AccountOpenStatus #)
 
 instance FromHttpApiData AccountOpenStatus where
-  parseQueryParam "OPEN"   = Right AccountOpen
-  parseQueryParam "CLOSED" = Right AccountClosed
-  parseQueryParam "ALL"    = Right AccountOpenStatusAll
-  parseQueryParam t        = Left $ "Invalid AccountOpenStatus: " <> t
+  parseQueryParam t = note ("Invalid AccountOpenStatus: " <> t) (t^?_AccountOpenStatus)
 
-data AccountIsOwned = AccountOwned | AccountNotOwned | AccountIsOwnedAll deriving (Eq)
+data AccountIsOwned = AccountOwned | AccountNotOwned | AccountIsOwnedAll deriving (Eq, Show, Enum, Bounded)
+_AccountIsOwned :: Prism' Text AccountIsOwned
+_AccountIsOwned = prism' toT fromT
+  where
+    toT = \case
+      AccountOwned      -> "OWNED"
+      AccountNotOwned   -> "NOT_OWNED"
+      AccountIsOwnedAll -> "ALL"
+    fromT = \case
+      "OWNED"     -> Just AccountOwned
+      "NOT_OWNED" -> Just AccountNotOwned
+      "ALL"       -> Just AccountIsOwnedAll
+      _           -> Nothing
 
 instance ToHttpApiData AccountIsOwned where
-  toQueryParam AccountOwned      = "OWNED"
-  toQueryParam AccountNotOwned   = "NOT_OWNED"
-  toQueryParam AccountIsOwnedAll = "ALL"
+  toQueryParam = (_AccountIsOwned #)
 
 instance FromHttpApiData AccountIsOwned where
-  parseQueryParam "OWNED"     = Right AccountOwned
-  parseQueryParam "NOT_OWNED" = Right AccountNotOwned
-  parseQueryParam "ALL"       = Right AccountIsOwnedAll
-  parseQueryParam t           = Left $ "Invalid AccountIsOwned: " <> t
+  parseQueryParam t = note ("Invalid AccountIsOwned: " <> t) (t^?_AccountIsOwned)
 
 type AccountOpenStatusParam = QueryParam "open-status" AccountOpenStatus
 type AccountIsOwnedParam = QueryParam "is-owned" AccountIsOwned
