@@ -25,8 +25,11 @@ lq = LinkQualifier
 linkTest :: TestName -> Link -> URI -> TestTree
 linkTest tn l u = testCase tn $ linkToUri lq l @?= u
 
-paginatedLinkTest :: TestName -> (Maybe PageNumber -> Link) -> URI -> TestTree
+paginatedLinkTest :: TestName -> (Maybe PageNumber -> Maybe PageSize -> Link) -> URI -> TestTree
 paginatedLinkTest tn f u = testGroup tn
-  [ linkTest "No page" (f Nothing) u
-  , linkTest "With Page" (f (Just $ PageNumber 2)) (u & uriQuery <>~ [QueryParam [queryKey|page|] [queryValue|2|]])
+  [ linkTest "No page" (f Nothing Nothing) u
+  , linkTest "With Page" (f (Just $ PageNumber 2) Nothing) (u & uriQuery <>~ [QueryParam [queryKey|page|] [queryValue|2|]])
+  , linkTest "With Page and size"
+    (f (Just $ PageNumber 2) (Just $ PageSize 13))
+    (u & uriQuery <>~ [QueryParam [queryKey|page|] [queryValue|2|], QueryParam [queryKey|page-size|] [queryValue|13|]])
   ]

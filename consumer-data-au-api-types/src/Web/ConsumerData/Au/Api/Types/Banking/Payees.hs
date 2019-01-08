@@ -10,7 +10,7 @@ module Web.ConsumerData.Au.Api.Types.Banking.Payees
 import Control.Lens        (Getter, to)
 import GHC.Generics        (Generic)
 import Servant.API
-    ((:>), Capture, Get)
+    ((:>), Capture, Get, QueryParam)
 import Servant.API.ContentTypes.Waargonaut (WaargJSON)
 import Servant.API.Generic ((:-))
 
@@ -19,7 +19,7 @@ import Web.ConsumerData.Au.Api.Types.Banking.Common.Payees
 import Web.ConsumerData.Au.Api.Types.Response
 import Web.ConsumerData.Au.Api.Types.Tag
 
-type PayeesGetRoute r = r :- Get '[WaargJSON OB] PayeesResponse
+type PayeesGetRoute r = r :- QueryParam "type" PayeeType :> PaginatedRoute (Get '[WaargJSON OB] PayeesResponse)
 type PayeesByIdGetRoute r = r :- Capture "payeeId" PayeeId :> Get '[WaargJSON OB] PayeeDetailResponse
 
 data PayeesApi r = PayeesApi

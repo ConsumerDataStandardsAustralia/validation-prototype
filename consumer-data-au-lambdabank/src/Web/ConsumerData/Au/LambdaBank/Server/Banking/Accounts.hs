@@ -14,41 +14,48 @@ import Web.ConsumerData.Au.LambdaBank.Server.Internal
 
 accountsServer :: ToServant AccountsApi (AsServerT LambdaBankM)
 accountsServer = genericServerT AccountsApi
-    { _accountsGet = \pMay -> getAccounts >>= \as -> bankPaginatedResponse
-      as
-      (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsGet))
-    , _accountsBalancesGet = \pMay -> getBalancesAll >>= \bs -> bankPaginatedResponse
-      bs
-      (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsBalancesGet))
+    { _accountsGet = \status owned prodCat pn ps -> do
+        accts <- getAccounts
+        bankPaginatedResponse accts
+          (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsGet. to (\f -> f status owned prodCat)))
+    , _accountsBalancesGet = \status owned prodCat pn ps -> do
+        balances <- getBalancesAll
+        bankPaginatedResponse balances
+          (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsBalancesGet.to (\f -> f status owned prodCat)))
     , _accountsBalancesPost = getBalancesForAccounts (error "TODO") >>= \bs -> bankStandardResponse
       bs
       (links^.bankingLinks.bankingAccountsLinks.accountsBalancesPost)
-    , _accountsTransactionsGet = \pMay -> getTransactionsAll >>= \as -> bankPaginatedResponse
-      as
-      (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsTransactionsGet))
-    , _accountsTransactionsPost = getTransactionsForAccounts (error "TODO") >>= \as -> bankPaginatedResponse
-      as
-      (fakePaginator Nothing (const $ links^.bankingLinks.bankingAccountsLinks.accountsTransactionsPost))
-    , _accountsDirectDebitsGet = \pMay -> getDirectDebitsAll >>= \dds -> bankPaginatedResponse
+    , _accountsTransactionsGet = \st et minA maxA xactT status owned prodCat pn ps -> do
+        xacts <- getTransactionsAll
+        bankPaginatedResponse xacts
+          (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsTransactionsGet.to (\f -> f st et minA maxA xactT status owned prodCat)))
+    , _accountsTransactionsPost = \st et minA maxA xactT pn ps -> do
+        xacts <- getTransactionsForAccounts (error "TODO")
+        bankPaginatedResponse xacts
+          (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsTransactionsPost. to (\f -> f st et minA maxA xactT)))
+    , _accountsDirectDebitsGet = \owned prodCat pn ps -> do
+        debits <- getDirectDebitsAll
+        bankPaginatedResponse debits
+          (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsDirectDebitsGet. to (\f -> f owned prodCat)))
+    , _accountsDirectDebitsPost = getDirectDebitsForAccounts (error "TODO") >>= \dds -> bankStandardResponse
       dds
-      (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsDirectDebitsGet))
-    , _accountsDirectDebitsPost = getDirectDebitsForAccounts (error "TODO") >>= \dds -> bankPaginatedResponse
-      dds
-      (fakePaginator Nothing (const $ links^.bankingLinks.bankingAccountsLinks.accountsDirectDebitsPost))
+      (links^.bankingLinks.bankingAccountsLinks.accountsDirectDebitsPost)
     , _accountsById = \accountId -> genericServerT AccountApi
-      { _accountGet                = getAccountById accountId >>= \ad -> bankStandardResponse
+      { _accountGet = getAccountById accountId >>= \ad -> bankStandardResponse
         ad
         (links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountGet)
-      , _accountTransactionsGet    = \pMay -> getTransactionsForAccount accountId >>= \xacts -> bankPaginatedResponse
-        xacts
-        (fakePaginator pMay (links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountTransactionsGet))
+      , _accountTransactionsGet = \st et minA maxA xactT pn ps -> do
+          xacts <- getTransactionsForAccount accountId
+          bankPaginatedResponse xacts
+            (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountTransactionsGet.to (\f -> f st et minA maxA xactT)))
       , _accountTransactionByIdGet = \transactionId ->
           getTransactionDetailForAccountTransaction accountId transactionId >>= \xacts -> bankStandardResponse
             xacts
             ((links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountTransactionByIdGet) transactionId)
-      , _accountDirectDebitsGet    = getDirectDebitsForAccount accountId >>= \dds -> bankPaginatedResponse
-        dds
-        (fakePaginator Nothing
-          (const $ links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountDirectDebitsGet))
+      , _accountDirectDebitsGet = \pn ps -> do
+          debits <- getDirectDebitsForAccount accountId
+          bankPaginatedResponse debits
+            (fakePaginator pn ps
+             (links^.bankingLinks.bankingAccountsLinks.accountsByIdLinks.to ($accountId).accountDirectDebitsGet))
       }
     }
