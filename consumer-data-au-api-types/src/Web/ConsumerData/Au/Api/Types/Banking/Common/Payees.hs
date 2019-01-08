@@ -4,12 +4,16 @@
 
 module Web.ConsumerData.Au.Api.Types.Banking.Common.Payees where
 
+import Control.Lens
+
+import           Control.Error              (note)
 import           Control.Monad.Except       (throwError)
 import           Data.Functor.Contravariant (contramap, (>$<))
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import           Servant.API
-    (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece, toQueryParam, parseQueryParam)
+    (FromHttpApiData, ToHttpApiData, parseQueryParam, parseUrlPiece,
+    toQueryParam, toUrlPiece)
 import           Waargonaut.Decode          (Decoder)
 import qualified Waargonaut.Decode          as D
 import qualified Waargonaut.Decode.Error    as D
@@ -89,17 +93,25 @@ data PayeeType =
   | International
   | Biller
   deriving (Bounded, Enum, Eq, Ord, Show)
+_PayeeType :: Prism' Text PayeeType
+_PayeeType = prism' toT fromT
+  where
+    toT = \case
+      Domestic       -> "DOMESTIC"
+      International  -> "INTERNATIONAL"
+      Biller         -> "BILLER"
+    fromT = \case
+      "DOMESTIC"      -> Just Domestic
+      "INTERNATIONAL" -> Just International
+      "BILLER"        -> Just Biller
+      _               -> Nothing
+
 
 instance ToHttpApiData PayeeType where
-  toQueryParam Domestic          = "DOMESTIC"
-  toQueryParam International     = "INTERNATIONAL"
-  toQueryParam Biller            = "BILLER"
+  toQueryParam = (_PayeeType #)
 
 instance FromHttpApiData PayeeType where
-  parseQueryParam "DOMESTIC"      = Right Domestic
-  parseQueryParam "INTERNATIONAL" = Right International
-  parseQueryParam "BILLER"        = Right Biller
-  parseQueryParam t        = Left $ "Invalid PayeeType: " <> t
+  parseQueryParam t = note ("Invalid PayeeType: " <> t) (t ^?_PayeeType)
 
 payeeTypeDecoder :: Monad f => Decoder f PayeeType
 payeeTypeDecoder = D.text >>= \case
