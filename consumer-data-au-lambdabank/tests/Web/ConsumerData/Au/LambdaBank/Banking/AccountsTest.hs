@@ -20,7 +20,7 @@ import Web.ConsumerData.Au.LambdaBank.WithServer
 test_accounts :: [TestTree]
 test_accounts =
   [ testCase "/banking/accounts/balances test with page" . withServer 1337 $ do
-      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsBalancesGet . to ($ Just (PageNumber 2))
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsBalancesGet . to (\f -> f Nothing Nothing Nothing (Just (PageNumber 2)) Nothing)
       liftIO $ res @?= Response testBalances
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/balances?page=2|]
@@ -31,7 +31,7 @@ test_accounts =
         )
         (MetaPaginated 0 2)
   , testCase "/banking/accounts/balances test" . withServer 1337 $ do
-      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsBalancesGet . to ($ Nothing)
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsBalancesGet . to (\f -> f Nothing Nothing Nothing Nothing Nothing)
       liftIO $ res @?= Response testBalances
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/balances?page=1|]
@@ -42,7 +42,7 @@ test_accounts =
         )
         (MetaPaginated 0 1)
   , testCase "/banking/accounts/transactions test with page 2" . withServer 1337 $ do
-      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsTransactionsGet . to ($ Just (PageNumber 2))
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsTransactionsGet . to (\f -> f Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just (PageNumber 2)) Nothing)
       liftIO $ res @?= Response testAccountsTransactions
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/transactions?page=2|]
@@ -53,7 +53,7 @@ test_accounts =
         )
         (MetaPaginated 0 2)
   , testCase "/banking/accounts/{accountId}/transactions test" . withServer 1337 $ do
-      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsByIdClient . to ($ AccountId (AsciiString (pack "12345"))) . accountTransactionsGet . to ($ Nothing)
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsByIdClient . to ($ AccountId (AsciiString (pack "12345"))) . accountTransactionsGet . to (\f -> f Nothing Nothing Nothing Nothing Nothing Nothing Nothing)
       liftIO $ res @?= Response testAccountTransactions
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/12345/transactions?page=1|]
@@ -64,7 +64,7 @@ test_accounts =
         )
         (MetaPaginated 0 1)
   , testCase "/banking/accounts/{accountId}/transactions test with page 2" . withServer 1337 $ do
-      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsByIdClient . to ($ AccountId (AsciiString (pack "12345"))) . accountTransactionsGet . to ($ Just (PageNumber 2))
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsByIdClient . to ($ AccountId (AsciiString (pack "12345"))) . accountTransactionsGet . to (\f -> f Nothing Nothing Nothing Nothing Nothing (Just (PageNumber 2)) Nothing)
       liftIO $ res @?= Response testAccountTransactions
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/12345/transactions?page=2|]
@@ -84,12 +84,12 @@ test_accounts =
 test_accountsPost :: [TestTree]
 test_accountsPost =
   [ testCase "POST /banking/accounts/balances test" . withServer 1337 $ do
-      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsBalancesPost . to ($ mkStandardRequest (AccountIds [AccountId (AsciiString (pack "12345")), AccountId (AsciiString (pack "12347"))]))
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsBalancesPost . to ($ requestAccountIds)
       liftIO $ res @?= Response (filterBalancesByAccountIds testAccountIds testBalances)
         (LinksStandard [uri|http://localhost:1337/banking/accounts/balances|])
         MetaStandard
   , testCase "POST /banking/accounts/transactions test" . withServer 1337 $ do
-      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsTransactionsPost . to ($ mkStandardRequest (AccountIds [AccountId (AsciiString (pack "12345")), AccountId (AsciiString (pack "12347"))])) . to ($ Nothing)
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsTransactionsPost . to (\f -> f Nothing Nothing Nothing Nothing Nothing requestAccountIds Nothing Nothing)
       liftIO $ res @?= Response (filterTransactionsByAccountIds testAccountIds testAccountsTransactions)
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/transactions?page=1|]
@@ -100,7 +100,7 @@ test_accountsPost =
         )
         (MetaPaginated 0 1)
   , testCase "POST /banking/accounts/transactions test with page 2" . withServer 1337 $ do
-      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsTransactionsPost . to ($ mkStandardRequest (AccountIds [AccountId (AsciiString (pack "12345")), AccountId (AsciiString (pack "12347"))])) . to ($ Just (PageNumber 2))
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsTransactionsPost . to (\f -> f Nothing Nothing Nothing Nothing Nothing requestAccountIds (Just (PageNumber 2)) Nothing)
       liftIO $ res @?= Response (filterTransactionsByAccountIds testAccountIds testAccountsTransactions)
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/transactions?page=2|]
@@ -111,7 +111,7 @@ test_accountsPost =
         )
         (MetaPaginated 0 2)
   , testCase "POST /banking/accounts/direct-debits test" . withServer 1337 $ do
-      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsDirectDebitsPost . to ($ mkStandardRequest (AccountIds [AccountId (AsciiString (pack "12345")), AccountId (AsciiString (pack "12347"))])) . to ($ Nothing)
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsDirectDebitsPost . to (\f -> f requestAccountIds Nothing Nothing)
       liftIO $ res @?= Response (filterDirectDebitsByAccountIds testAccountIds testDirectDebitAuthorisations)
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/direct-debits?page=1|]
@@ -122,3 +122,6 @@ test_accountsPost =
         )
         (MetaPaginated 0 1)
   ]
+  where
+    requestAccountIds :: RequestAccountIds
+    requestAccountIds = mkStandardRequest (AccountIds [AccountId (AsciiString (pack "12345")), AccountId (AsciiString (pack "12347"))])

@@ -11,12 +11,13 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Web.ConsumerData.Au.Api.Types.Response where
 
 import Control.Lens
 
-import Control.Error (note)
+import           Control.Error              (note)
 import           Control.Lens.TH            (makeLenses, makeWrapped)
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing)
@@ -37,7 +38,8 @@ import           Data.Text                  (Text, pack)
 import           Data.Text.Lens             (_Text)
 import           GHC.Generics               (Generic)
 import           Servant.API
-    (FromHttpApiData, ToHttpApiData, parseQueryParam, toQueryParam)
+    ((:>), FromHttpApiData, QueryParam, ToHttpApiData, parseQueryParam,
+    toQueryParam)
 import           Servant.Links              (Link, linkURI)
 import           Text.URI
     (Authority, RText, RTextLabel (PathPiece, Scheme),
@@ -49,7 +51,7 @@ import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
 
-import Waargonaut.Helpers                   (atKeyOptional', maybeOrAbsentE)
+import Waargonaut.Helpers                (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Tag
 
 eitherDecoder :: Monad m => Either Text a -> Decoder m a
@@ -84,8 +86,28 @@ uriEncoder = render >$< E.text
 uriDecoder :: Monad f => Decoder f URI
 uriDecoder = D.text >>= (\t -> eitherDecoder . note ("Not a valid URI: " <> t) . mkURI $ t)
 
+newtype PageNumber = PageNumber Nat1
+makeWrapped ''PageNumber
+
+instance ToHttpApiData PageNumber where
+  toQueryParam = (^. _Wrapped . to show . from _Text)
+
+instance FromHttpApiData PageNumber where
+  parseQueryParam = fmap PageNumber . (intToNat1 <=< parseQueryParam)
+
+newtype PageSize = PageSize Nat1
+makeWrapped ''PageSize
+
+instance ToHttpApiData PageSize where
+  toQueryParam = (^. _Wrapped . to show . from _Text)
+
+instance FromHttpApiData PageSize where
+  parseQueryParam = fmap PageSize . (intToNat1 <=< parseQueryParam)
+
 type StandardResponse = Response MetaStandard LinksStandard
 type PaginatedResponse = Response MetaPaginated LinksPaginated
+
+type PaginatedRoute e = QueryParam "page" PageNumber :> QueryParam "page-size" PageSize :> e
 
 data Response meta links dada = Response
   { _responseData  :: dada
@@ -235,21 +257,13 @@ instance JsonDecode OB LinksPaginated where
 instance JsonEncode OB LinksPaginated where
   mkEncoder = tagOb $ linksPaginatedEncoder
 
-newtype PageNumber = PageNumber Nat1
-makeWrapped ''PageNumber
-
-
-instance ToHttpApiData PageNumber where
-  toQueryParam = (^. _Wrapped . to show . from _Text)
-
-instance FromHttpApiData PageNumber where
-  parseQueryParam = fmap PageNumber . (intToNat1 <=< parseQueryParam)
 
 data Paginator = Paginator
   { _paginatorCurrentPage  :: PageNumber
   , _paginatorLastPage     :: PageNumber
+  , _paginatorPageSize     :: Maybe PageSize
   , _paginatorTotalRecords :: Nat
-  , _paginatorMkLink       :: PageNumber -> Link
+  , _paginatorMkLink       :: PageNumber -> Maybe PageSize -> Link
   }
 makeLenses ''Paginator
 
@@ -288,13 +302,14 @@ mkPaginatedResponse d q p = Response d
    (p ^. paginatorLastPage . _Wrapped)
   )
   where
-    selfU = linkToUri q $ (p^.paginatorMkLink) (p^.paginatorCurrentPage)
+    selfU = linkToUri q $ (p^.paginatorMkLink) (p^.paginatorCurrentPage) ps
+    ps = p^.paginatorPageSize
     cp = p^.paginatorCurrentPage._Wrapped
     lp = p^.paginatorLastPage._Wrapped
     ml = p^.paginatorMkLink
     onFirst = cp == 1
     onLast = cp == lp
-    firstU = bool (Just . linkToUri q $ ml (PageNumber 1)) Nothing onFirst
-    prevU = bool (Just . linkToUri q $ ml (PageNumber (cp - 1))) Nothing onFirst
-    nextU = bool (Just . linkToUri q $ ml (PageNumber (cp + 1))) Nothing onLast
-    lastU = bool (Just . linkToUri q $ ml (PageNumber lp)) Nothing onLast
+    firstU = bool (Just . linkToUri q $ ml (PageNumber 1) ps) Nothing onFirst
+    prevU = bool (Just . linkToUri q $ ml (PageNumber (cp - 1)) ps) Nothing onFirst
+    nextU = bool (Just . linkToUri q $ ml (PageNumber (cp + 1)) ps) Nothing onLast
+    lastU = bool (Just . linkToUri q $ ml (PageNumber lp) ps) Nothing onLast

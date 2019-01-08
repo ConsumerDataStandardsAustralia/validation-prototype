@@ -8,6 +8,7 @@ module Web.ConsumerData.Au.LambdaBank.Model where
 
 import Web.ConsumerData.Au.Api.Types
 
+import Data.Text                 (Text)
 import Control.Monad.Free        (MonadFree, liftF)
 import Control.Monad.Free.Church (F, iterM)
 
@@ -27,9 +28,21 @@ data ModelF next where
   GetTransactionsForAccount                 :: AccountId -> (AccountTransactions -> next) -> ModelF next
   GetTransactionDetailForAccountTransaction :: AccountId -> TransactionId -> (TransactionsDetail -> next) -> ModelF next
   GetDirectDebitsForAccount                 :: AccountId -> (DirectDebitAuthorisations -> next) -> ModelF next
-  GetPayeesAll                              :: (Payees -> next) -> ModelF next
+  GetPayeesAll
+    :: Maybe PayeeType
+    -> Maybe PageNumber
+    -> Maybe PageSize
+    -> (Payees -> next)
+    -> ModelF next
   GetPayeeDetail                            :: PayeeId -> (PayeeDetail -> next) -> ModelF next
-  GetProductsAll                            :: (Products -> next) -> ModelF next
+  GetProductsAll
+    :: Maybe ProductEffective
+    -> Maybe DateTimeString
+    -> Maybe Text
+    -> Maybe ProductCategory
+    -> Maybe PageNumber
+    -> Maybe PageSize
+    -> (Products -> next) -> ModelF next
   GetProductDetail                          :: ProductId -> (ProductDetail -> next) -> ModelF next
 
 deriving instance Functor ModelF
@@ -73,14 +86,22 @@ getTransactionDetailForAccountTransaction aId xactId = liftF $ GetTransactionDet
 getDirectDebitsForAccount :: MonadFree ModelF m => AccountId -> m DirectDebitAuthorisations
 getDirectDebitsForAccount accountId = liftF $ GetDirectDebitsForAccount accountId id
 
-getPayeesAll :: MonadFree ModelF m => m Payees
-getPayeesAll = liftF $ GetPayeesAll id
+getPayeesAll :: MonadFree ModelF m => Maybe PayeeType -> Maybe PageNumber -> Maybe PageSize -> m Payees
+getPayeesAll pt pn ps = liftF $ GetPayeesAll pt pn ps id
 
 getPayeeDetail :: MonadFree ModelF m => PayeeId -> m PayeeDetail
 getPayeeDetail pId = liftF $ GetPayeeDetail pId id
 
-getProductsAll :: MonadFree ModelF m => m Products
-getProductsAll = liftF $ GetProductsAll id
+getProductsAll
+  :: MonadFree ModelF m
+  => Maybe ProductEffective
+  -> Maybe DateTimeString
+  -> Maybe Text
+  -> Maybe ProductCategory
+  -> Maybe PageNumber
+  -> Maybe PageSize
+  -> m Products
+getProductsAll pe dts t pc pn ps = liftF $ GetProductsAll pe dts t pc pn ps id
 
 getProductDetail :: MonadFree ModelF m => ProductId -> m ProductDetail
 getProductDetail pId = liftF $ GetProductDetail pId id
@@ -120,7 +141,7 @@ runModelM = iterM $ \case
   (GetTransactionsForAccount _ next) -> next testAccountTransactions
   (GetTransactionDetailForAccountTransaction _ _ next) -> next testAccountTransactionsDetail
   (GetDirectDebitsForAccount _ next) -> next testDirectDebitAuthorisations
-  (GetPayeesAll next) -> next testPayees
+  (GetPayeesAll _ _ _ next) -> next testPayees
   (GetPayeeDetail _ next) -> next testPayeeDetail
-  (GetProductsAll next) -> next testProducts
+  (GetProductsAll _ _ _ _ _ _ next) -> next testProducts
   (GetProductDetail _ next) -> next testProductDetail

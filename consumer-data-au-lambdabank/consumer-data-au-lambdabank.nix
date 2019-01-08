@@ -1,9 +1,10 @@
 { mkDerivation, aeson, base, bytestring
 , consumer-data-au-api-client, consumer-data-au-api-types, country
-, currency-codes, digit, exceptions, free, hedgehog, http-client
-, jose, lens, modern-uri, mtl, profunctors, servant, servant-client
-, servant-server, stdenv, tasty, tasty-discover, tasty-golden
-, tasty-hedgehog, tasty-hunit, text, time, transformers, wai, warp
+, currency-codes, digit, exceptions, flippers, free, hedgehog
+, http-client, jose, lens, modern-uri, mtl, profunctors, servant
+, servant-client, servant-server, stdenv, tasty, tasty-discover
+, tasty-golden, tasty-hedgehog, tasty-hunit, text, time
+, transformers, wai, warp
 }:
 mkDerivation {
   pname = "consumer-data-au-lambdabank";
@@ -13,9 +14,9 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     aeson base bytestring consumer-data-au-api-client
-    consumer-data-au-api-types country currency-codes digit free jose
-    lens modern-uri mtl profunctors servant servant-server text time
-    transformers wai warp
+    consumer-data-au-api-types country currency-codes digit flippers
+    free jose lens modern-uri mtl profunctors servant servant-server
+    text time transformers wai warp
   ];
   executableHaskellDepends = [ base ];
   testHaskellDepends = [

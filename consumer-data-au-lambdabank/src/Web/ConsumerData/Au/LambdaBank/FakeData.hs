@@ -97,8 +97,8 @@ testOrganisationDetail = OrganisationDetail
   testOrganisation
   [testAddress]
 
-fakePaginator :: Maybe PageNumber -> (Maybe PageNumber -> Link) -> Paginator
-fakePaginator pMay = Paginator p p 0 . (lmap Just)
+fakePaginator :: Maybe PageNumber -> Maybe PageSize -> (Maybe PageNumber -> Maybe PageSize -> Link) -> Paginator
+fakePaginator pMay psMay = Paginator p p psMay 0 . (lmap Just)
   where
     p = fromMaybe (PageNumber 1) pMay
 

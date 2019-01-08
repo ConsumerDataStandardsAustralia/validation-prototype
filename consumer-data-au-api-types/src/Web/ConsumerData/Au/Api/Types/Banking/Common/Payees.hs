@@ -9,7 +9,7 @@ import           Data.Functor.Contravariant (contramap, (>$<))
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import           Servant.API
-    (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece)
+    (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece, toQueryParam, parseQueryParam)
 import           Waargonaut.Decode          (Decoder)
 import qualified Waargonaut.Decode          as D
 import qualified Waargonaut.Decode.Error    as D
@@ -89,6 +89,17 @@ data PayeeType =
   | International
   | Biller
   deriving (Bounded, Enum, Eq, Ord, Show)
+
+instance ToHttpApiData PayeeType where
+  toQueryParam Domestic          = "DOMESTIC"
+  toQueryParam International     = "INTERNATIONAL"
+  toQueryParam Biller            = "BILLER"
+
+instance FromHttpApiData PayeeType where
+  parseQueryParam "DOMESTIC"      = Right Domestic
+  parseQueryParam "INTERNATIONAL" = Right International
+  parseQueryParam "BILLER"        = Right Biller
+  parseQueryParam t        = Left $ "Invalid PayeeType: " <> t
 
 payeeTypeDecoder :: Monad f => Decoder f PayeeType
 payeeTypeDecoder = D.text >>= \case
