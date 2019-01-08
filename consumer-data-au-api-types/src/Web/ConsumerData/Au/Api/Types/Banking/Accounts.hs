@@ -35,7 +35,7 @@ import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
 import Web.ConsumerData.Au.Api.Types.Response
 import Web.ConsumerData.Au.Api.Types.Tag
 
-data AccountOpenStatus = AccountOpen | AccountClosed | AccountOpenStatusAll deriving (Eq)
+data AccountOpenStatus = AccountOpen | AccountClosed | AccountOpenStatusAll deriving (Eq, Show, Enum, Bounded)
 _AccountOpenStatus :: Prism' Text AccountOpenStatus
 _AccountOpenStatus = prism' toT fromT
   where
@@ -55,7 +55,7 @@ instance ToHttpApiData AccountOpenStatus where
 instance FromHttpApiData AccountOpenStatus where
   parseQueryParam t = note ("Invalid AccountOpenStatus: " <> t) (t^?_AccountOpenStatus)
 
-data AccountIsOwned = AccountOwned | AccountNotOwned | AccountIsOwnedAll deriving (Eq)
+data AccountIsOwned = AccountOwned | AccountNotOwned | AccountIsOwnedAll deriving (Eq, Show, Enum, Bounded)
 _AccountIsOwned :: Prism' Text AccountIsOwned
 _AccountIsOwned = prism' toT fromT
   where

@@ -1,22 +1,24 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Web.ConsumerData.Au.Api.Types.Banking.AccountsTest where
 
 import Control.Lens
 
-import Data.Functor.Identity (Identity)
-import Data.Time             (UTCTime(UTCTime), fromGregorian)
-import Test.Tasty            (TestTree)
-import Test.Tasty.HUnit      (testCase, (@?=))
-import Text.URI.QQ           (uri)
-import Waargonaut.Decode     (Decoder)
-import Waargonaut.Encode     (Encoder)
-import Waargonaut.Generic    (mkDecoder, mkEncoder, untag)
-import WaargoRoundTrip       (roundTripTest)
+import           Data.Functor.Identity (Identity)
+import           Data.Time             (UTCTime (UTCTime), fromGregorian)
+import           Test.Tasty            (TestTree)
+import           Test.Tasty.HUnit      (testCase, (@?=))
+import           Text.URI.QQ           (uri)
+import           Waargonaut.Decode     (Decoder)
+import           Waargonaut.Encode     (Encoder)
+import           Waargonaut.Generic    (mkDecoder, mkEncoder, untag)
+import           WaargoRoundTrip       (roundTripTest)
 
 import Web.ConsumerData.Au.Api.Types
 import Web.ConsumerData.Au.Api.Types.LinkTestHelpers
     (linkTest, paginatedLinkTest)
+import Web.ConsumerData.Au.Api.Types.PrismTestHelpers (testEnumPrismTripping)
 import Web.ConsumerData.Au.Api.Types.Tag
 
 
@@ -85,6 +87,12 @@ test_accountLinks =
   where
     alinks   = links^.bankingLinks.bankingAccountsLinks
     accLinks = alinks^.accountsByIdLinks.to ($ AccountId (AsciiString "123"))
+
+test_accountEnums :: [TestTree]
+test_accountEnums =
+  [ testEnumPrismTripping "AccountIsOwned" _AccountIsOwned
+  , testEnumPrismTripping "AccountOpenStatus" _AccountOpenStatus
+  ]
 
 -- TODO This probably does what people expect, but it is poorly specified in the spec
 test_maskAccountId :: [TestTree]
