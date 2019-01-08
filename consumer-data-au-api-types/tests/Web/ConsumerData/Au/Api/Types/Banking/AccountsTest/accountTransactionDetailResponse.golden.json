@@ -16,7 +16,7 @@
         "extendedData": {
           "payer": "string",
           "payee": "string",
-          "extension$type": "extendedDescription",
+          "extensionUType": "extendedDescription",
           "extendedDescription": "string",
           "service": "X2P1.01"
         }

@@ -6,7 +6,7 @@
     "maskedNumber": "string",
     "productCategory": "PERS_AT_CALL_DEPOSITS",
     "providerType": "string",
-    "balance$type": "lending",
+    "balanceUType": "lending",
     "lending": {
       "accountBalance": {
         "amount": "string",
@@ -26,7 +26,7 @@
       }
     },
     "bundleName": "string",
-    "specificAccount$type": "termDeposit",
+    "specificAccountUType": "termDeposit",
     "termDeposit": {
       "lodgementDate": "string",
       "maturityDate": "string",
@@ -84,7 +84,7 @@
     ],
     "address": {
       "purpose": "WORK",
-      "address$type": "simple",
+      "addressUType": "simple",
       "simple": {
         "mailingName": "string",
         "addressLine1": "string",

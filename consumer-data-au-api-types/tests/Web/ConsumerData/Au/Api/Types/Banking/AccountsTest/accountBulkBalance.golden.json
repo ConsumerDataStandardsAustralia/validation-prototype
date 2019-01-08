@@ -3,7 +3,7 @@
     "balances": [
       {
         "accountId": "string",
-        "balance$type" : "deposits",
+        "balanceUType" : "deposits",
         "deposits": {
           "currentBalance": {
             "amount": "300.56",

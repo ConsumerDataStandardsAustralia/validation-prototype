@@ -1,5 +1,5 @@
 {
-    "customer$type": "person",
+    "customerUType": "person",
     "person" : {
         "lastUpdateTime": "2018-11-01T05:32:18Z",
         "firstName": "first name",
@@ -30,7 +30,7 @@
         "physicalAddresses": [
             {
                 "purpose": "REGISTERED",
-                "address$type": "simple",
+                "addressUType": "simple",
                 "simple": {
                     "mailingName": "mailing name",
                     "addressLine1": "addy line 1",
