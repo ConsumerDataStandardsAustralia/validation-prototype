@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -8,7 +9,9 @@ module Web.ConsumerData.Au.Api.Types.Banking.Products
   ( module Web.ConsumerData.Au.Api.Types.Banking.Products
   ) where
 
-import Control.Lens                        (Getter, to)
+import Control.Error                       (note)
+import Control.Lens
+    (Getter, Prism', prism', to, ( # ), (^?))
 import Data.Text                           (Text)
 import GHC.Generics                        (Generic)
 import Servant.API
@@ -30,16 +33,25 @@ instance FromHttpApiData ProductId where
   parseUrlPiece = fmap ProductId . parseUrlPiece
 
 data ProductEffective = ProductCurrent | ProductFuture | ProductAll deriving (Eq, Show)
+_ProductEffective :: Prism' Text ProductEffective
+_ProductEffective = prism' toT fromT
+  where
+    toT = \case
+      ProductCurrent -> "CURRENT"
+      ProductFuture  -> "FUTURE"
+      ProductAll     -> "ALL"
+    fromT = \case
+      "CURRENT" -> Just ProductCurrent
+      "FUTURE"  -> Just ProductFuture
+      "ALL"     -> Just ProductAll
+      _         -> Nothing
+
+
 instance ToHttpApiData ProductEffective where
-  toUrlPiece ProductCurrent = "CURRENT"
-  toUrlPiece ProductFuture  = "FUTURE"
-  toUrlPiece ProductAll     = "ALL"
+  toUrlPiece = (_ProductEffective #)
 
 instance FromHttpApiData ProductEffective where
-  parseUrlPiece "CURRENT" = Right ProductCurrent
-  parseUrlPiece "FUTURE"  = Right ProductFuture
-  parseUrlPiece "ALL"     = Right ProductAll
-  parseUrlPiece t         = Left $ "Invalid product effective query: " <> t
+  parseUrlPiece t = note ("Invalid product effective query: " <> t) (t^?_ProductEffective)
 
 type ProductsGetRoute r = r :-
   ( QueryParam "effective" ProductEffective

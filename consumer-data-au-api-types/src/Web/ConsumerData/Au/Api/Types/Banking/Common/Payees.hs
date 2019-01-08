@@ -4,12 +4,14 @@
 
 module Web.ConsumerData.Au.Api.Types.Banking.Common.Payees where
 
-import           Control.Monad.Except       (throwError)
-import           Data.Functor.Contravariant (contramap, (>$<))
+import Control.Lens
+
+import           Control.Error              (note)
+import           Data.Functor.Contravariant ((>$<))
 import           Data.Text                  (Text)
-import qualified Data.Text                  as T
 import           Servant.API
-    (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece, toQueryParam, parseQueryParam)
+    (FromHttpApiData, ToHttpApiData, parseQueryParam, parseUrlPiece,
+    toQueryParam, toUrlPiece)
 import           Waargonaut.Decode          (Decoder)
 import qualified Waargonaut.Decode          as D
 import qualified Waargonaut.Decode.Error    as D
@@ -81,7 +83,7 @@ payeeMLO (Payee pid nick desc ptype) =
   E.atKey' "payeeId" payeeIdEncoder pid .
   E.atKey' "nickname" E.text nick .
   maybeOrAbsentE "description" E.text desc .
-  E.atKey' "type" (payeeTypeEncoder True) ptype
+  E.atKey' "type" payeeTypeEncoder ptype
 
 
 data PayeeType =
@@ -89,31 +91,30 @@ data PayeeType =
   | International
   | Biller
   deriving (Bounded, Enum, Eq, Ord, Show)
+_PayeeType :: Prism' Text PayeeType
+_PayeeType = prism' toT fromT
+  where
+    toT = \case
+      Domestic       -> "DOMESTIC"
+      International  -> "INTERNATIONAL"
+      Biller         -> "BILLER"
+    fromT = \case
+      "DOMESTIC"      -> Just Domestic
+      "INTERNATIONAL" -> Just International
+      "BILLER"        -> Just Biller
+      _               -> Nothing
 
 instance ToHttpApiData PayeeType where
-  toQueryParam Domestic          = "DOMESTIC"
-  toQueryParam International     = "INTERNATIONAL"
-  toQueryParam Biller            = "BILLER"
+  toQueryParam = (_PayeeType #)
 
 instance FromHttpApiData PayeeType where
-  parseQueryParam "DOMESTIC"      = Right Domestic
-  parseQueryParam "INTERNATIONAL" = Right International
-  parseQueryParam "BILLER"        = Right Biller
-  parseQueryParam t        = Left $ "Invalid PayeeType: " <> t
+  parseQueryParam t = note ("Invalid PayeeType: " <> t) (t ^?_PayeeType)
 
 payeeTypeDecoder :: Monad f => Decoder f PayeeType
-payeeTypeDecoder = D.text >>= \case
-  "DOMESTIC" -> pure Domestic
-  "domestic" -> pure Domestic
-  "INTERNATIONAL" -> pure International
-  "international" -> pure International
-  "BILLER" -> pure Biller
-  "biller" -> pure Biller
-  s -> throwError (D.ConversionFailure (s <> " is not a valid Payee type"))
+payeeTypeDecoder = D.prismDOrFail (D.ConversionFailure ("Is not a valid Payee type")) _PayeeType  D.text
 
-payeeTypeEncoder :: Applicative f => Bool -> Encoder f PayeeType
-payeeTypeEncoder upper = flip contramap E.text $ \x ->
-  (if upper then T.toUpper else id) $ showPayeeType x
+payeeTypeEncoder :: Applicative f => Encoder f PayeeType
+payeeTypeEncoder = E.prismE _PayeeType E.text
 
 showPayeeType :: PayeeType -> Text
 showPayeeType = \case
