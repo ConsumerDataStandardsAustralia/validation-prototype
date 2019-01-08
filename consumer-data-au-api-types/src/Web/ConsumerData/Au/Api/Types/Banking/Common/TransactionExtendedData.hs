@@ -54,7 +54,7 @@ data TransactionExtendedDataExtensionType =
   deriving (Eq, Show)
 
 extensionTypeDecoder :: Monad f => Decoder f TransactionExtendedDataExtensionType
-extensionTypeDecoder = typeTaggedDecoder "extension$type" $ \case
+extensionTypeDecoder = typeTaggedDecoder "extensionUType" $ \case
   "extendedDescription" -> Just $ (TypedTagField TEDExtendedDescription D.text)
   _                     -> Nothing
 
@@ -64,7 +64,7 @@ extensionTypeFields ::
 extensionTypeFields = \case
   TEDExtendedDescription t -> fields "extendedDescription" E.text t
   where
-    fields = typeTaggedField "extension$type"
+    fields = typeTaggedField "extensionUType"
 
 
 data TransactionExtendedDataService =

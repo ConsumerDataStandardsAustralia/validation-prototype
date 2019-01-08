@@ -101,7 +101,7 @@ data SpecificAccount =
   deriving (Eq, Show)
 
 specificAccountDecoder :: Monad f => Decoder f SpecificAccount
-specificAccountDecoder = typeTaggedDecoder "specificAccount$type" $ \case
+specificAccountDecoder = typeTaggedDecoder "specificAccountUType" $ \case
     "termDeposit" -> Just $ (TypedTagField TermDeposit termDepositAccountTypeDecoder)
     "creditCard"  -> Just $ (TypedTagField CreditCard creditCardAccountTypeDecoder)
     "loan"        -> Just $ (TypedTagField Loan loanAccountTypeDecoder)
@@ -119,7 +119,7 @@ specificAccountFields = \case
   CreditCard c -> fields "creditCard" creditCardAccountTypeEncoder c
   Loan l -> fields "loan" loanAccountTypeEncoder l
   where
-    fields = typeTaggedField "specificAccount$type"
+    fields = typeTaggedField "specificAccountUType"
 
 instance JsonEncode OB SpecificAccount where
   mkEncoder = tagOb specificAccountEncoder

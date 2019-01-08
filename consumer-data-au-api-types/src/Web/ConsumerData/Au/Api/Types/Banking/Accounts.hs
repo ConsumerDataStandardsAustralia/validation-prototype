@@ -15,8 +15,8 @@ import Control.Lens
 import Data.Text                           (Text)
 import GHC.Generics                        (Generic)
 import Servant.API
-    ((:>), Capture, FromHttpApiData, Get, Post, QueryParam, ToHttpApiData,
-    parseQueryParam, toQueryParam)
+    ((:>), Capture, FromHttpApiData, Get, Post, QueryParam, ReqBody,
+    ToHttpApiData, parseQueryParam, toQueryParam)
 import Servant.API.ContentTypes.Waargonaut (WaargJSON)
 import Servant.API.Generic                 ((:-), AsApi, ToServant, fromServant)
 import Servant.Links                       (AsLink, Link)
@@ -32,6 +32,7 @@ import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
     (TransactionId)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionsDetail
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
+import Web.ConsumerData.Au.Api.Types.Request
 import Web.ConsumerData.Au.Api.Types.Response
 import Web.ConsumerData.Au.Api.Types.Tag
 
@@ -97,7 +98,10 @@ type AccountsBalancesGetRoute r = AccountsBalancesRoute r
   :> AccountProductCategoryParam
   :> PaginatedRoute (Get '[WaargJSON OB] AccountBulkBalanceResponse)
   )
-type AccountsBalancesPostRoute r = AccountsBalancesRoute r (Post '[WaargJSON OB] AccountBalanceByIdsResponse)
+type AccountsBalancesPostRoute r = AccountsBalancesRoute r
+  ( ReqBody '[WaargJSON OB] RequestAccountIds
+  :> Post '[WaargJSON OB] AccountBalanceByIdsResponse
+  )
 type AccountsTransactionsRoute r e = r :- "transactions" :> e
 type AccountsTransactionsGetRoute r = AccountsTransactionsRoute r
   (  TransactionStartTimeParam
@@ -116,6 +120,7 @@ type AccountsTransactionsPostRoute r = AccountsTransactionsRoute r
   :> TransactionMinAmountParam
   :> TransactionMaxAmountParam
   :> TransactionTextParam
+  :> ReqBody '[WaargJSON OB] RequestAccountIds
   :> (PaginatedRoute (Post '[WaargJSON OB] AccountsTransactionsResponse))
   )
 type AccountsDirectDebitsRoute r e = r :- "direct-debits" :> e
@@ -123,7 +128,10 @@ type AccountsDirectDebitsGetRoute r = AccountsDirectDebitsRoute r
   (  AccountIsOwnedParam
   :> AccountProductCategoryParam
   :> PaginatedRoute (Get '[WaargJSON OB] AccountDirectDebitsResponse))
-type AccountsDirectDebitsPostRoute r = AccountsDirectDebitsRoute r (Post '[WaargJSON OB] AccountDirectDebitsPostResponse)
+type AccountsDirectDebitsPostRoute r = AccountsDirectDebitsRoute r
+  (  ReqBody '[WaargJSON OB] RequestAccountIds
+  :> (PaginatedRoute (Post '[WaargJSON OB] AccountDirectDebitsPostResponse))
+  )
 type AccountsByIdRoute r = r :- Capture "accountId" AccountId :> ToServant AccountApi AsApi
 
 data AccountsApi r = AccountsApi
@@ -192,7 +200,9 @@ type AccountByIdResponse = StandardResponse AccountDetail
 type AccountBulkBalanceResponse = PaginatedResponse AccountBalances
 type AccountBalanceByIdsResponse = StandardResponse AccountBalances
 type AccountDirectDebitsResponse = PaginatedResponse DirectDebitAuthorisations
-type AccountDirectDebitsPostResponse = StandardResponse DirectDebitAuthorisations
+type AccountDirectDebitsPostResponse = PaginatedResponse DirectDebitAuthorisations
 type AccountTransactionsResponse = PaginatedResponse AccountTransactions
 type AccountTransactionDetailResponse = StandardResponse TransactionsDetail
 type AccountsTransactionsResponse = PaginatedResponse BulkTransactions
+
+type RequestAccountIds = StandardRequest AccountIds

@@ -65,7 +65,7 @@ test_accountLinks =
     ((alinks^.accountsDirectDebitsGet) Nothing Nothing) [uri|http://localhost/banking/accounts/direct-debits|]
   , paginatedLinkTest "Get Bulk Direct Debits all params"
     ((alinks^.accountsDirectDebitsGet) (Just $ AccountOwned) (Just $ PCTravelCard)) [uri|http://localhost/banking/accounts/direct-debits?is-owned=OWNED&product-category=TRAVEL_CARD|]
-  , linkTest "Get Direct Debits for Specific Accounts"
+  , paginatedLinkTest "Get Direct Debits for Specific Accounts"
     (alinks^.accountsDirectDebitsPost) [uri|http://localhost/banking/accounts/direct-debits|]
   , linkTest "Get Account Detail"
     (accLinks^.accountGet) [uri|http://localhost/banking/accounts/123|]

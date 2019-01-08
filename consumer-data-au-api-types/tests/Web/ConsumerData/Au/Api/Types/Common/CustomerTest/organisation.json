@@ -1,5 +1,5 @@
 {
-    "customer$type": "organisation",
+    "customerUType": "organisation",
     "organisation": {
         "lastUpdateTime": "2018-11-01T05:32:18Z",
         "agentFirstName": "string",

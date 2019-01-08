@@ -22,24 +22,25 @@ accountsServer = genericServerT AccountsApi
         balances <- getBalancesAll
         bankPaginatedResponse balances
           (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsBalancesGet.to (\f -> f status owned prodCat)))
-    , _accountsBalancesPost = getBalancesForAccounts (error "TODO") >>= \bs -> bankStandardResponse
+    , _accountsBalancesPost = \request -> getBalancesForAccounts (_requestData request) >>= \bs -> bankStandardResponse
       bs
       (links^.bankingLinks.bankingAccountsLinks.accountsBalancesPost)
     , _accountsTransactionsGet = \st et minA maxA xactT status owned prodCat pn ps -> do
         xacts <- getTransactionsAll
         bankPaginatedResponse xacts
           (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsTransactionsGet.to (\f -> f st et minA maxA xactT status owned prodCat)))
-    , _accountsTransactionsPost = \st et minA maxA xactT pn ps -> do
-        xacts <- getTransactionsForAccounts (error "TODO")
+    , _accountsTransactionsPost = \st et minA maxA xactT request pn ps -> do
+        xacts <- getTransactionsForAccounts (_requestData request)
         bankPaginatedResponse xacts
           (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsTransactionsPost. to (\f -> f st et minA maxA xactT)))
     , _accountsDirectDebitsGet = \owned prodCat pn ps -> do
         debits <- getDirectDebitsAll
         bankPaginatedResponse debits
           (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsDirectDebitsGet. to (\f -> f owned prodCat)))
-    , _accountsDirectDebitsPost = getDirectDebitsForAccounts (error "TODO") >>= \dds -> bankStandardResponse
-      dds
-      (links^.bankingLinks.bankingAccountsLinks.accountsDirectDebitsPost)
+    , _accountsDirectDebitsPost = \request pn ps -> do
+        xacts <- getDirectDebitsForAccounts (_requestData request)
+        bankPaginatedResponse xacts
+          (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsDirectDebitsPost))
     , _accountsById = \accountId -> genericServerT AccountApi
       { _accountGet = getAccountById accountId >>= \ad -> bankStandardResponse
         ad

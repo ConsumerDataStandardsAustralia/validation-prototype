@@ -37,7 +37,7 @@ payeeDetailDecoder =
     <$> payeeDecoder
     <*> payeeTypeDataDecoder
   where
-    payeeTypeDataDecoder = typeTaggedDecoder "payee$type" $ \case
+    payeeTypeDataDecoder = typeTaggedDecoder "payeeUType" $ \case
       "domestic" -> Just (TypedTagField PTDDomestic domesticPayeeDecoder)
       "international" -> Just (TypedTagField PTDInternational internationalPayeeDecoder)
       "biller" -> Just (TypedTagField PTDBiller billerPayeeDecoder)
@@ -52,7 +52,7 @@ payeeDetailEncoder = E.mapLikeObj $ \(PayeeDetail p td) ->
         PTDDomestic d -> fields "domestic" domesticPayeeEncoder d
         PTDInternational i -> fields "international" internationalPayeeEncoder i
         PTDBiller b -> fields "biller" billerPayeeEncoder b
-      fields = typeTaggedField "payee$type"
+      fields = typeTaggedField "payeeUType"
 
 instance JsonDecode OB PayeeDetail where
   mkDecoder = tagOb payeeDetailDecoder
@@ -81,7 +81,7 @@ data DomesticPayee
   deriving (Eq, Show)
 
 domesticPayeeDecoder :: Monad f => Decoder f DomesticPayee
-domesticPayeeDecoder = typeTaggedDecoder "payeeAccount$type" $ \case
+domesticPayeeDecoder = typeTaggedDecoder "payeeAccountUType" $ \case
   "account" -> Just (TypedTagField DPAccount domesticPayeeAccountDecoder)
   "card" -> Just (TypedTagField DPCard domesticPayeeCardDecoder)
   "payId" -> Just (TypedTagField DPPayeeId domesticPayeePayIdDecoder)
@@ -93,7 +93,7 @@ domesticPayeeEncoder = E.mapLikeObj $ \case
   DPCard c -> fields "card" domesticPayeeCardEncoder c
   DPPayeeId p -> fields "payId" domesticPayeePayIdEncoder p
   where
-    fields = typeTaggedField "payeeAccount$type"
+    fields = typeTaggedField "payeeAccountUType"
 
 
 data DomesticPayeeAccount

@@ -1,5 +1,5 @@
 {
-    "customer$type": "organisation",
+    "customerUType": "organisation",
     "organisation": {
         "lastUpdateTime": "2018-11-01T05:32:18Z",
         "agentFirstName": "fname",
@@ -18,7 +18,7 @@
         "physicalAddresses": [
             {
                 "purpose": "REGISTERED",
-                "address$type": "simple",
+                "addressUType": "simple",
                 "simple": {
                     "mailingName": "mname",
                     "addressLine1": "aline1",
