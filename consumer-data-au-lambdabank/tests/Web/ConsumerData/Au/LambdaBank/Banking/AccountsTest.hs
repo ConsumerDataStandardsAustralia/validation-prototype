@@ -19,7 +19,34 @@ import Web.ConsumerData.Au.LambdaBank.WithServer
 
 test_accounts :: [TestTree]
 test_accounts =
-  [ testCase "/banking/accounts/balances test with page" . withServer 1337 $ do
+  [ testCase "/banking/accounts test" . withServer 1337 $ do
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsGet . to (\f -> f Nothing Nothing Nothing Nothing Nothing)
+      liftIO $ res @?= Response testAccounts
+        (LinksPaginated
+         [uri|http://localhost:1337/banking/accounts?page=1|]
+         Nothing
+         Nothing
+         Nothing
+         Nothing
+        )
+        (MetaPaginated 0 1)
+  , testCase "/banking/accounts test with page 2" . withServer 1337 $ do
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsGet . to (\f -> f Nothing Nothing Nothing (Just (PageNumber 2)) Nothing)
+      liftIO $ res @?= Response testAccounts
+        (LinksPaginated
+         [uri|http://localhost:1337/banking/accounts?page=2|]
+         (Just [uri|http://localhost:1337/banking/accounts?page=1|])
+         (Just [uri|http://localhost:1337/banking/accounts?page=1|])
+         Nothing
+         Nothing
+        )
+        (MetaPaginated 0 2)
+  , testCase "/banking/accounts/{accountId} test" . withServer 1337 $ do
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsByIdClient . to ($ AccountId (AsciiString (pack "12345"))) . accountGet
+      liftIO $ res @?= Response testAccountDetail
+        (LinksStandard [uri|http://localhost:1337/banking/accounts/12345|])
+        MetaStandard
+  , testCase "/banking/accounts/balances test with page" . withServer 1337 $ do
       res <- apiClient ^. bankingClient . bankingAccountsClient . accountsBalancesGet . to (\f -> f Nothing Nothing Nothing (Just (PageNumber 2)) Nothing)
       liftIO $ res @?= Response testBalances
         (LinksPaginated

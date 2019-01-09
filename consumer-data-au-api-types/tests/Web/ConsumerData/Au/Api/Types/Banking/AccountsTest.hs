@@ -161,9 +161,29 @@ test_roundTripAccountBalanceByIdsResponse = roundTripTest
   "AccountBalanceByIdsResponseRoundtrip"
   "tests/Web/ConsumerData/Au/Api/Types/Banking/AccountsTest/accountBalanceByIds.golden.json"
 
+
 test_roundTripAccountsByIdRoute :: TestTree
 test_roundTripAccountsByIdRoute = roundTripTest
   (untag (mkDecoder :: (Tagged OB (Decoder Identity AccountByIdResponse))))
   (untag (mkEncoder :: (Tagged OB (Encoder Identity AccountByIdResponse))))
   "AccountsByIdRoundtrip"
   "tests/Web/ConsumerData/Au/Api/Types/Banking/AccountsTest/accountById.golden.json"
+
+test_roundSubAccountDetail :: [TestTree]
+test_roundSubAccountDetail =
+  [ roundTripTest
+    creditCardAccountTypeDecoder
+    creditCardAccountTypeEncoder
+    " CreditCardAccountRoundTrip"
+    "tests/Web/ConsumerData/Au/Api/Types/Banking/AccountsTest/creditCardAccount.json"
+  , roundTripTest
+    loanAccountTypeDecoder
+    loanAccountTypeEncoder
+    " LoanAccountRoundTrip"
+    "tests/Web/ConsumerData/Au/Api/Types/Banking/AccountsTest/loanAccount.json"
+  , roundTripTest
+    termDepositAccountTypeDecoder
+    termDepositAccountTypeEncoder
+    " TermDepositAccountRoundTrip"
+    "tests/Web/ConsumerData/Au/Api/Types/Banking/AccountsTest/termDepositAccount.json"
+  ]

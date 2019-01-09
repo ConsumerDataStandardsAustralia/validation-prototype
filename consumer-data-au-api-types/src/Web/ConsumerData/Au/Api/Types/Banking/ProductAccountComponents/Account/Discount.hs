@@ -52,7 +52,6 @@ instance JsonEncode OB AccountDiscounts where
 data AccountDiscount = AccountDiscount
   { _accountDiscountDescription  :: Text -- ^ Description of the discount
   , _accountDiscountDiscountType :: AccountDiscountType -- ^ The type of discount. See the note below for valid values and their meaning
--- WARNING
   , _accountDiscountAmount       :: AmountString -- ^ Value of the discount. Note that the currency of the fee discount is expected to be the same as the currency of the fee itself
   } deriving (Show, Eq)
 

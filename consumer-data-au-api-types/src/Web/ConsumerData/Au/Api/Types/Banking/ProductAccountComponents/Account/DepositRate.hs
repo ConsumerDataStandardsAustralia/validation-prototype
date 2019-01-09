@@ -56,7 +56,6 @@ instance JsonEncode OB AccountDepositRates where
 -- WARNING This type is refering to *Account* only property, not as it defined in the above link
 data AccountDepositRate = AccountDepositRate
   { _accountDepositRateDepositRateType   :: AccountDepositRateType -- ^ The type of rate (base, bonus, etc). See the next section for an overview of valid values and their meaning
--- WARNING
   , _accountDepositRateRate              :: RateString -- ^ The rate to be applied
   , _accountDepositRateAdditionalInfo    :: Maybe Text -- ^ Display text providing more information on the rate
   , _accountDepositRateAdditionalInfoUri :: Maybe URI -- ^ Link to a web page with more information on this fee
@@ -135,8 +134,6 @@ accountDepositRateTypeToType' (ADepositRateTypeIntroductory {}) = ADepositRateTy
 
 accountDepositRateTypeFields :: (Monoid ws, Semigroup ws) => AccountDepositRateType -> MapLikeObj ws Json -> MapLikeObj ws Json
 accountDepositRateTypeFields pc =
--- accountDepositRateTypeEncoder :: Applicative f => Encoder f AccountDepositRateType
--- accountDepositRateTypeEncoder = E.mapLikeObj $ \pc -> do
   case pc of
     ADepositRateTypeFixed v ->
       E.atKey' "depositRateType" accountDepositRateType'Encoder (accountDepositRateTypeToType' pc) .

@@ -184,7 +184,7 @@ accOpenStatusEncoder =
 accOpenStatusDecoder :: Monad m =>
   D.Decoder m AccOpenStatus
 accOpenStatusDecoder = D.prismDOrFail
-  (D._ConversionFailure # "is not a valid AccountOpen Status type")
+  (D._ConversionFailure # "Not a valid AccountOpen Status type")
   _AccOpenStatus
   D.text
 

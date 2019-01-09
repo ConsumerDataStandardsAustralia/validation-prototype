@@ -6,6 +6,8 @@
     "maskedNumber": "string",
     "productCategory": "PERS_AT_CALL_DEPOSITS",
     "productName": "string",
+    "bsb" : "123456",
+    "accountNumber": "123456789",
     "bundleName": "string",
     "specificAccountUType": "termDeposit",
     "termDeposit": {

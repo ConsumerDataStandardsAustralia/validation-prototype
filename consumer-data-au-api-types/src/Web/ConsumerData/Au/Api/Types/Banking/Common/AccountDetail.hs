@@ -47,17 +47,15 @@ import Web.ConsumerData.Au.Api.Types.Tag
 
 -- AccountDetail <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaaccountdetail CDR AU v0.1.0 AccountDetail>
 data AccountDetail = AccountDetail
-  { _accountDetailAccount         :: Maybe Account
+  { _accountDetailAccount         :: Account
+  , _accountDetailBsb             :: Maybe Text
+  , _accountDetailAccountNumber   :: Maybe Text
   , _accountDetailBundleName      :: Maybe Text -- ^ Indicates if this account is park of a bundle that is providing additional benefit to the customer.
   , _accountDetailSpecificAccount :: Maybe SpecificAccount -- ^ Account specific fields.
   , _accountDetailFeatures        :: Maybe AccountFeatures -- ^ Array of features on the account
-  -- WARNING using AccountFeatureType instead of ProductFeature
   , _accountDetailFees            :: Maybe AccountFees -- ^ Fees and charges applicable to the account
-  -- WARNING using AccountFeeType instead of ProductFee
   , _accountDetailDepositRates    :: Maybe AccountDepositRates -- ^ Interest rates available for deposits
-  -- WARNING using AccountDepositRateType instead of ProductDepositRate
   , _accountDetailLendingRates    :: Maybe AccountLendingRates -- ^ Interest rates charged against lending balances
-  -- WARNING using AccountLendingRateType instead of ProductLendingRate
   , _accountDetailAddress         :: Maybe PhysicalAddress -- ^ The address for the account to be used for correspondence
   -- WARNING
   } deriving (Eq, Show)
@@ -65,7 +63,9 @@ data AccountDetail = AccountDetail
 accountDetailDecoder :: Monad f => Decoder f AccountDetail
 accountDetailDecoder =
   AccountDetail
-    <$> (D.maybeOrNull accountDecoder)
+    <$> accountDecoder
+    <*> atKeyOptional' "bsb" D.text
+    <*> atKeyOptional' "accountNumber" D.text
     <*> atKeyOptional' "bundleName" D.text
     <*> (D.maybeOrNull specificAccountDecoder)
     <*> atKeyOptional' "features" accountFeaturesDecoder
@@ -80,7 +80,9 @@ instance JsonDecode OB AccountDetail where
 
 accountDetailEncoder :: Applicative f => Encoder f AccountDetail
 accountDetailEncoder = E.mapLikeObj $ \p ->
-  maybe id accountFields (_accountDetailAccount p) .
+  accountFields (_accountDetailAccount p) .
+  maybeOrAbsentE "bsb" E.text (_accountDetailBsb p) .
+  maybeOrAbsentE "accountNumber" E.text (_accountDetailAccountNumber p) .
   maybeOrAbsentE "bundleName" E.text (_accountDetailBundleName p) .
   maybe id specificAccountFields (_accountDetailSpecificAccount p) .
   maybeOrAbsentE "features" accountFeaturesEncoder (_accountDetailFeatures p) .
@@ -161,7 +163,7 @@ instance JsonEncode OB TermDepositAccountType where
 data MaturityInstructions =
     MaturityInstructionsRolledOver -- ^ "ROLLED_OVER"
   | MaturityInstructionsPaidOutAtMaturity -- ^ "PAID_OUT_AT_MATURITY"
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 maturityInstructionsText ::
   Prism' Text MaturityInstructions
@@ -224,20 +226,19 @@ data LoanAccountType = LoanAccountType
   { _loanAccountTypeOriginalStartDate     :: Maybe DateString -- ^ Optional original start date for the loan.
   , _loanAccountTypeOriginalLoanAmount    :: Maybe AmountString -- ^ Optional original loan value.
   , _loanAccountTypeOriginalLoanCurrency  :: Maybe CurrencyString -- ^ If absent assumes AUD.
-  , _loanAccountTypeLoanEndDate           :: DateString -- ^ Date that the loan is due to be repaid in full.
-  , _loanAccountTypeNextInstalmentDate    :: DateString -- ^ Next date that an installment is required.
-  , _loanAccountTypeMinInstalmentAmount   :: AmountString -- ^ Minimum Amount of next instalment.
+  , _loanAccountTypeLoanEndDate           :: Maybe DateString -- ^ Date that the loan is due to be repaid in full.
+  , _loanAccountTypeNextInstalmentDate    :: Maybe DateString -- ^ Next date that an installment is required.
+  , _loanAccountTypeMinInstalmentAmount   :: Maybe AmountString -- ^ Minimum Amount of next instalment.
   , _loanAccountTypeMinInstalmentCurrency :: Maybe CurrencyString -- ^ If absent assumes AUD.
-  , _loanAccountTypeMaxRedrawAmount       :: Maybe AmountString -- ^ WARNING number(date)  in standard (7/11/18) Maximum amount of funds that can be redrawn. If not present redraw is not available even if the feature exists for the account.
--- WARNING  it is called `maxRedraw` on website
+  , _loanAccountTypeMaxRedraw             :: Maybe AmountString -- ^ Maximum amount of funds that can be redrawn. If not present redraw is not available even if the feature exists for the account.
   , _loanAccountTypeMaxRedrawCurrency     :: Maybe CurrencyString -- ^ If absent assumes AUD.
-  , _loanAccountTypeMinRedrawAmount       :: Maybe AmountString -- ^ WARNING number(date)  in standard (7/11/18)
--- WARNING  it is called `minRedraw` on website
+  , _loanAccountTypeMinRedraw             :: Maybe AmountString -- ^ Minimum redraw amount.
   , _loanAccountTypeMinRedrawCurrency     :: Maybe CurrencyString -- ^ If absent assumes AUD.
   , _loanAccountTypeOffsetAccountEnabled  :: Maybe Bool -- ^ Set to true if one or more offset accounts are configured for this loan account
-  , _loanAccountTypeOffsetAccountId       :: Maybe [AccountId] -- ^ The accountIDs of the configured offset accounts attached to this loan. Only offset accounts that can be accesses under the current authorisation should be included. It is expected behaviour that offsetAccountEnabled is set to true but the offsetAccountIds field is absent or empty. This represents a situation where an offset account exists but details can not be accessed under the current authorisation.
+  , _loanAccountTypeOffsetAccountIds      :: Maybe [AccountId] -- ^ The accountIDs of the configured offset accounts attached to this loan. Only offset accounts that can be accesses under the current authorisation should be included. It is expected behaviour that offsetAccountEnabled is set to true but the offsetAccountIds field is absent or empty. This represents a situation where an offset account exists but details can not be accessed under the current authorisation.
+  , _loanAccountTypeRepaymentFrequency    :: Maybe DurationString -- ^ The expected or required repayment frequency. Formatted according to <https://en.wikipedia.org/wiki/ISO_8601#Durations ISO 8601 Durations>
   , _loanAccountTypeRepaymentType         :: Maybe RepaymentType -- ^ Options in place for repayments. If absent defaults to PRINCIPAL_AND_INTEREST.
-  , _loanAccountTypeRepaymentFrequency    :: DurationString -- ^ The expected or required repayment frequency. Formatted according to <https://en.wikipedia.org/wiki/ISO_8601#Durations ISO 8601 Durations>
+
   } deriving (Eq, Show)
 
 loanAccountTypeDecoder :: Monad f => Decoder f LoanAccountType
@@ -246,18 +247,18 @@ loanAccountTypeDecoder =
     <$> atKeyOptional' "originalStartDate" dateStringDecoder
     <*> atKeyOptional' "originalLoanAmount" amountStringDecoder
     <*> atKeyOptional' "originalLoanCurrency" currencyStringDecoder
-    <*> D.atKey "loanEndDate" dateStringDecoder
-    <*> D.atKey "nextInstalmentDate" dateStringDecoder
-    <*> D.atKey "minInstalmentAmount" amountStringDecoder
+    <*> atKeyOptional' "loanEndDate" dateStringDecoder
+    <*> atKeyOptional' "nextInstalmentDate" dateStringDecoder
+    <*> atKeyOptional' "minInstalmentAmount" amountStringDecoder
     <*> atKeyOptional' "minInstalmentCurrency" currencyStringDecoder
-    <*> atKeyOptional' "maxRedrawAmount" amountStringDecoder
+    <*> atKeyOptional' "maxRedraw" amountStringDecoder
     <*> atKeyOptional' "maxRedrawCurrency" currencyStringDecoder
-    <*> atKeyOptional' "minRedrawAmount" amountStringDecoder
+    <*> atKeyOptional' "minRedraw" amountStringDecoder
     <*> atKeyOptional' "minRedrawCurrency" currencyStringDecoder
     <*> atKeyOptional' "offsetAccountEnabled" D.bool
-    <*> atKeyOptional' "offsetAccountId" (D.list accountIdDecoder)
+    <*> atKeyOptional' "offsetAccountIds" (D.list accountIdDecoder)
+    <*> atKeyOptional' "repaymentFrequency" durationStringDecoder
     <*> atKeyOptional' "repaymentType" repaymentTypeDecoder
-    <*> D.atKey "repaymentFrequency" durationStringDecoder
 
 instance JsonDecode OB LoanAccountType where
   mkDecoder = tagOb loanAccountTypeDecoder
@@ -267,18 +268,18 @@ loanAccountTypeEncoder = E.mapLikeObj $ \p ->
   maybeOrAbsentE "originalStartDate" dateStringEncoder (_loanAccountTypeOriginalStartDate p) .
   maybeOrAbsentE "originalLoanAmount" amountStringEncoder (_loanAccountTypeOriginalLoanAmount p) .
   maybeOrAbsentE "originalLoanCurrency" currencyStringEncoder (_loanAccountTypeOriginalLoanCurrency p) .
-  E.atKey' "loanEndDate" dateStringEncoder (_loanAccountTypeLoanEndDate p) .
-  E.atKey' "nextInstalmentDate" dateStringEncoder (_loanAccountTypeNextInstalmentDate p) .
-  E.atKey' "minInstalmentAmount" amountStringEncoder (_loanAccountTypeMinInstalmentAmount p) .
+  maybeOrAbsentE "loanEndDate" dateStringEncoder (_loanAccountTypeLoanEndDate p) .
+  maybeOrAbsentE "nextInstalmentDate" dateStringEncoder (_loanAccountTypeNextInstalmentDate p) .
+  maybeOrAbsentE "minInstalmentAmount" amountStringEncoder (_loanAccountTypeMinInstalmentAmount p) .
   maybeOrAbsentE "minInstalmentCurrency" currencyStringEncoder (_loanAccountTypeMinInstalmentCurrency p) .
-  maybeOrAbsentE "maxRedrawAmount" amountStringEncoder (_loanAccountTypeMaxRedrawAmount p) .
+  maybeOrAbsentE "maxRedraw" amountStringEncoder (_loanAccountTypeMaxRedraw p) .
   maybeOrAbsentE "maxRedrawCurrency" currencyStringEncoder (_loanAccountTypeMaxRedrawCurrency p) .
-  maybeOrAbsentE "minRedrawAmount" amountStringEncoder (_loanAccountTypeMinRedrawAmount p) .
+  maybeOrAbsentE "minRedraw" amountStringEncoder (_loanAccountTypeMinRedraw p) .
   maybeOrAbsentE "minRedrawCurrency" currencyStringEncoder (_loanAccountTypeMinRedrawCurrency p) .
-  maybeOrAbsentE "loanEndDate" E.bool (_loanAccountTypeOffsetAccountEnabled p) .
-  maybeOrAbsentE "offsetAccountId" (E.list accountIdEncoder) (_loanAccountTypeOffsetAccountId p) .
-  maybeOrAbsentE "repaymentType" repaymentTypeEncoder (_loanAccountTypeRepaymentType p) .
-  E.atKey' "repaymentFrequency" durationStringEncoder (_loanAccountTypeRepaymentFrequency p)
+  maybeOrAbsentE "offsetAccountEnabled" E.bool (_loanAccountTypeOffsetAccountEnabled p) .
+  maybeOrAbsentE "offsetAccountIds" (E.list accountIdEncoder) (_loanAccountTypeOffsetAccountIds p) .
+  maybeOrAbsentE "repaymentFrequency" durationStringEncoder (_loanAccountTypeRepaymentFrequency p) .
+  maybeOrAbsentE "repaymentType" repaymentTypeEncoder (_loanAccountTypeRepaymentType p)
 
 instance JsonEncode OB LoanAccountType where
   mkEncoder = tagOb loanAccountTypeEncoder
@@ -287,7 +288,7 @@ instance JsonEncode OB LoanAccountType where
 data RepaymentType =
     RepaymentTypeInterestOnly -- ^ "INTEREST_ONLY"
   | RepaymentTypePrincipalAndInterest -- ^ "PRINCIPAL_AND_INTEREST"
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 repaymentTypeText ::
   Prism' Text RepaymentType

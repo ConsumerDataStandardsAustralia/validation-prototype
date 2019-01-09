@@ -61,7 +61,6 @@ instance JsonEncode OB AccountFees where
 data AccountFee = AccountFee
   { _accountFeeName              :: Text -- ^ Name of the fee
   , _accountFeeFeeType           :: AccountFeeType -- ^ The type of fee. See the note below for valid values and their meaning
--- WARNING
   , _accountFeeAmount            :: Maybe AmountString -- ^ The amount charged for the fee. Assumed to be in AUD. One of amount, balanceRate and transactionRate is mandatory.
   , _accountFeeBalanceRate       :: Maybe RateString -- ^ A fee rate calculated based on a proportion of the balance. Assumed to be in AUD. One of amount, balanceRate and transactionRate is mandatory.
   , _accountFeeTransactionRate   :: Maybe RateString -- ^ A fee rate calculated based on a proportion of a transaction. Assumed to be in AUD. One of amount, balanceRate and transactionRate is mandatory.
@@ -69,7 +68,6 @@ data AccountFee = AccountFee
   , _accountFeeAdditionalInfo    :: Maybe Text -- ^ Display text providing more information on the fee
   , _accountFeeAdditionalInfoUri :: Maybe URI -- ^ Optional Link to a web page with more information on this fee
   , _accountFeeDiscounts         :: Maybe AccountDiscounts -- ^ An optional list of discounts to this fee that may be available
--- WARNING
   } deriving (Show, Eq)
 
 accountFeeDecoder :: Monad f => Decoder f AccountFee
@@ -108,8 +106,6 @@ instance JsonEncode OB AccountFee where
 data AccountFeeType =
     AFeePeriodicPeriodic DurationString -- ^ "PERIODIC" A periodic fee such as a monthly account servicing fee. Use of @additionalValue@ field: The period of charge. Formatted according to ISO 8601 Durations.
   | AFeePeriodicTransaction Text -- ^ "TRANSACTION" A fee for each transaction (above any free transactions in a period). Use of @additionalValue@ field: A description of the type of transaction (eg. Assisted Transaction, Teller Transaction, Cheque).
--- not for accounts
--- | AFeePeriodicEstablishment -- ^ "ESTABLISHMENT" An establishment fee for the product.
   | AFeePeriodicExit -- ^ "EXIT" A fee for closing the product.
   | AFeePeriodicOverdraw -- ^ "OVERDRAW" A fee for overdrawing the account.
   | AFeePeriodicMinBalance DurationString -- ^ "MIN_BALANCE" A periodic fee for being below the minimum balance. Use of @additionalValue@ field: The period of charge. Formatted according to ISO 8601 Durations.

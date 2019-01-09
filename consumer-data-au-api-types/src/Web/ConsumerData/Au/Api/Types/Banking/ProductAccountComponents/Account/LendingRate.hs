@@ -56,7 +56,6 @@ instance JsonEncode OB AccountLendingRates where
 -- WARNING This type is refering to *Account* only property, not as it defined in the above link
 data AccountLendingRate = AccountLendingRate
   { _accountLendingRateLendingRateType   :: AccountLendingRateType -- ^ The type of rate (base, bonus, etc). See the next section for an overview of valid values and their meaning
--- WARNING
   , _accountLendingRateRate              :: RateString -- ^ The rate to be applied
   , _accountLendingRateAdditionalInfo    :: Maybe Text -- ^ Display text providing more information on the rate
   , _accountLendingRateAdditionalInfoUri :: Maybe URI -- ^ Link to a web page with more information on this fee

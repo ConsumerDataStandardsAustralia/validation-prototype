@@ -3,6 +3,7 @@
 module Web.ConsumerData.Au.Api.Types.Banking.ProductsGens where
 
 import           Control.Monad.Catch (MonadThrow)
+import           Data.Text.Gens      (textGen)
 import           Hedgehog            (MonadGen)
 import qualified Hedgehog.Gen        as Gen
 import qualified Hedgehog.Range      as Range

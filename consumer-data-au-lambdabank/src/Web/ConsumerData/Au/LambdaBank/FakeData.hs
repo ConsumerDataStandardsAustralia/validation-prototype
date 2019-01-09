@@ -114,7 +114,10 @@ testAccount =
     (MaskedAccountNumber "abcde") (Just AccOpen) (Just True) PCTermDeposits "Saving for the Future Account"
 
 testAccountDetail :: AccountDetail
-testAccountDetail = AccountDetail (Just testAccount) Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+testAccountDetail =
+  AccountDetail testAccount Nothing Nothing Nothing
+    (Just (TermDeposit (TermDepositAccountType (DateString "2019-01-01") (DateString "2019-01-02") Nothing Nothing MaturityInstructionsRolledOver))) 
+    Nothing Nothing Nothing Nothing Nothing
 
 identified :: a -> Identified a
 identified = Identified a12345 "acc12345" (Just "my savings")
