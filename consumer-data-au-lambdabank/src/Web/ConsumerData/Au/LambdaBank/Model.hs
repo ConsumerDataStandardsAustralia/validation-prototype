@@ -49,7 +49,7 @@ data ModelF next where
 
 deriving instance Functor ModelF
 
-type ModelFree a = forall f m. (ModelF :<: f, MonadFree f m) => m a-- => ModelFree m
+type ModelFree a = forall f m. (ModelF :<: f, MonadFree f m) => m a
 
 getCustomer :: ModelFree CustomerResponse
 getCustomer = liftF . inj $ GetCustomer id

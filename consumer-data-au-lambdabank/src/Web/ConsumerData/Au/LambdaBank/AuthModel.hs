@@ -46,8 +46,3 @@ runAuthModelF = \case
     counter <- liftIO . fmap succ $ readTVarIO counterVar
     liftIO . atomically $ writeTVar counterVar counter
     pure $ next counter
-
-authProg :: AuthModelM Integer
-authProg = do
-  _ <- incrementCount
-  incrementCount

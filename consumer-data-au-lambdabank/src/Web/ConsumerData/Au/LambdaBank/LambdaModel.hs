@@ -11,7 +11,7 @@ module Web.ConsumerData.Au.LambdaBank.LambdaModel where
 import Control.Concurrent.STM.TVar (TVar)
 import Control.Monad.Free.Church   (F, foldF)
 import Control.Monad.IO.Class      (MonadIO)
-import Control.Monad.Reader        (MonadReader, ReaderT, runReaderT)
+import Control.Monad.Reader        (MonadReader, runReaderT)
 
 import Data.Functor.Coproduct                   ((:+:) (Inl, Inr))
 import Web.ConsumerData.Au.LambdaBank.AuthModel (AuthModelF, runAuthModelF)
@@ -40,8 +40,5 @@ runLambdaModelM ::
   TVar Integer
   -> LambdaModelM a
   -> IO a
-runLambdaModelM tv ma = do
-  let
-    na :: ReaderT (TVar Integer) IO a
-    na = foldF runLambdaModelF ma
-  runReaderT na tv
+runLambdaModelM tv ma =
+  runReaderT (foldF runLambdaModelF ma) tv
