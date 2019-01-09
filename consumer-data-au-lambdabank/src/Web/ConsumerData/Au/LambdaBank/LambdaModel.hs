@@ -13,7 +13,7 @@ import Control.Monad.Free.Church   (F, foldF)
 import Control.Monad.IO.Class      (MonadIO)
 import Control.Monad.Reader        (MonadReader, ReaderT, runReaderT)
 
-import Data.Coproduct                           ((:+:) (Inl, Inr))
+import Data.Functor.Coproduct                   ((:+:) (Inl, Inr))
 import Web.ConsumerData.Au.LambdaBank.AuthModel (AuthModelF, runAuthModelF)
 import Web.ConsumerData.Au.LambdaBank.Model     (ModelF, runModelF)
 

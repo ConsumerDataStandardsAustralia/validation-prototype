@@ -16,7 +16,7 @@ import Control.Monad.Free.Church   (F)
 import Control.Monad.IO.Class      (MonadIO, liftIO)
 import Control.Monad.Reader.Class  (MonadReader, ask)
 
-import Data.Coproduct ((:<:), inj)
+import Data.Functor.Coproduct ((:<:), inj)
 
 data AuthModelF next where
   IncrementCount :: (Integer -> next) -> AuthModelF next

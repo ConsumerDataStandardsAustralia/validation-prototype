@@ -4,7 +4,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators         #-}
 
-module Data.Coproduct where
+-- | Taken wholesale from Data types a la carte.
+module Data.Functor.Coproduct where
 
 data ((f :: * -> *) :+: (g :: * -> *)) e = Inl (f e) | Inr (g e)
   deriving (Functor)

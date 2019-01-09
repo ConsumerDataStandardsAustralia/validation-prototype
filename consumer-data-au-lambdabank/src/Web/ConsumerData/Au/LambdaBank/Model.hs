@@ -13,7 +13,7 @@ import Web.ConsumerData.Au.Api.Types
 import Data.Text                 (Text)
 import Control.Monad.Free        (MonadFree, liftF)
 
-import Data.Coproduct ((:<:), inj)
+import Data.Functor.Coproduct ((:<:), inj)
 import Web.ConsumerData.Au.LambdaBank.FakeData
 
 data ModelF next where
