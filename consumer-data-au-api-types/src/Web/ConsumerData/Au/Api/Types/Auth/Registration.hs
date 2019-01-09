@@ -81,7 +81,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
 where
 
 import           Aeson.Helpers
-    (parseJSONWithPrism, parseSpaceSeperatedSet, toJsonSpaceSeperatedSet, _URI)
+    (parseJSONWithPrism, parseSpaceSeparatedSet, toJsonSpaceSeparatedSet, _URI)
 import           Control.Applicative                       (liftA2)
 import           Control.Lens
     (Lens', Prism', at, makePrisms, makeWrapped, prism, prism', to, ( # ), (&),
@@ -183,10 +183,10 @@ newtype GrantTypes = GrantTypes (Set GrantType)
   deriving (Generic, Show, Eq)
 
 instance ToJSON GrantTypes where
-  toJSON (GrantTypes s) = toJsonSpaceSeperatedSet (_GrantType #) s
+  toJSON (GrantTypes s) = toJsonSpaceSeparatedSet (_GrantType #) s
 
 instance FromJSON GrantTypes where
-  parseJSON = fmap GrantTypes . parseSpaceSeperatedSet _GrantType "GrantType"
+  parseJSON = fmap GrantTypes . parseSpaceSeparatedSet _GrantType "GrantType"
 
 newtype FapiGrantTypes = FapiGrantTypes GrantTypes
   deriving (Generic, Show, Eq)
@@ -294,10 +294,10 @@ newtype RegistrationContacts = RegistrationContacts (Set EmailAddress)
   deriving (Generic, Show, Eq)
 
 instance ToJSON RegistrationContacts where
-  toJSON (RegistrationContacts s) = toJsonSpaceSeperatedSet fromEmailAddress s
+  toJSON (RegistrationContacts s) = toJsonSpaceSeparatedSet fromEmailAddress s
 
 instance FromJSON RegistrationContacts where
-  parseJSON = fmap RegistrationContacts . parseSpaceSeperatedSet _Unwrapped "EmailAddress"
+  parseJSON = fmap RegistrationContacts . parseSpaceSeparatedSet _Unwrapped "EmailAddress"
 
 -- | Text with support for BCP47 [RFC5646] language tags in keys. e.g.
 -- client_name#ja-Jpan-JP :: クライアント名", as required by
@@ -526,10 +526,10 @@ newtype RequestUris = RequestUris {
   deriving (Generic, Show, Eq)
 
 instance ToJSON RequestUris where
-  toJSON (RequestUris set) = toJsonSpaceSeperatedSet (render . getRequestUri) set
+  toJSON (RequestUris set) = toJsonSpaceSeparatedSet (render . getRequestUri) set
 
 instance FromJSON RequestUris where
-  parseJSON = fmap RequestUris . parseSpaceSeperatedSet (_URI . _Unwrapped) "RequestUris"
+  parseJSON = fmap RequestUris . parseSpaceSeparatedSet (_URI . _Unwrapped) "RequestUris"
 
 newtype RequestUri =
   RequestUri {getRequestUri :: URI}
@@ -544,10 +544,10 @@ newtype RedirectUrls = RedirectUrls {
   deriving (Generic, Show, Eq)
 
 instance ToJSON RedirectUrls where
-  toJSON (RedirectUrls set) = toJsonSpaceSeperatedSet (render . getRedirectUri) set
+  toJSON (RedirectUrls set) = toJsonSpaceSeparatedSet (render . getRedirectUri) set
 
 instance FromJSON RedirectUrls where
-  parseJSON = fmap RedirectUrls . parseSpaceSeperatedSet (_URI . _Unwrapped) "RedirectUrls"
+  parseJSON = fmap RedirectUrls . parseSpaceSeparatedSet (_URI . _Unwrapped) "RedirectUrls"
 
 -- | Constructor for @redirect_url@ array; all URLs must be HTTPS, none may be
 -- localhost, as mandated by CDR.
@@ -572,10 +572,10 @@ newtype FapiResponseTypes = FapiResponseTypes (Set ResponseType)
   deriving (Generic, Show, Eq)
 
 instance ToJSON FapiResponseTypes where
-  toJSON (FapiResponseTypes set) = toJsonSpaceSeperatedSet (responseTypeText #) set
+  toJSON (FapiResponseTypes set) = toJsonSpaceSeparatedSet (responseTypeText #) set
 
 instance FromJSON FapiResponseTypes where
-  parseJSON = fmap FapiResponseTypes . parseSpaceSeperatedSet responseTypeText "FapiResponseTypes"
+  parseJSON = fmap FapiResponseTypes . parseSpaceSeparatedSet responseTypeText "FapiResponseTypes"
 
 newtype FapiScopes = FapiScopes Scopes
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
