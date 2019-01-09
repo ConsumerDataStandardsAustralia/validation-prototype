@@ -15,8 +15,7 @@ import Web.ConsumerData.Au.LambdaBank.Server.Internal (LambdaBankM)
 
 authServer :: ToServant AuthApi (AsServerT LambdaBankM)
 authServer = genericServerT AuthApi
-  { -- authorise = authoriseServer
-    inc = incServer
+  { authorise = authoriseServer
   }
 
 authoriseServer ::
@@ -30,7 +29,3 @@ authoriseServer ::
   -> LambdaBankM (IdToken 'TokenUse)
 authoriseServer =
   error "TODO: implement authorise server"
-
-incServer ::
-  LambdaBankM Text
-incServer = pack . show <$> incrementCount

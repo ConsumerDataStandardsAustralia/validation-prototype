@@ -80,7 +80,9 @@ import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import           Data.Text.Encoding         (decodeUtf8, encodeUtf8)
 import           GHC.Generics               (Generic, Generic1)
+import           Servant.API                (ToHttpApiData (toQueryParam))
 import           Text.URI                   (URI, mkURI)
+import qualified Text.URI                   as URI
 import           Text.URI.Lens              (unRText, uriScheme)
 import           Waargonaut.Encode          (Encoder')
 import qualified Waargonaut.Encode          as E
@@ -97,7 +99,7 @@ This code is based on the <https://openid.net/specs/openid-financial-api-part-2.
 -- | @client_id@ field supplied in requests/responses, provided to the client after registration
 newtype ClientId =
   ClientId {getClientId :: Text}
-  deriving (Generic, ToJSON, FromJSON, Show, Eq)
+  deriving (Generic, ToJSON, FromJSON, ToHttpApiData, Show, Eq)
 
 newtype AuthCodeVerifier =
   AuthCodeVerifier {getAuthCodeVerifier :: Text}
@@ -269,6 +271,10 @@ responseTypeEncoder ::
 responseTypeEncoder =
   (responseTypeText #) >$< E.text'
 
+instance ToHttpApiData ResponseType where
+  toQueryParam =
+    (responseTypeText #)
+
 instance ToJSON ResponseType where
   toJSON = toJSON . (responseTypeText #)
 
@@ -344,6 +350,9 @@ scopeText =
             t -> Left t
         )
 
+instance ToHttpApiData Scope where
+  toQueryParam = (scopeText #)
+
 instance ToJSON Scope where
   toJSON = toJSON . (scopeText #)
 
@@ -414,6 +423,9 @@ newtype RedirectUri =
   RedirectUri {getRedirectUri :: URI}
   deriving (Show, FromJSON, ToJSON, Eq, Ord)
 makeWrapped ''RedirectUri
+
+instance ToHttpApiData RedirectUri where
+  toQueryParam = URI.render . getRedirectUri
 
 -- | A @kid@ to be returned in the token. A @kid@ is the certificate Key ID, and it must be checked
 -- to match signing cert
