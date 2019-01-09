@@ -43,5 +43,5 @@ app tv lq = genericServeT runLambdaBankM routes
 
 runServer :: Int -> LinkQualifier -> IO ()
 runServer port lq = do
-  tv <- liftIO $ newTVarIO 0
+  tv <- newTVarIO 0
   run port (app tv lq)
