@@ -6,6 +6,7 @@
 
 module Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts where
 
+import           Control.Lens
 import           Data.Bool                  (bool)
 import           Data.Char                  (isNumber)
 import           Data.Functor.Contravariant ((>$<))
@@ -15,6 +16,7 @@ import           Servant.API
     (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece)
 import           Waargonaut.Decode          (Decoder)
 import qualified Waargonaut.Decode          as D
+import qualified Waargonaut.Decode.Error    as D
 import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
@@ -51,9 +53,11 @@ data Account = Account
   , _accountDisplayName     :: Text
   , _accountNickname        :: Maybe Text
   , _accountMaskedNumber    :: MaskedAccountNumber
-  , _accountProductCategory :: Maybe ProductCategory
-  , _accountProductType     :: Text
-  , _accountBalance         :: Balance
+  , _accountOpenStatus      :: Maybe AccOpenStatus
+  , _accountIsOwned         :: Maybe Bool
+  , _accountProductCategory :: EnumProductCategory
+  , _accountProductName     :: Text
+  -- , _accountBalance         :: Balance
   }
   deriving (Eq, Show)
 
@@ -64,9 +68,10 @@ accountDecoder =
     <*> D.atKey "displayName" D.text
     <*> atKeyOptional' "nickname" D.text
     <*> D.atKey "maskedNumber" maskedAccountNumberDecoder
-    <*> atKeyOptional' "productCategory" productCategoryDecoder
-    <*> D.atKey "providerType" D.text
-    <*> balanceTypeDecoder
+    <*> atKeyOptional' "openStatus" accOpenStatusDecoder
+    <*> atKeyOptional' "isOwned" D.bool
+    <*> D.atKey "productCategory" enumProductCategoryDecoder
+    <*> D.atKey "productName" D.text
 
 instance JsonDecode OB Account where
   mkDecoder = tagOb accountDecoder
@@ -81,10 +86,10 @@ accountFields a =
   E.atKey' "displayName" E.text (_accountDisplayName a) .
   maybeOrAbsentE "nickname" E.text (_accountNickname a) .
   E.atKey' "maskedNumber" maskedAccountNumberEncoder (_accountMaskedNumber a) .
-  maybeOrAbsentE "productCategory" productCategoryEncoder (_accountProductCategory a) .
-  E.atKey' "providerType" E.text (_accountProductType a) .
--- WARNING -^ providerType (in swagger/online) vs productType (in pdf)
-  balanceTypeFields (_accountBalance a)
+  maybeOrAbsentE "openStatus" accOpenStatusEncoder (_accountOpenStatus a) .
+  maybeOrAbsentE "isOwned" E.bool (_accountIsOwned a) .
+  E.atKey' "productCategory" enumProductCategoryEncoder (_accountProductCategory a) .
+  E.atKey' "productName" E.text (_accountProductName a)
 
 instance JsonEncode OB Account where
   mkEncoder = tagOb accountEncoder
@@ -158,6 +163,30 @@ maskedAccountNumberDecoder = MaskedAccountNumber <$> D.text
 maskedAccountNumberEncoder :: Applicative f => Encoder f MaskedAccountNumber
 maskedAccountNumberEncoder = unMaskedAccountNumber >$< E.text
 
+
+data AccOpenStatus = AccOpen | AccClosed
+  deriving (Bounded, Enum, Eq, Show)
+_AccOpenStatus :: Prism' Text AccOpenStatus
+_AccOpenStatus = prism' toT fromT
+  where
+    toT = \case
+      AccOpen   -> "OPEN"
+      AccClosed -> "CLOSED"
+    fromT = \case
+      "OPEN"   -> Just AccOpen
+      "CLOSED" -> Just AccClosed
+      _        -> Nothing
+
+accOpenStatusEncoder :: E.Encoder' AccOpenStatus
+accOpenStatusEncoder =
+  E.prismE _AccOpenStatus E.text'
+
+accOpenStatusDecoder :: Monad m =>
+  D.Decoder m AccOpenStatus
+accOpenStatusDecoder = D.prismDOrFail
+  (D._ConversionFailure # "is not a valid AccountOpen Status type")
+  _AccOpenStatus
+  D.text
 
 -- | The type of the balance object
 data Balance =

@@ -78,7 +78,7 @@ instance FromHttpApiData AccountIsOwned where
 
 type AccountOpenStatusParam = QueryParam "open-status" AccountOpenStatus
 type AccountIsOwnedParam = QueryParam "is-owned" AccountIsOwned
-type AccountProductCategoryParam = QueryParam "product-category" ProductCategory
+type AccountProductCategoryParam = QueryParam "product-category" EnumProductCategory
 type TransactionStartTimeParam = QueryParam "start-time" DateTimeString
 type TransactionEndTimeParam = QueryParam "end-time" DateTimeString
 type TransactionMinAmountParam = QueryParam "min-amount" AmountString

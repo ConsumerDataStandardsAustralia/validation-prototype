@@ -25,7 +25,7 @@ productGen  = Product
   <*> Gen.maybe dateTimeStringGen
   <*> Gen.maybe dateTimeStringGen
   <*> dateTimeStringGen
-  <*> productCategoryGen
+  <*> enumProductCategoryGen
   <*> textGen
   <*> textGen
   <*> textGen
@@ -42,8 +42,8 @@ productAdditionalInformationGen = ProductAdditionalInformation
   <*> Gen.maybe genUri
   <*> Gen.maybe genUri
 
-productCategoryGen :: (MonadGen m) => m ProductCategory
-productCategoryGen = Gen.enumBounded
+enumProductCategoryGen :: (MonadGen m) => m EnumProductCategory
+enumProductCategoryGen = Gen.enumBounded
 
 
 productDetailGen :: (MonadGen m, MonadThrow m) => m ProductDetail

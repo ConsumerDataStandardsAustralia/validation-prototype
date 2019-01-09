@@ -9,6 +9,7 @@ import Web.ConsumerData.Au.Api.Types
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypesGens
     (amountStringGen, asciiStringGen, currencyAmountGen, currencyStringGen,
     dateTimeStringGen)
+import Web.ConsumerData.Au.Api.Types.Banking.ProductsGens (enumProductCategoryGen)
 
 
 accountIdsGen :: Gen AccountIds
@@ -24,15 +25,16 @@ accountGen = Account
   <*> textGen
   <*> Gen.maybe textGen
   <*> maskedAccountNumberGen
-  <*> Gen.maybe productCategoryGen
+  <*> Gen.maybe accOpenStatusGen
+  <*> Gen.maybe Gen.bool
+  <*> enumProductCategoryGen
   <*> textGen
-  <*> balanceGen
 
 maskedAccountNumberGen :: Gen MaskedAccountNumber
 maskedAccountNumberGen = MaskedAccountNumber <$> textGen
 
-productCategoryGen :: Gen ProductCategory
-productCategoryGen = Gen.enumBounded
+accOpenStatusGen :: Gen AccOpenStatus
+accOpenStatusGen = Gen.enumBounded
 
 balanceGen :: Gen Balance
 balanceGen = Gen.choice

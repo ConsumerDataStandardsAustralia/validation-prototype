@@ -54,7 +54,7 @@ data Product = Product
   , _productEffectiveFrom         :: Maybe DateTimeString -- ^ A description of the product.
   , _productEffectiveTo           :: Maybe DateTimeString -- ^ The date and time at which this product will be retired and will no longer be offered.
   , _productLastUpdated           :: DateTimeString -- ^ A description of the product.
-  , _productProductCategory       :: ProductCategory -- ^ The product category an account aligns withs.
+  , _productProductCategory       :: EnumProductCategory -- ^ The product category an account aligns withs.
   , _productName                  :: Text -- ^ The display name of the product.
   , _productDescription           :: Text -- ^ The description of the product.
   , _productBrand                 :: Text -- ^ A label of the brand for the product. Able to be used for filtering. For data providers with single brands this value is still required.
@@ -71,7 +71,7 @@ productDecoder =
     <*> atKeyOptional' "effectiveFrom" dateTimeStringDecoder
     <*> atKeyOptional' "effectiveTo" dateTimeStringDecoder
     <*> D.atKey "lastUpdated" dateTimeStringDecoder
-    <*> D.atKey "productCategory" productCategoryDecoder
+    <*> D.atKey "productCategory" enumProductCategoryDecoder
     <*> D.atKey "name" D.text
     <*> D.atKey "description" D.text
     <*> D.atKey "brand" D.text
@@ -94,7 +94,7 @@ productFields o =
   maybeOrAbsentE "effectiveFrom" dateTimeStringEncoder (_productEffectiveFrom o).
   maybeOrAbsentE "effectiveTo" dateTimeStringEncoder (_productEffectiveTo o).
   E.atKey' "lastUpdated" dateTimeStringEncoder (_productLastUpdated o).
-  E.atKey' "productCategory" productCategoryEncoder (_productProductCategory o).
+  E.atKey' "productCategory" enumProductCategoryEncoder (_productProductCategory o).
   E.atKey' "name" E.text (_productName o).
   E.atKey' "description" E.text (_productDescription o).
   E.atKey' "brand" E.text (_productBrand o).
@@ -140,7 +140,7 @@ instance JsonEncode OB ProductAdditionalInformation where
 
 
 -- | The product category an account aligns withs. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproductcategory CDR AU v0.1.0 ProductCategory>
-data ProductCategory =
+data EnumProductCategory =
     PCPersAtCallDeposits -- ^ "PERS_AT_CALL_DEPOSITS"
   | PCBusAtCallDeposits -- ^ "BUS_AT_CALL_DEPOSITS"
   | PCTermDeposits -- ^ "TERM_DEPOSITS"
@@ -161,8 +161,8 @@ data ProductCategory =
   | PCTravelCard -- ^ "TRAVEL_CARD"
   deriving (Bounded, Enum, Eq, Ord, Show)
 
-productCategoryText :: Prism' Text ProductCategory
-productCategoryText =
+_EnumProductCategory :: Prism' Text EnumProductCategory
+_EnumProductCategory =
   prism (\case
           PCPersAtCallDeposits -> "PERS_AT_CALL_DEPOSITS"
           PCBusAtCallDeposits -> "BUS_AT_CALL_DEPOSITS"
@@ -206,20 +206,20 @@ productCategoryText =
       )
 
 
-instance ToHttpApiData ProductCategory where
-  toQueryParam = (productCategoryText #)
+instance ToHttpApiData EnumProductCategory where
+  toQueryParam = (_EnumProductCategory #)
 
-instance FromHttpApiData ProductCategory where
+instance FromHttpApiData EnumProductCategory where
   parseQueryParam t = maybe
     (Left $ "Not a valid product category: " <> t)
     Right
-    (t^?productCategoryText)
+    (t^?_EnumProductCategory)
 
-productCategoryEncoder :: Applicative f => Encoder f ProductCategory
-productCategoryEncoder = E.prismE productCategoryText E.text
+enumProductCategoryEncoder :: Applicative f => Encoder f EnumProductCategory
+enumProductCategoryEncoder = E.prismE _EnumProductCategory E.text
 
-productCategoryDecoder :: Monad f => Decoder f ProductCategory
-productCategoryDecoder = D.prismDOrFail
+enumProductCategoryDecoder :: Monad f => Decoder f EnumProductCategory
+enumProductCategoryDecoder = D.prismDOrFail
   (D._ConversionFailure # "Not a valid ProductCategory")
-  productCategoryText
+  _EnumProductCategory
   D.text

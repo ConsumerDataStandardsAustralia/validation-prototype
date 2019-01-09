@@ -8,7 +8,7 @@ and not all in one file. Don't be too upset
 that it looks heinous for now!
 --}
 
-import Data.Currency            (Alpha(AUD))
+-- import Data.Currency            (Alpha(AUD))
 import Country.Identifier       (australia)
 import Data.Profunctor          (lmap)
 import Data.Digit.Decimal
@@ -111,8 +111,7 @@ testAccountIds = AccountIds
 testAccount :: Account
 testAccount =
   Account a12345 "acc12345" (Just "my savings")
-    (MaskedAccountNumber "abcde") (Just PCTermDeposits) "saving"
-    (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "201.30") (Just $ CurrencyString AUD)) (CurrencyAmount (AmountString "198.80") Nothing)))
+    (MaskedAccountNumber "abcde") (Just AccOpen) (Just True) PCTermDeposits "Saving for the Future Account"
 
 testAccountDetail :: AccountDetail
 testAccountDetail = AccountDetail (Just testAccount) Nothing Nothing Nothing Nothing Nothing Nothing Nothing

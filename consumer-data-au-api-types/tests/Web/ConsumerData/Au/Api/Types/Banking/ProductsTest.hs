@@ -39,7 +39,7 @@ test_productsLinks =
 
 test_roundTripEnum :: [TestTree]
 test_roundTripEnum =
-  [ testEnumPrismTripping "ProductCategory" productCategoryText
+  [ testEnumPrismTripping "EnumProductCategory" _EnumProductCategory
   ]
 
 test_roundTripProducts :: TestTree

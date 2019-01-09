@@ -39,7 +39,7 @@ data ModelF next where
     :: Maybe ProductEffective
     -> Maybe DateTimeString
     -> Maybe Text
-    -> Maybe ProductCategory
+    -> Maybe EnumProductCategory
     -> Maybe PageNumber
     -> Maybe PageSize
     -> (Products -> next) -> ModelF next
@@ -97,7 +97,7 @@ getProductsAll
   => Maybe ProductEffective
   -> Maybe DateTimeString
   -> Maybe Text
-  -> Maybe ProductCategory
+  -> Maybe EnumProductCategory
   -> Maybe PageNumber
   -> Maybe PageSize
   -> m Products

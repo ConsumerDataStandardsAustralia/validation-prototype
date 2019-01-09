@@ -5,26 +5,7 @@
     "nickname": "string",
     "maskedNumber": "string",
     "productCategory": "PERS_AT_CALL_DEPOSITS",
-    "providerType": "string",
-    "balanceUType": "lending",
-    "lending": {
-      "accountBalance": {
-        "amount": "string",
-        "currency": "AUD"
-      },
-      "availableBalance": {
-        "amount": "string",
-        "currency": "AUD"
-      },
-      "creditLimit": {
-        "amount": "string",
-        "currency": "AUD"
-      },
-      "amortisedLimit": {
-        "amount": "string",
-        "currency": "AUD"
-      }
-    },
+    "productName": "string",
     "bundleName": "string",
     "specificAccountUType": "termDeposit",
     "termDeposit": {
