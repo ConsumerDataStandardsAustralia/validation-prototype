@@ -8,7 +8,7 @@
 
 module Web.ConsumerData.Au.LambdaBank.LambdaModel where
 
-import Control.Concurrent.STM.TVar (TVar, newTVarIO)
+import Control.Concurrent.STM.TVar (TVar)
 import Control.Monad.Free.Church   (F, foldF)
 import Control.Monad.IO.Class      (MonadIO)
 import Control.Monad.Reader        (MonadReader, ReaderT, runReaderT)
@@ -37,10 +37,10 @@ type LambdaModelM = F (AuthModelF :+: ModelF)
 
 runLambdaModelM ::
   forall a.
-  LambdaModelM a
+  TVar Integer
+  -> LambdaModelM a
   -> IO a
-runLambdaModelM ma = do
-  tv <- newTVarIO 0
+runLambdaModelM tv ma = do
   let
     na :: ReaderT (TVar Integer) IO a
     na = foldF runLambdaModelF ma

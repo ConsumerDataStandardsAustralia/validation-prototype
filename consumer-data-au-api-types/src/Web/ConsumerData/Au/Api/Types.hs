@@ -38,10 +38,12 @@ import Web.ConsumerData.Au.Api.Types.Response              as Response
 
 type CommonRoute r = r :- "common" :> ToServant CommonApi AsApi
 type BankingRoute r = r :- "banking" :> ToServant BankingApi AsApi
+type AuthRoute r = r :- "auth" :> ToServant AuthApi AsApi
 
 data Api r = Api
   { _common  :: CommonRoute r
   , _banking :: BankingRoute r
+  , _auth    :: AuthRoute r
   } deriving (Generic)
 
 common :: Getter (Api r) (CommonRoute r)
@@ -49,6 +51,9 @@ common = to _common
 
 banking :: Getter (Api r) (BankingRoute r)
 banking = to _banking
+
+auth :: Getter (Api r) (AuthRoute r)
+auth = to _auth
 
 api :: Proxy (ToServantApi Api)
 api = genericApi (Proxy :: Proxy Api)
