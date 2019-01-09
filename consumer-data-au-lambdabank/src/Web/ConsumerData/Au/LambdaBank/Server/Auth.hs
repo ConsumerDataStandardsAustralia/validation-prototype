@@ -3,13 +3,13 @@
 module Web.ConsumerData.Au.LambdaBank.Server.Auth where
 
 import Crypto.JWT             (SignedJWT)
-import Data.Text (Text, pack)
+import Data.Text              (Text, pack)
 import Servant.API.Generic    (ToServant)
 import Servant.Server.Generic (AsServerT, genericServerT)
 
 import Web.ConsumerData.Au.Api.Types
-    (AuthApi (..), ClientId, IdToken, Nonce, RedirectUri, ResponseType, Scopes,
-    State, IdTokenUse (TokenUse))
+    (AuthApi (..), ClientId, IdToken, IdTokenUse (TokenUse), Nonce,
+    RedirectUri, ResponseType, Scopes, State)
 import Web.ConsumerData.Au.LambdaBank.AuthModel       (incrementCount)
 import Web.ConsumerData.Au.LambdaBank.Server.Internal (LambdaBankM)
 
