@@ -7,6 +7,7 @@
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE PackageImports             #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE TemplateHaskell            #-}
@@ -44,13 +45,13 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , ClientId (..)
   , RedirectUri (..)
   , ResponseType (..)
-  , ClientIss (..)
+  , ClientIss (..), _HttpsUrl
   -- Not exporting constructor for Scopes --- use the smart constructor
   , Scopes
   , mkScopes
   , scopeText
   , Scope (..)
-  , State (..)
+  , State (..), authTestPath
   ) where
 
 import           Aeson.Helpers
@@ -60,7 +61,7 @@ import           Control.Lens
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
-import           Crypto.Hash                (HashAlgorithm, hashWith)
+import           "cryptonite" Crypto.Hash   (HashAlgorithm, hashWith)
 import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
 import           Crypto.JWT                 (StringOrURI)
 import           Data.Aeson.Types
@@ -261,6 +262,7 @@ responseTypeText =
         )
         (\case
             "code id_token" -> Right CodeIdToken
+            "id_token code" -> Right CodeIdToken
             t -> Left t
         )
 
@@ -433,6 +435,14 @@ mkHttpsUrlText ::
 mkHttpsUrlText =
   mkHttpsUrl <=< maybe (throwing_ _UriParseError) pure . mkURI
 
+_HttpsUrl :: Prism' URI HttpsUrl
+_HttpsUrl = prism
+ (\(HttpsUrl u) -> u)
+ (\m -> either (const $ Left m)
+                Right
+                (mkHttpsUrl m :: Either HttpsUrlError HttpsUrl)
+  )
+
 mkHttpsUrl ::
   ( AsHttpsUrlError e
   , MonadError e m
@@ -584,3 +594,8 @@ instance FromJSON1 Claim where
 
 instance ToJSON a => ToJSON (Claim a) where
   toJSON = toJSON1
+
+authTestPath ::
+  FilePath
+authTestPath =
+  "tests/Web/ConsumerData/Au/Api/Types/Auth"

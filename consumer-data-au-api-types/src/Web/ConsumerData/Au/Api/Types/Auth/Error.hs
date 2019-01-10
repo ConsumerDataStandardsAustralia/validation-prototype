@@ -7,6 +7,8 @@ import           Control.Lens        (makeClassyPrisms, prism)
 import           Control.Monad.Catch (Exception)
 import qualified Crypto.JOSE.Error   as JE
 import           Crypto.JWT          (AsJWTError (..), JWTError)
+import           Crypto.JWT.Pretty
+    (AsPrettyJwtError (_PrettyJwtError), PrettyJwtError)
 import           Data.Text           (Text)
 
 data Error =
@@ -41,4 +43,22 @@ instance AsJWTError Error where
           \case JoseJwtError e -> Right e
                 e -> Left e
 
+data GoldenError = InvalidGoldenE | AuthE Error | PrettyJwtE PrettyJwtError deriving (Eq, Show)
+
+makeClassyPrisms ''GoldenError
+
+newtype JwtFailure = JwtFailure String
+  deriving (Eq, Show)
+
+instance Exception JwtFailure
+
+instance AsPrettyJwtError GoldenError where
+  _PrettyJwtError = _PrettyJwtE . _PrettyJwtError
+
 makeClassyPrisms ''Error
+
+instance AsError GoldenError where
+  _Error = _AuthE . _Error
+
+instance JE.AsError GoldenError where
+  _Error = _Error . _JoseError

@@ -32,7 +32,6 @@ mkDerivation {
     tasty-hedgehog tasty-hunit text time transformers waargonaut wai
     warp
   ];
-  testToolDepends = [ tasty-discover ];
   description = "Api Types for the Australian Consumer Data Rights Specification";
   license = stdenv.lib.licenses.mit;
 }
