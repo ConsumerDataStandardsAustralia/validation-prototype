@@ -1,5 +1,5 @@
 {
-    "customer$type": "person",
+    "customerUType": "person",
     "person": {
         "lastUpdateTime": "2018-11-01T05:32:18Z",
         "firstName": "string",

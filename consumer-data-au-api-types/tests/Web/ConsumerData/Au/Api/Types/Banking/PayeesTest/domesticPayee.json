@@ -1,5 +1,5 @@
 {
-  "payeeAccount$type": "account",
+  "payeeAccountUType": "account",
   "account": {
     "accountName": "string",
     "bsb": "string",

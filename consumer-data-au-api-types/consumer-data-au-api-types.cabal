@@ -24,6 +24,7 @@ library
                      , Data.GADT.Aeson.TH
                      , Data.GADT.Tag.TH
                      , Data.Time.Waargonaut
+                     , Data.Vector.V5
                      , Data.Vector.V6
                      , Waargonaut.Helpers
                      , Web.ConsumerData.Au.Api.Types
@@ -44,18 +45,20 @@ library
                      , Web.ConsumerData.Au.Api.Types.Banking.Common
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDetail
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransaction
+                     , Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransactions
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.AuthorisedEntity
+                     , Web.ConsumerData.Au.Api.Types.Banking.Common.BulkTransaction
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.ExtendedTransactionData
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Identified
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.PayeeDetail
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Payees
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.ProductDetail
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.Products
-                     , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionBasic
+                     , Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
                      , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionDetail
+                     , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionExtendedData
+                     , Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionsDetail
                      , Web.ConsumerData.Au.Api.Types.Banking.Payees
                      , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.DepositRate
                      , Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Account.Discount
@@ -83,6 +86,7 @@ library
                      , Web.ConsumerData.Au.Api.Types.Common.Customer.Data.PhoneNumber
                      , Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
                      , Web.ConsumerData.Au.Api.Types.Data.PhysicalAddress
+                     , Web.ConsumerData.Au.Api.Types.Request
                      , Web.ConsumerData.Au.Api.Types.Response
                      , Web.ConsumerData.Au.Api.Types.Stub
                      , Web.ConsumerData.Au.Api.Types.SumTypeHelpers
@@ -151,6 +155,7 @@ test-suite tasty
                      , currency-codes == 3.0.*
                      , dependent-map == 0.2.*
                      , dependent-sum == 0.4.*
+                     , digit == 0.7.*
                      , exceptions == 0.10.*
                      , hedgehog == 0.6.*
                      , http-client == 0.5.*
@@ -199,6 +204,9 @@ test-suite tasty
                      , Web.ConsumerData.Au.Api.Types.Common.Gens
                      , Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypesGens
                      , Web.ConsumerData.Au.Api.Types.Data.Gens
+                     , Web.ConsumerData.Au.Api.Types.LinkTestHelpers
+                     , Web.ConsumerData.Au.Api.Types.PrismTestHelpers
+                     , Web.ConsumerData.Au.Api.Types.RequestTest
                      , Web.ConsumerData.Au.Api.Types.ResponseTest
                      , WaaaargonautTest
   default-language:    Haskell2010

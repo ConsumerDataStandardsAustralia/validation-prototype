@@ -6,8 +6,10 @@
 
 module Web.ConsumerData.Au.Api.Types.Banking.Common.Products where
 
-import           Control.Lens             (Prism', prism, ( # ))
+import           Control.Lens             (Prism', prism, ( # ), (^?))
 import           Data.Text                (Text)
+import           Servant.API
+    (FromHttpApiData, ToHttpApiData, parseQueryParam, toQueryParam)
 import           Text.URI                 (URI)
 import           Waargonaut.Decode        (Decoder)
 import qualified Waargonaut.Decode        as D
@@ -202,6 +204,16 @@ productCategoryText =
           "TRAVEL_CARD" -> Right PCTravelCard
           t -> Left t
       )
+
+
+instance ToHttpApiData ProductCategory where
+  toQueryParam = (productCategoryText #)
+
+instance FromHttpApiData ProductCategory where
+  parseQueryParam t = maybe
+    (Left $ "Not a valid product category: " <> t)
+    Right
+    (t^?productCategoryText)
 
 productCategoryEncoder :: Applicative f => Encoder f ProductCategory
 productCategoryEncoder = E.prismE productCategoryText E.text

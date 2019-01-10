@@ -11,6 +11,7 @@ that it looks heinous for now!
 import Data.Currency            (Alpha(AUD))
 import Country.Identifier       (australia)
 import Data.Profunctor          (lmap)
+import Data.Digit.Decimal
 import Data.List.NonEmpty       (NonEmpty((:|)))
 import Data.Maybe               (fromMaybe)
 import Data.Time (fromGregorian, UTCTime(..))
@@ -21,10 +22,21 @@ import Web.ConsumerData.Au.Api.Types
 a12345 :: AccountId
 a12345 = AccountId (AsciiString "12345")
 
+a12346 :: AccountId
+a12346 = AccountId (AsciiString "12346")
+
+a12347 :: AccountId
+a12347 = AccountId (AsciiString "12347")
+
+
 testBalances :: AccountBalances
 testBalances = AccountBalances
   [ AccountBalance a12345
-      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "400") Nothing) (CurrencyAmount (AmountString "350.75") Nothing)))
+      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "500") Nothing) (CurrencyAmount (AmountString "550.55") Nothing)))
+  , AccountBalance a12346
+      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "600") Nothing) (CurrencyAmount (AmountString "650.65") Nothing)))
+  , AccountBalance a12347
+      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "700") Nothing) (CurrencyAmount (AmountString "750.75") Nothing)))
   ]
 
 testPerson :: Person
@@ -75,7 +87,7 @@ testOrganisation = Organisation
   (Just "abn123")
   (Just "acn123")
   (Just True)
-  (Just "icode")
+  (Just (IndustryCode (V5 x3 x3 x6 x6 x1)))
   (Just OrgTypeCompany)
   (Just australia)
   (Just $ UTCTime (fromGregorian 2015 8 1) 0)
@@ -85,10 +97,16 @@ testOrganisationDetail = OrganisationDetail
   testOrganisation
   [testAddress]
 
-fakePaginator :: Maybe PageNumber -> (Maybe PageNumber -> Link) -> Paginator
-fakePaginator pMay = Paginator p p 0 . (lmap Just)
+fakePaginator :: Maybe PageNumber -> Maybe PageSize -> (Maybe PageNumber -> Maybe PageSize -> Link) -> Paginator
+fakePaginator pMay psMay = Paginator p p psMay 0 . (lmap Just)
   where
     p = fromMaybe (PageNumber 1) pMay
+
+testAccountIds :: AccountIds
+testAccountIds = AccountIds
+  [ a12345
+  , a12347
+  ]
 
 testAccount :: Account
 testAccount =
@@ -107,26 +125,35 @@ testAccounts = Accounts
   [ testAccount
   ]
 
-testTransactionBasic :: TransactionBasic
-testTransactionBasic = TransactionBasic
+testAccountTransactions :: AccountTransactions
+testAccountTransactions = AccountTransactions a12345 "name" (Just "nick name") (Transactions [testTransaction])
+
+testTransaction :: Transaction
+testTransaction = Transaction
   (Just (TransactionId (AsciiString "reference"))) False TransactionStatusPosted "" Nothing Nothing Nothing Nothing "ref"
 
 testTransactionDetail :: TransactionDetail
 testTransactionDetail = TransactionDetail Nothing TransactionStatusPosted "" Nothing Nothing Nothing Nothing "" Nothing
 
-testAccountTransaction :: AccountTransaction
-testAccountTransaction = AccountTransaction a12345 (Just testTransactionBasic)
-
-testAccountTransactions :: AccountTransactions
-testAccountTransactions = AccountTransactions $ identified
-  [ testTransactionBasic
+testAccountsTransactions :: BulkTransactions
+testAccountsTransactions = BulkTransactions
+  [ testBulkTransaction5
+  , testBulkTransaction6
+  , testBulkTransaction7
   ]
 
-testAccountsTransactions :: AccountsTransactions
-testAccountsTransactions = AccountsTransactions [testAccountTransaction]
+testBulkTransaction5 :: BulkTransaction
+testBulkTransaction5 = BulkTransaction a12345 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
 
-testAccountTransactionDetail :: AccountTransactionDetail
-testAccountTransactionDetail = AccountTransactionDetail $ identified testTransactionDetail
+testBulkTransaction6 :: BulkTransaction
+testBulkTransaction6 = BulkTransaction a12346 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+
+testBulkTransaction7 :: BulkTransaction
+testBulkTransaction7 = BulkTransaction a12347 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+
+
+testAccountTransactionsDetail :: TransactionsDetail
+testAccountTransactionsDetail = TransactionsDetail a12345 "" Nothing (TransactionDetails [testTransactionDetail])
 
 testDirectDebitAuthorisations :: DirectDebitAuthorisations
 testDirectDebitAuthorisations = DirectDebitAuthorisations
@@ -135,6 +162,16 @@ testDirectDebitAuthorisations = DirectDebitAuthorisations
       (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
       Nothing
       (Just (AmountString "50.00"))
+  , AccountDirectDebit
+      a12346
+      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
+      Nothing
+      (Just (AmountString "60.00"))
+  , AccountDirectDebit
+      a12347
+      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
+      Nothing
+      (Just (AmountString "70.00"))
   ]
 
 testPayee :: Payee

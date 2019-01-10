@@ -8,22 +8,25 @@ module Web.ConsumerData.Au.Api.Types.Common.Customer.Data.Organisation
   ( module Web.ConsumerData.Au.Api.Types.Common.Customer.Data.Organisation
   ) where
 
-import           Control.Lens            (Prism', prism, ( # ))
-import           Country                 (Country)
+import           Control.Lens               (Prism', prism, ( # ))
+import           Country                    (Country)
 import           Country.Waargonaut
     (countryAlphaThreeDecoder, countryAlphaThreeEncoder)
-import           Data.Text               (Text)
-import           Data.Time               (UTCTime)
-import           Data.Time.Waargonaut    (utcTimeDecoder, utcTimeEncoder)
-import           GHC.Generics            (Generic)
-import           Waargonaut.Decode       (Decoder)
-import qualified Waargonaut.Decode       as D
-import           Waargonaut.Decode.Error (_ConversionFailure)
-import           Waargonaut.Encode       (Encoder)
-import qualified Waargonaut.Encode       as E
+import           Data.Digit.Decimal         (DecDigit)
+import           Data.Functor.Contravariant ((>$<))
+import           Data.Text                  (Text)
+import           Data.Time                  (UTCTime)
+import           Data.Time.Waargonaut       (utcTimeDecoder, utcTimeEncoder)
+import           Data.Vector.V5             (V5, v5DigitDecoder, v5DigitEncoder)
+import           GHC.Generics               (Generic)
+import           Waargonaut.Decode          (Decoder)
+import qualified Waargonaut.Decode          as D
+import           Waargonaut.Decode.Error    (_ConversionFailure)
+import           Waargonaut.Encode          (Encoder)
+import qualified Waargonaut.Encode          as E
+import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import           Waargonaut.Types.JObject   (MapLikeObj)
-import           Waargonaut.Types.Json   (Json)
-import           Waargonaut.Helpers      (atKeyOptional', maybeOrAbsentE)
+import           Waargonaut.Types.Json      (Json)
 
 -- | The authorisation was given to a business agent and this type represents that business. This type should not be used where a retail customer was authorised.
 -- <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocCommonCommonSchemas CDR AU v0.1.0>
@@ -39,7 +42,7 @@ data Organisation = Organisation
   , _organisationAbn               :: Maybe Text -- ^ Australian Business Number.
   , _organisationAcn               :: Maybe Text -- ^ Australian Company Number.
   , _organisationIsACNCRegistered  :: Maybe Bool -- ^ @True@ if registered with the ACNC. @False@ if not. @Absent@ or @null@ if not confirmed.
-  , _organisationIndustryCode      :: Maybe Text -- ^ ANZIC (2006) code for the organisation.
+  , _organisationIndustryCode      :: Maybe IndustryCode -- ^ ANZIC (2006) code for the organisation.
   , _organisationOrganisationType  :: Maybe OrganisationType
   , _organisationRegisteredCountry :: Maybe Country -- ^ A valid ISO 3166 Alpha-3 country code.
   , _organisationEstablishmentDate :: Maybe UTCTime -- ^ The date the organisation described was established.
@@ -63,7 +66,7 @@ organisationFields o =
   maybeOrAbsentE "abn" E.text (_organisationAbn o ) .
   maybeOrAbsentE "acn" E.text (_organisationAcn o ) .
   maybeOrAbsentE "isACNRegistered" E.bool (_organisationIsACNCRegistered o ) .
-  maybeOrAbsentE "industryCode" E.text (_organisationIndustryCode o ) .
+  maybeOrAbsentE "industryCode" industryCodeEncoder (_organisationIndustryCode o ) .
   maybeOrAbsentE "organisationType" organisationTypeEncoder (_organisationOrganisationType o ) .
   maybeOrAbsentE "registeredCountry" countryAlphaThreeEncoder (_organisationRegisteredCountry o ) .
   maybeOrAbsentE "establishmentDate" utcTimeEncoder (_organisationEstablishmentDate o )
@@ -81,10 +84,19 @@ organisationDecoder =
     <*> atKeyOptional' "abn" D.text
     <*> atKeyOptional' "acn" D.text
     <*> atKeyOptional' "isACNRegistered" D.bool
-    <*> atKeyOptional' "industryCode" D.text
+    <*> atKeyOptional' "industryCode" industryCodeDecoder
     <*> atKeyOptional' "organisationType" organisationTypeDecoder
     <*> atKeyOptional' "registeredCountry" countryAlphaThreeDecoder
     <*> atKeyOptional' "establishmentDate" utcTimeDecoder
+
+data IndustryCode = IndustryCode { getIndustryCode :: V5 DecDigit }
+  deriving (Generic, Eq, Show)
+
+industryCodeEncoder :: Applicative m => Encoder m IndustryCode
+industryCodeEncoder = getIndustryCode >$< v5DigitEncoder
+
+industryCodeDecoder :: Monad m => Decoder m IndustryCode
+industryCodeDecoder = IndustryCode <$> v5DigitDecoder
 
 -- | List of organisation types.
 data OrganisationType =

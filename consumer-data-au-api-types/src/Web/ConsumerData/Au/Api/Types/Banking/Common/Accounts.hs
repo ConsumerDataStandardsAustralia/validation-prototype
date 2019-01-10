@@ -91,7 +91,7 @@ instance JsonEncode OB Account where
 
 
 balanceTypeDecoder :: Monad f => Decoder f Balance
-balanceTypeDecoder = typeTaggedDecoder "balance$type" $ \case
+balanceTypeDecoder = typeTaggedDecoder "balanceUType" $ \case
   "deposits" -> Just $ (TypedTagField BalanceDeposit depositBalanceTypeDecoder)
   "lending"  -> Just $ (TypedTagField BalanceLending lendingBalanceTypeDecoder)
   "purses"   -> Just $ (TypedTagField BalancePurses multiCurrencyPursesTypeDecoder)
@@ -105,7 +105,22 @@ balanceTypeFields = \case
   BalanceLending b -> fields "lending" lendingBalanceTypeEncoder b
   BalancePurses b  -> fields "purses" multiCurrencyPursesTypeEncoder b
   where
-    fields = typeTaggedField "balance$type"
+    fields = typeTaggedField "balanceUType"
+
+
+newtype AccountIds = AccountIds { unAccountIds :: [AccountId] } deriving (Eq, Show)
+
+accountIdsDecoder :: Monad f => Decoder f AccountIds
+accountIdsDecoder = D.atKey "accountIds" (AccountIds <$> D.list accountIdDecoder)
+
+accountIdsEncoder :: Applicative f => Encoder f AccountIds
+accountIdsEncoder = E.mapLikeObj $ E.atKey' "accountIds" (E.list accountIdEncoder) . unAccountIds
+
+instance JsonDecode OB AccountIds where
+  mkDecoder = tagOb accountIdsDecoder
+
+instance JsonEncode OB AccountIds where
+  mkEncoder = tagOb accountIdsEncoder
 
 
 newtype AccountId = AccountId { unAccountId :: AsciiString } deriving (Eq, Show)

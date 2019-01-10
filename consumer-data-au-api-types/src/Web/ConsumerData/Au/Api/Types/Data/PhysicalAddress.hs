@@ -40,7 +40,7 @@ physicalAddressEncoder = E.mapLikeObj $ \pa ->
     addressFields = \case
       AddressSimple a -> fields "simple" simpleAddressEncoder a
       AddressPaf      -> fields "paf" emptyObjEncoder ()
-    fields = typeTaggedField "address$type"
+    fields = typeTaggedField "addressUType"
 
 physicalAddressDecoder :: Monad f => Decoder f PhysicalAddress
 physicalAddressDecoder = PhysicalAddress
@@ -48,7 +48,7 @@ physicalAddressDecoder = PhysicalAddress
   <*> addyDecoder
 
   where
-    addyDecoder = typeTaggedDecoder "address$type" $ \case
+    addyDecoder = typeTaggedDecoder "addressUType" $ \case
       "simple" -> Just $ (TypedTagField AddressSimple simpleAddressDecoder)
       "paf"    -> Just $ (TypedTagField (const AddressPaf) (emptyObjDecoder ()))
       _        -> Nothing

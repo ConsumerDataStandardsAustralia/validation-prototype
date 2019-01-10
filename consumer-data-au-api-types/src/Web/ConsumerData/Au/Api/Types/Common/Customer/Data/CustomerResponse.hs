@@ -34,10 +34,10 @@ customerResponseEncoder = E.mapLikeObj $ \case
   CustomerPerson p -> fields "person" personEncoder p
   CustomerOrganisation o -> fields "organisation" organisationEncoder o
   where
-    fields = typeTaggedField "customer$type"
+    fields = typeTaggedField "customerUType"
 
 customerResponseDecoder :: Monad f => Decoder f CustomerResponse
-customerResponseDecoder = typeTaggedDecoder "customer$type" $ \case
+customerResponseDecoder = typeTaggedDecoder "customerUType" $ \case
     "person"       -> Just $ (TypedTagField CustomerPerson personDecoder)
     "organisation" -> Just $ (TypedTagField CustomerOrganisation organisationDecoder)
     _              -> Nothing

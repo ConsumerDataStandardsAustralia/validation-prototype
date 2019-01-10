@@ -4,9 +4,9 @@
         "nickname": "payee-nick",
         "description": "A very descriptive description",
         "type": "DOMESTIC",
-        "payee$type": "domestic",
+        "payeeUType": "domestic",
         "domestic": {
-            "payeeAccount$type": "payId",
+            "payeeAccountUType": "payId",
             "payId":{
                 "name": "my pay id",
                 "identifier": "payid-2",

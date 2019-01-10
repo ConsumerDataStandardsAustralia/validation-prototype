@@ -18,10 +18,10 @@ import Web.ConsumerData.Au.LambdaBank.WithServer
 test_payees :: [TestTree]
 test_payees =
   [ testCase "payees test" . withServer 1337 $ do
-      res <- apiClient ^. bankingClient . payeesClient . payeesGet
+      res <- apiClient ^. bankingClient . payeesClient . payeesGet . to (\f -> f Nothing Nothing Nothing)
       liftIO $ res @?= Response testPayees
         (LinksPaginated
-         [uri|http://localhost:1337/banking/payees|]
+         [uri|http://localhost:1337/banking/payees?page=1|]
          Nothing
          Nothing
          Nothing

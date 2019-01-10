@@ -25,7 +25,7 @@ mkDerivation {
   ];
   testHaskellDepends = [
     aeson aeson-diff aeson-pretty attoparsec base bytestring containers
-    country currency-codes dependent-map dependent-sum exceptions
+    country currency-codes dependent-map dependent-sum digit exceptions
     hedgehog http-client jose lens modern-uri mtl network-uri
     profunctors servant servant-client servant-server
     servant-waargonaut tagged tasty tasty-discover tasty-golden

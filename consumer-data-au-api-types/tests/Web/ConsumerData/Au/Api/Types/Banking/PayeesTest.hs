@@ -5,16 +5,37 @@
 
 module Web.ConsumerData.Au.Api.Types.Banking.PayeesTest where
 
+import Control.Lens
+
 import Data.Functor.Identity (Identity)
 import Data.Tagged           (Tagged)
 import Test.Tasty            (TestTree)
+import Text.URI.QQ           (uri)
 import Waargonaut.Decode     (Decoder)
 import Waargonaut.Encode     (Encoder)
 import Waargonaut.Generic    (mkDecoder, mkEncoder, untag)
 import WaargoRoundTrip       (roundTripTest)
 
 import Web.ConsumerData.Au.Api.Types
+import Web.ConsumerData.Au.Api.Types.LinkTestHelpers
+    (linkTest, paginatedLinkTest)
+import Web.ConsumerData.Au.Api.Types.PrismTestHelpers (testEnumPrismTripping)
 import Web.ConsumerData.Au.Api.Types.Tag
+
+test_payeesLinks :: [TestTree]
+test_payeesLinks =
+  [ paginatedLinkTest "Get Payees no params"
+    ((links^.bankingLinks.bankingPayeesLinks.payeesGet) Nothing) [uri|http://localhost/banking/payees|]
+  , paginatedLinkTest "Get Payees all params"
+    ((links^.bankingLinks.bankingPayeesLinks.payeesGet) (Just International)) [uri|http://localhost/banking/payees?type=INTERNATIONAL|]
+  , linkTest "Get Payee Detail"
+    (links^.bankingLinks.bankingPayeesLinks.payeesByIdGet.to ($ PayeeId "123")) [uri|http://localhost/banking/payees/123|]
+  ]
+
+test_roundTripEnum :: [TestTree]
+test_roundTripEnum =
+  [ testEnumPrismTripping "PayeeType" _PayeeType
+  ]
 
 test_roundTripPayees :: TestTree
 test_roundTripPayees = roundTripTest

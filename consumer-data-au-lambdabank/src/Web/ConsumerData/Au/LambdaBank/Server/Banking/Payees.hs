@@ -14,10 +14,10 @@ import Web.ConsumerData.Au.LambdaBank.Server.Internal
 
 payeesServer :: ToServant PayeesApi (AsServerT LambdaBankM)
 payeesServer =genericServerT PayeesApi
-  { _payeesGet = getPayeesAll >>= \ps -> bankPaginatedResponse
-    ps
-    (fakePaginator Nothing (const $ links^.bankingLinks.bankingPayeesLinks.payeesGet))
-  , _payeesByIdGet = \payeeId -> getPayeeDetail payeeId >>= \pd -> bankStandardResponse
-    pd
-    (links^.bankingLinks.bankingPayeesLinks.payeesByIdGet $ payeeId)
+  { _payeesGet = \pt pn ps -> do
+    payees <- getPayeesAll pt pn ps
+    bankPaginatedResponse payees (fakePaginator pn ps (links^.bankingLinks.bankingPayeesLinks.payeesGet. to ($ pt)))
+  , _payeesByIdGet = \payeeId -> do
+      payee <- getPayeeDetail payeeId
+      bankStandardResponse payee (links^.bankingLinks.bankingPayeesLinks.payeesByIdGet $ payeeId)
   }
