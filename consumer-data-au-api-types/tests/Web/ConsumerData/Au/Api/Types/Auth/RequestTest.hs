@@ -19,7 +19,7 @@ import           Crypto.JOSE
     (Alg (ES256), decodeCompact, encodeCompact)
 import qualified Crypto.JOSE.Error      as JE
 import qualified Crypto.JOSE.JWK        as JWK
-import           Crypto.JWT             (SignedJWT, Audience (Audience), uri)
+import           Crypto.JWT             (Audience (Audience), uri)
 import           Crypto.JWT.Pretty
     (AsPrettyJwtError (_PrettyJwtError), JwtPart (Signature), PrettyJwt,
     PrettyJwtError, mkPrettyJwt, removePart)
@@ -167,22 +167,6 @@ genAuthRequest =
     <*> pure SelectAccount
     <*> genAud
     <*> genClaims
-
-genJws ::
-   IO SignedJWT
-genJws =
-  let
-    name = "Golden AuthorisationRequest JWT"
-    gf = authTestPath <> "/compact-authorisation-request.golden"
-    keyFile = authTestPath <> "/jwk.json"
-    alg = ES256
-    mJwt :: ExceptT GoldenError IO SignedJWT
-    mJwt = do
-      jwk <- ExceptT . fmap (first (_ParseError #) . eitherDecode') . BS.readFile $ keyFile
-      authRequestToJwt jwk alg goldenAuthRequest
-  in
-    either (throw . JwtFailure . show) pure =<< runExceptT mJwt
-
 
 goldenAuthRequest ::
   AuthorisationRequest
