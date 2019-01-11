@@ -252,12 +252,13 @@ accountBalanceGen = AccountBalance
   <$> accountIdGen
   <*> balanceGen
 
--- -----
 
 transactionGen :: Gen Transaction
 transactionGen = Transaction
-  <$> Gen.maybe transactionIdGen
+  <$> accountIdGen
+  <*> Gen.maybe transactionIdGen
   <*> Gen.bool
+  <*> transactionTypeGen
   <*> transactionStatusGen
   <*> textGen
   <*> Gen.maybe dateTimeStringGen
@@ -265,25 +266,34 @@ transactionGen = Transaction
   <*> Gen.maybe amountStringGen
   <*> Gen.maybe currencyStringGen
   <*> textGen
+  <*> Gen.maybe textGen
+  <*> Gen.maybe textGen
+  <*> Gen.maybe textGen
+  <*> Gen.maybe textGen
+  <*> Gen.maybe textGen
+  <*> Gen.maybe textGen
 
 transactionIdGen :: Gen TransactionId
 transactionIdGen = TransactionId <$> asciiStringGen
 
+transactionTypeGen :: Gen TransactionType
+transactionTypeGen = Gen.enumBounded
+
 transactionStatusGen :: Gen TransactionStatus
-transactionStatusGen = Gen.enumBounded
+transactionStatusGen = Gen.choice
+  [ pure TransactionStatusPending
+  , TransactionStatusPosted <$> dateTimeStringGen
+  ]
 
 
-transactionDetail :: Gen TransactionDetail
-transactionDetail = TransactionDetail
-  <$> Gen.maybe transactionIdGen
-  <*> transactionStatusGen
-  <*> textGen
-  <*> Gen.maybe dateTimeStringGen
-  <*> Gen.maybe dateTimeStringGen
-  <*> Gen.maybe amountStringGen
-  <*> Gen.maybe currencyStringGen
-  <*> textGen
-  <*> Gen.maybe transactionExtendedDataGen
+transactionDetailResponseGen :: Gen TransactionDetailResponse
+transactionDetailResponseGen = TransactionDetailResponse
+  <$> transactionDetailGen
+
+transactionDetailGen :: Gen TransactionDetail
+transactionDetailGen = TransactionDetail
+  <$> transactionGen
+  <*> transactionExtendedDataGen
 
 transactionExtendedDataGen :: Gen TransactionExtendedData
 transactionExtendedDataGen = TransactionExtendedData
@@ -299,20 +309,3 @@ transactionExtendedDataExtensionTypeGen = Gen.choice
 
 transactionExtendedDataServiceGen :: Gen TransactionExtendedDataService
 transactionExtendedDataServiceGen = Gen.enumBounded
-
-
-bulkTransactionGen :: Gen BulkTransaction
-bulkTransactionGen = BulkTransaction
-  <$> accountIdGen
-  <*> Gen.maybe transactionIdGen
-  <*> Gen.bool
-  <*> bulkTransactionStatusGen
-  <*> textGen
-  <*> Gen.maybe dateTimeStringGen
-  <*> Gen.maybe dateTimeStringGen
-  <*> Gen.maybe amountStringGen
-  <*> Gen.maybe currencyStringGen
-  <*> textGen
-
-bulkTransactionStatusGen :: Gen BulkTransactionStatus
-bulkTransactionStatusGen = Gen.enumBounded

@@ -116,7 +116,7 @@ testAccount =
 testAccountDetail :: AccountDetail
 testAccountDetail =
   AccountDetail testAccount Nothing Nothing Nothing
-    (Just (TermDeposit (TermDepositAccountType (DateString "2019-01-01") (DateString "2019-01-02") Nothing Nothing MaturityInstructionsRolledOver))) 
+    (Just (TermDeposit (TermDepositAccountType (DateString "2019-01-01") (DateString "2019-01-02") Nothing Nothing MaturityInstructionsRolledOver)))
     Nothing Nothing Nothing Nothing Nothing
 
 identified :: a -> Identified a
@@ -127,35 +127,40 @@ testAccounts = Accounts
   [ testAccount
   ]
 
-testAccountTransactions :: AccountTransactions
-testAccountTransactions = AccountTransactions a12345 "name" (Just "nick name") (Transactions [testTransaction])
-
-testTransaction :: Transaction
-testTransaction = Transaction
-  (Just (TransactionId (AsciiString "reference"))) False TransactionStatusPosted "" Nothing Nothing Nothing Nothing "ref"
-
-testTransactionDetail :: TransactionDetail
-testTransactionDetail = TransactionDetail Nothing TransactionStatusPosted "" Nothing Nothing Nothing Nothing "" Nothing
-
-testAccountsTransactions :: BulkTransactions
-testAccountsTransactions = BulkTransactions
-  [ testBulkTransaction5
-  , testBulkTransaction6
-  , testBulkTransaction7
+testTransactions :: Transactions
+testTransactions = Transactions
+  [ testTransaction5
+  , testTransaction6
+  , testTransaction7
   ]
 
-testBulkTransaction5 :: BulkTransaction
-testBulkTransaction5 = BulkTransaction a12345 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+testTransaction5 :: Transaction
+testTransaction5 = Transaction
+  a12345 (Just (TransactionId (AsciiString "tr56789"))) True TransactionTypePayment (TransactionStatusPosted (DateTimeString (UTCTime (fromGregorian 2018 1 1) 0)))"description here"
+  Nothing Nothing Nothing Nothing "ref"
+  Nothing Nothing Nothing Nothing Nothing Nothing
 
-testBulkTransaction6 :: BulkTransaction
-testBulkTransaction6 = BulkTransaction a12346 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+testTransaction6 :: Transaction
+testTransaction6 = Transaction
+  a12346 (Just (TransactionId (AsciiString "tr67890"))) False TransactionTypeFee TransactionStatusPending "description here"
+  Nothing Nothing Nothing Nothing "ref"
+  Nothing Nothing Nothing Nothing Nothing Nothing
 
-testBulkTransaction7 :: BulkTransaction
-testBulkTransaction7 = BulkTransaction a12347 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+testTransaction7 :: Transaction
+testTransaction7 = Transaction
+  a12347 (Just (TransactionId (AsciiString "tr78901"))) True TransactionTypePayment TransactionStatusPending "description here"
+  Nothing Nothing Nothing Nothing "ref"
+  Nothing Nothing Nothing Nothing Nothing Nothing
 
 
-testAccountTransactionsDetail :: TransactionsDetail
-testAccountTransactionsDetail = TransactionsDetail a12345 "" Nothing (TransactionDetails [testTransactionDetail])
+testTransactionDetailResponse :: TransactionDetailResponse
+testTransactionDetailResponse = TransactionDetailResponse testTransactionDetail
+
+testTransactionDetail :: TransactionDetail
+testTransactionDetail = TransactionDetail
+  testTransaction5
+  (TransactionExtendedData Nothing Nothing (Just (TEDExtendedDescription "ext description")) X2P101)
+
 
 testDirectDebitAuthorisations :: DirectDebitAuthorisations
 testDirectDebitAuthorisations = DirectDebitAuthorisations

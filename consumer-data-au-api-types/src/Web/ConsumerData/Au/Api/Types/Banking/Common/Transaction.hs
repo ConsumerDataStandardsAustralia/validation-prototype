@@ -10,7 +10,8 @@ module Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
   ) where
 
 import           Control.Lens               (Prism', prism, ( # ))
-import           Data.Functor.Contravariant ((>$<))
+import           Control.Monad.Except       (throwError)
+import           Data.Functor.Contravariant (contramap, (>$<))
 import           Data.Text                  (Text)
 import           Servant.API
     (FromHttpApiData, ToHttpApiData, parseUrlPiece, toUrlPiece)
@@ -24,6 +25,8 @@ import           Waargonaut.Types           (Json, MapLikeObj, WS)
 
 import Waargonaut.Helpers
     (atKeyOptional', maybeOrAbsentE)
+import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
+    (AccountId, accountIdDecoder, accountIdEncoder)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
     (AmountString, AsciiString, CurrencyString, DateTimeString,
     amountStringDecoder, amountStringEncoder, asciiStringDecoder,
@@ -37,12 +40,10 @@ newtype Transactions = Transactions
   deriving (Eq, Show)
 
 transactionsDecoder :: Monad f => Decoder f Transactions
-transactionsDecoder =
-  Transactions <$> D.list transactionDecoder
+transactionsDecoder = D.atKey "transactions" (Transactions <$> D.list transactionDecoder)
 
 transactionsEncoder :: Applicative f => Encoder f Transactions
-transactionsEncoder =
-  unTransactions >$< E.list transactionEncoder
+transactionsEncoder = E.mapLikeObj $ E.atKey' "transactions" (E.list transactionEncoder) . unTransactions
 
 instance JsonDecode OB Transactions where
   mkDecoder = tagOb transactionsDecoder
@@ -52,29 +53,45 @@ instance JsonEncode OB Transactions where
 
 
 data Transaction = Transaction
-  { _transactionTransactionId     :: Maybe TransactionId -- ^ A unique ID of the transaction adhering to the standards for ID permanence. This field is mandatory in this payload as it is a reflection of the requested transaction in the path parameter.
-  , _transactionIsDetailAvailable :: Bool -- ^ True if extended information is available using the transaction detail end point. False if extended data is not available
-  , _transactionStatus            :: TransactionStatus -- ^ Status of the transaction.
-  , _transactionDescription       :: Text -- ^ The transaction description as applied by the financial institution.
-  , _transactionPostDateTime      :: Maybe DateTimeString -- ^ The time the transaction was posted. This field is MANDATORY if the transaction has status POSTED. This is the time that appears on a standard statement.
-  , _transactionExecutionDateTime :: Maybe DateTimeString -- ^ The time the transaction was executed by the originating customer, if available.
-  , _transactionAmount            :: Maybe AmountString -- ^ The value of the transaction. Negative values mean money was outgoing.
-  , _transactionCurrency          :: Maybe CurrencyString -- ^ The currency for the transaction amount. AUD assumed if not present.
-  , _transactionReference         :: Text -- ^ The reference for the transaction provided by the originating institution.
+  { _transactionAccountId            :: AccountId
+  , _transactionTransactionId        :: Maybe TransactionId -- ^ A unique ID of the transaction adhering to the standards for ID permanence. This field is mandatory in this payload as it is a reflection of the requested transaction in the path parameter.
+  , _transactionIsDetailAvailable    :: Bool -- ^ True if extended information is available using the transaction detail end point. False if extended data is not available
+  , _transactionType                 :: TransactionType
+  , _transactionStatus               :: TransactionStatus -- ^ Status of the transaction.
+  , _transactionDescription          :: Text -- ^ The transaction description as applied by the financial institution.
+  , _transactionValueDateTime        :: Maybe DateTimeString
+  , _transactionExecutionDateTime    :: Maybe DateTimeString -- ^ The time the transaction was executed by the originating customer, if available.
+  , _transactionAmount               :: Maybe AmountString -- ^ The value of the transaction. Negative values mean money was outgoing.
+  , _transactionCurrency             :: Maybe CurrencyString -- ^ The currency for the transaction amount. AUD assumed if not present.
+  , _transactionReference            :: Text -- ^ The reference for the transaction provided by the originating institution.
+  , _transactionMerchantName         :: Maybe Text
+  , _transactionMerchantCategoryCode :: Maybe Text
+  , _transactionBillerCode           :: Maybe Text
+  , _transactionBillerName           :: Maybe Text
+  , _transactionCrn                  :: Maybe Text
+  , _transactionApcaNumber           :: Maybe Text
   } deriving (Eq, Show)
 
 transactionDecoder :: (Monad f) => Decoder f Transaction
 transactionDecoder =
   Transaction
-    <$> atKeyOptional' "transactionId" transactionIdDecoder
+    <$> D.atKey "accountId" accountIdDecoder
+    <*> atKeyOptional' "transactionId" transactionIdDecoder
     <*> D.atKey "isDetailAvailable" D.bool
-    <*> D.atKey "status" transactionStatusDecoder
+    <*> D.atKey "type" transactionTypeDecoder
+    <*> transactionStatusDecoder
     <*> D.atKey "description" D.text
-    <*> atKeyOptional' "postDateTime" dateTimeStringDecoder
+    <*> atKeyOptional' "valueDateTime" dateTimeStringDecoder
     <*> atKeyOptional' "executionDateTime" dateTimeStringDecoder
     <*> atKeyOptional' "amount" amountStringDecoder
     <*> atKeyOptional' "currency" currencyStringDecoder
     <*> D.atKey "reference" D.text
+    <*> atKeyOptional' "merchantName" D.text
+    <*> atKeyOptional' "merchantCategoryCode" D.text
+    <*> atKeyOptional' "billerCode" D.text
+    <*> atKeyOptional' "billerName" D.text
+    <*> atKeyOptional' "crn" D.text
+    <*> atKeyOptional' "apcaNumber" D.text
 
 instance JsonDecode OB Transaction where
   mkDecoder = tagOb transactionDecoder
@@ -83,16 +100,24 @@ transactionEncoder :: Applicative f => Encoder f Transaction
 transactionEncoder = E.mapLikeObj transactionMLO
 
 transactionMLO :: Transaction -> MapLikeObj WS Json -> MapLikeObj WS Json
-transactionMLO p =
-  maybeOrAbsentE "transactionId" transactionIdEncoder (_transactionTransactionId p) .
-  E.atKey' "isDetailAvailable" E.bool (_transactionIsDetailAvailable p) .
-  E.atKey' "status" transactionStatusEncoder (_transactionStatus p) .
-  E.atKey' "description" E.text (_transactionDescription p) .
-  maybeOrAbsentE "postDateTime" dateTimeStringEncoder (_transactionPostDateTime p) .
-  maybeOrAbsentE "executionDateTime" dateTimeStringEncoder (_transactionExecutionDateTime p) .
-  maybeOrAbsentE "amount" amountStringEncoder (_transactionAmount p) .
-  maybeOrAbsentE "currency" currencyStringEncoder (_transactionCurrency p) .
-  E.atKey' "reference" E.text (_transactionReference p)
+transactionMLO t =
+  E.atKey' "accountId" accountIdEncoder (_transactionAccountId t) .
+  maybeOrAbsentE "transactionId" transactionIdEncoder (_transactionTransactionId t) .
+  E.atKey' "isDetailAvailable" E.bool (_transactionIsDetailAvailable t) .
+  E.atKey' "type" transactionTypeEncoder (_transactionType t) .
+  transactionStatusFields (_transactionStatus t) .
+  E.atKey' "description" E.text (_transactionDescription t) .
+  maybeOrAbsentE "valueDateTime" dateTimeStringEncoder (_transactionValueDateTime t) .
+  maybeOrAbsentE "executionDateTime" dateTimeStringEncoder (_transactionExecutionDateTime t) .
+  maybeOrAbsentE "amount" amountStringEncoder (_transactionAmount t) .
+  maybeOrAbsentE "currency" currencyStringEncoder (_transactionCurrency t) .
+  E.atKey' "reference" E.text (_transactionReference t) .
+  maybeOrAbsentE "merchantName" E.text (_transactionMerchantName t) .
+  maybeOrAbsentE "merchantCategoryCode" E.text (_transactionMerchantCategoryCode t) .
+  maybeOrAbsentE "billerCode" E.text (_transactionBillerCode t) .
+  maybeOrAbsentE "billerName" E.text (_transactionBillerName t) .
+  maybeOrAbsentE "crn" E.text (_transactionCrn t) .
+  maybeOrAbsentE "apcaNumber" E.text (_transactionApcaNumber t)
 
 instance JsonEncode OB Transaction where
   mkEncoder = tagOb transactionEncoder
@@ -116,32 +141,88 @@ instance FromHttpApiData TransactionId where
 
 
 -- | Status of the transaction. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schematransactionstatus CDR AU v0.1.0 TransactionStatus>
-data TransactionStatus =
-    TransactionStatusPending -- ^ "PENDING"
-  | TransactionStatusPosted -- ^ "POSTED"
+data TransactionType =
+    TransactionTypeFee -- ^"FEE"
+  | TransactionTypeInterestCharged -- ^"INTEREST_CHARGED"
+  | TransactionTypeInterestPaid -- ^"INTEREST_PAID"
+  | TransactionTypeTransferOutgoing -- ^"TRANSFER_OUTGOING"
+  | TransactionTypeTransferIncoming -- ^"TRANSFER_INCOMING"
+  | TransactionTypePayment -- ^"PAYMENT"
+  | TransactionTypeOther -- ^"OTHER"
   deriving (Bounded, Enum, Eq, Ord, Show)
 
-transactionStatusText ::
-  Prism' Text TransactionStatus
-transactionStatusText =
+transactionTypeText ::
+  Prism' Text TransactionType
+transactionTypeText =
   prism (\case
-        TransactionStatusPending -> "PENDING"
-        TransactionStatusPosted -> "POSTED"
+        TransactionTypeFee -> "FEE"
+        TransactionTypeInterestCharged -> "INTEREST_CHARGED"
+        TransactionTypeInterestPaid -> "INTEREST_PAID"
+        TransactionTypeTransferOutgoing -> "TRANSFER_OUTGOING"
+        TransactionTypeTransferIncoming -> "TRANSFER_INCOMING"
+        TransactionTypePayment -> "PAYMENT"
+        TransactionTypeOther -> "OTHER"
     )
     (\case
-        "PENDING" -> Right TransactionStatusPending
-        "POSTED" -> Right TransactionStatusPosted
+        "FEE" -> Right TransactionTypeFee
+        "INTEREST_CHARGED" -> Right TransactionTypeInterestCharged
+        "INTEREST_PAID" -> Right TransactionTypeInterestPaid
+        "TRANSFER_OUTGOING" -> Right TransactionTypeTransferOutgoing
+        "TRANSFER_INCOMING" -> Right TransactionTypeTransferIncoming
+        "PAYMENT" -> Right TransactionTypePayment
+        "OTHER" -> Right TransactionTypeOther
         t -> Left t
     )
 
-transactionStatusEncoder ::
-  E.Encoder' TransactionStatus
-transactionStatusEncoder =
-  E.prismE transactionStatusText E.text'
+transactionTypeEncoder ::
+  E.Encoder' TransactionType
+transactionTypeEncoder =
+  E.prismE transactionTypeText E.text'
 
-transactionStatusDecoder :: Monad m =>
-  D.Decoder m TransactionStatus
-transactionStatusDecoder = D.prismDOrFail
-  (D._ConversionFailure # "Not a valid TransactionStatus")
-  transactionStatusText
+transactionTypeDecoder :: Monad m =>
+  D.Decoder m TransactionType
+transactionTypeDecoder = D.prismDOrFail
+  (D._ConversionFailure # "Not a valid TransactionType")
+  transactionTypeText
   D.text
+
+
+-- | Status of the transaction. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schematransactionstatus CDR AU v0.1.0 TransactionStatus>
+data TransactionStatus =
+    TransactionStatusPending -- ^ "PENDING"
+  | TransactionStatusPosted DateTimeString -- ^ "POSTED"
+  deriving (Eq, Show)
+
+transactionStatusDecoder :: Monad f => Decoder f TransactionStatus
+transactionStatusDecoder = do
+  status <- D.atKey "status" D.text
+  postingDateTime <- case status of
+    "PENDING" -> pure TransactionStatusPending
+    "POSTED" -> TransactionStatusPosted <$> (D.atKey "postingDateTime" dateTimeStringDecoder)
+    _ -> throwError (D._ConversionFailure # "Not a valid TransactionStatus")
+  pure postingDateTime
+
+transactionStatus'ToText :: TransactionStatus' -> Text
+transactionStatus'ToText = \case
+  TransactionStatusPending' -> "PENDING"
+  TransactionStatusPosted' -> "POSTED"
+
+data TransactionStatus' =
+    TransactionStatusPending'
+  | TransactionStatusPosted'
+
+transactionStatus'Encoder :: Applicative f => Encoder f TransactionStatus'
+transactionStatus'Encoder = flip contramap E.text transactionStatus'ToText
+
+transactionStatusToType' :: TransactionStatus -> TransactionStatus'
+transactionStatusToType' (TransactionStatusPending {}) = TransactionStatusPending'
+transactionStatusToType' (TransactionStatusPosted {}) = TransactionStatusPosted'
+
+transactionStatusFields :: (Monoid ws, Semigroup ws) => TransactionStatus -> MapLikeObj ws Json -> MapLikeObj ws Json
+transactionStatusFields ts =
+  case ts of
+    TransactionStatusPending ->
+      E.atKey' "status" transactionStatus'Encoder (transactionStatusToType' ts)
+    TransactionStatusPosted v ->
+      E.atKey' "status" transactionStatus'Encoder (transactionStatusToType' ts) .
+      E.atKey' "postingDateTime" dateTimeStringEncoder v

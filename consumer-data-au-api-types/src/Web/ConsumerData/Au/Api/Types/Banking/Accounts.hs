@@ -25,12 +25,11 @@ import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDetail
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
     (DirectDebitAuthorisations)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
-import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountTransactions
-import Web.ConsumerData.Au.Api.Types.Banking.Common.BulkTransaction
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Products
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
-    (TransactionId)
-import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionsDetail
+    (TransactionId, Transactions)
+import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionDetail
+    (TransactionDetailResponse)
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
 import Web.ConsumerData.Au.Api.Types.Request
 import Web.ConsumerData.Au.Api.Types.Response
@@ -112,7 +111,7 @@ type AccountsTransactionsGetRoute r = AccountsTransactionsRoute r
   :> AccountOpenStatusParam
   :> AccountIsOwnedParam
   :> AccountProductCategoryParam
-  :> PaginatedRoute (Get '[WaargJSON OB] AccountsTransactionsResponse)
+  :> PaginatedRoute (Get '[WaargJSON OB] AccountTransactionsResponse)
   )
 type AccountsTransactionsPostRoute r = AccountsTransactionsRoute r
   (  TransactionStartTimeParam
@@ -201,8 +200,8 @@ type AccountBulkBalanceResponse = PaginatedResponse AccountBalances
 type AccountBalanceByIdsResponse = StandardResponse AccountBalances
 type AccountDirectDebitsResponse = PaginatedResponse DirectDebitAuthorisations
 type AccountDirectDebitsPostResponse = PaginatedResponse DirectDebitAuthorisations
-type AccountTransactionsResponse = PaginatedResponse AccountTransactions
-type AccountTransactionDetailResponse = StandardResponse TransactionsDetail
-type AccountsTransactionsResponse = PaginatedResponse BulkTransactions
+type AccountTransactionsResponse = PaginatedResponse Transactions
+type AccountTransactionDetailResponse = StandardResponse TransactionDetailResponse
+type AccountsTransactionsResponse = PaginatedResponse Transactions
 
 type RequestAccountIds = StandardRequest AccountIds

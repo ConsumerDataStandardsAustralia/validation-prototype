@@ -1,0 +1,56 @@
+{
+  "data": {
+    "transactions": [
+      {
+        "accountId": "string",
+        "transactionId": "string",
+        "isDetailAvailable": true,
+        "type": "FEE",
+        "status": "POSTED",
+        "description": "string",
+        "postingDateTime": "2018-11-01T05:33:52Z",
+        "valueDateTime": "2018-11-01T05:33:52Z",
+        "executionDateTime": "2018-11-01T05:33:52Z",
+        "amount": "300.56",
+        "currency": "AUD",
+        "reference": "string",
+        "merchantName": "string",
+        "merchantCategoryCode": "string",
+        "billerCode": "string",
+        "billerName": "string",
+        "crn": "string",
+        "apcaNumber": "string"
+      },
+      {
+        "accountId": "string",
+        "transactionId": "string",
+        "isDetailAvailable": false,
+        "type": "PAYMENT",
+        "status": "PENDING",
+        "description": "string",
+        "valueDateTime": "2018-11-01T05:33:52Z",
+        "executionDateTime": "2018-11-01T05:33:52Z",
+        "amount": "300.56",
+        "currency": "AUD",
+        "reference": "string",
+        "merchantName": "string",
+        "merchantCategoryCode": "string",
+        "billerCode": "string",
+        "billerName": "string",
+        "crn": "string",
+        "apcaNumber": "string"
+      }
+    ]
+  },
+  "links": {
+    "self": "http://example.com/self",
+    "first": "http://example.com/first",
+    "prev": "http://example.com/prev",
+    "next": "http://example.com/next",
+    "last": "http://example.com/last"
+  },
+  "meta": {
+    "totalRecords": 6,
+    "totalPages": 2
+  }
+}

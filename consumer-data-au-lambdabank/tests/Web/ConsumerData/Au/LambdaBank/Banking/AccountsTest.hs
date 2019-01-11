@@ -70,7 +70,7 @@ test_accounts =
         (MetaPaginated 0 1)
   , testCase "/banking/accounts/transactions test with page 2" . withServer 1337 $ do
       res <- apiClient ^. bankingClient . bankingAccountsClient . accountsTransactionsGet . to (\f -> f Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing (Just (PageNumber 2)) Nothing)
-      liftIO $ res @?= Response testAccountsTransactions
+      liftIO $ res @?= Response testTransactions
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/transactions?page=2|]
          (Just [uri|http://localhost:1337/banking/accounts/transactions?page=1|])
@@ -81,7 +81,7 @@ test_accounts =
         (MetaPaginated 0 2)
   , testCase "/banking/accounts/{accountId}/transactions test" . withServer 1337 $ do
       res <- apiClient ^. bankingClient . bankingAccountsClient . accountsByIdClient . to ($ AccountId (AsciiString (pack "12345"))) . accountTransactionsGet . to (\f -> f Nothing Nothing Nothing Nothing Nothing Nothing Nothing)
-      liftIO $ res @?= Response testAccountTransactions
+      liftIO $ res @?= Response testTransactions
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/12345/transactions?page=1|]
          Nothing
@@ -92,7 +92,7 @@ test_accounts =
         (MetaPaginated 0 1)
   , testCase "/banking/accounts/{accountId}/transactions test with page 2" . withServer 1337 $ do
       res <- apiClient ^. bankingClient . bankingAccountsClient . accountsByIdClient . to ($ AccountId (AsciiString (pack "12345"))) . accountTransactionsGet . to (\f -> f Nothing Nothing Nothing Nothing Nothing (Just (PageNumber 2)) Nothing)
-      liftIO $ res @?= Response testAccountTransactions
+      liftIO $ res @?= Response testTransactions
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/12345/transactions?page=2|]
          (Just [uri|http://localhost:1337/banking/accounts/12345/transactions?page=1|])
@@ -103,7 +103,7 @@ test_accounts =
         (MetaPaginated 0 2)
   , testCase "/banking/accounts/{accountId}/transactions/{transactionId} test" . withServer 1337 $ do
       res <- apiClient ^. bankingClient . bankingAccountsClient . accountsByIdClient . to ($ AccountId (AsciiString (pack "12345"))) . accountTransactionByIdGet . to ($ TransactionId (AsciiString (pack "6789")))
-      liftIO $ res @?= Response testAccountTransactionsDetail
+      liftIO $ res @?= Response testTransactionDetailResponse
         (LinksStandard [uri|http://localhost:1337/banking/accounts/12345/transactions/6789|])
         MetaStandard
   ]
@@ -117,7 +117,7 @@ test_accountsPost =
         MetaStandard
   , testCase "POST /banking/accounts/transactions test" . withServer 1337 $ do
       res <- apiClient ^. bankingClient . bankingAccountsClient . accountsTransactionsPost . to (\f -> f Nothing Nothing Nothing Nothing Nothing requestAccountIds Nothing Nothing)
-      liftIO $ res @?= Response (filterTransactionsByAccountIds testAccountIds testAccountsTransactions)
+      liftIO $ res @?= Response (filterTransactionsByAccountIds testAccountIds testTransactions)
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/transactions?page=1|]
          Nothing
@@ -128,7 +128,7 @@ test_accountsPost =
         (MetaPaginated 0 1)
   , testCase "POST /banking/accounts/transactions test with page 2" . withServer 1337 $ do
       res <- apiClient ^. bankingClient . bankingAccountsClient . accountsTransactionsPost . to (\f -> f Nothing Nothing Nothing Nothing Nothing requestAccountIds (Just (PageNumber 2)) Nothing)
-      liftIO $ res @?= Response (filterTransactionsByAccountIds testAccountIds testAccountsTransactions)
+      liftIO $ res @?= Response (filterTransactionsByAccountIds testAccountIds testTransactions)
         (LinksPaginated
          [uri|http://localhost:1337/banking/accounts/transactions?page=2|]
         (Just [uri|http://localhost:1337/banking/accounts/transactions?page=1|])
