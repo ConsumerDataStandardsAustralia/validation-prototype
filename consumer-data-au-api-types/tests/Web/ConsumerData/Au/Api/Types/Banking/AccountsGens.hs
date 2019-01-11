@@ -231,7 +231,13 @@ accountLendingRateTypeGen = Gen.choice
 
 
 balanceGen :: Gen Balance
-balanceGen = Gen.choice
+balanceGen = Balance
+  <$> accountIdGen
+  <*> balanceTypeGen
+
+
+balanceTypeGen :: Gen BalanceType
+balanceTypeGen = Gen.choice
   [ BalanceDeposit <$>
       ( DepositBalanceType
           <$> currencyAmountGen
@@ -246,12 +252,6 @@ balanceGen = Gen.choice
       ( MultiCurrencyPursesType
           <$> Gen.list (Range.linear 0 3) currencyAmountGen )
   ]
-
-accountBalanceGen :: Gen AccountBalance
-accountBalanceGen = AccountBalance
-  <$> accountIdGen
-  <*> balanceGen
-
 
 transactionGen :: Gen Transaction
 transactionGen = Transaction

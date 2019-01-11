@@ -111,10 +111,16 @@ test_accounts =
 test_accountsPost :: [TestTree]
 test_accountsPost =
   [ testCase "POST /banking/accounts/balances test" . withServer 1337 $ do
-      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsBalancesPost . to ($ requestAccountIds)
+      res <- apiClient ^. bankingClient . bankingAccountsClient . accountsBalancesPost . to (\f -> f requestAccountIds Nothing Nothing)
       liftIO $ res @?= Response (filterBalancesByAccountIds testAccountIds testBalances)
-        (LinksStandard [uri|http://localhost:1337/banking/accounts/balances|])
-        MetaStandard
+        (LinksPaginated
+         [uri|http://localhost:1337/banking/accounts/balances?page=1|]
+         Nothing
+         Nothing
+         Nothing
+         Nothing
+        )
+        (MetaPaginated 0 1)
   , testCase "POST /banking/accounts/transactions test" . withServer 1337 $ do
       res <- apiClient ^. bankingClient . bankingAccountsClient . accountsTransactionsPost . to (\f -> f Nothing Nothing Nothing Nothing Nothing requestAccountIds Nothing Nothing)
       liftIO $ res @?= Response (filterTransactionsByAccountIds testAccountIds testTransactions)

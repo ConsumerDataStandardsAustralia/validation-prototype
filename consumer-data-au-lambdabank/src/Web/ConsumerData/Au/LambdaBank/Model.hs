@@ -109,7 +109,7 @@ getProductDetail pId = liftF $ GetProductDetail pId id
 
 filterBalancesByAccountIds :: AccountIds -> AccountBalances -> AccountBalances
 filterBalancesByAccountIds (AccountIds aIds) (AccountBalances balances) =
-  AccountBalances $ filter (\balance -> elem (_accountBalanceAccountId balance) aIds) balances
+  AccountBalances $ filter (\balance -> elem (_balanceAccountId balance) aIds) balances
   -- AccountBalances $ (filter (\balance -> elem (_accountBalanceAccountId balance) (unAccountIds aIds)) (getBalances balances))
 
 filterTransactionsByAccountIds :: AccountIds -> Transactions -> Transactions

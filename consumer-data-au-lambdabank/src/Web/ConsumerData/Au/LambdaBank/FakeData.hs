@@ -29,16 +29,6 @@ a12347 :: AccountId
 a12347 = AccountId (AsciiString "12347")
 
 
-testBalances :: AccountBalances
-testBalances = AccountBalances
-  [ AccountBalance a12345
-      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "500") Nothing) (CurrencyAmount (AmountString "550.55") Nothing)))
-  , AccountBalance a12346
-      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "600") Nothing) (CurrencyAmount (AmountString "650.65") Nothing)))
-  , AccountBalance a12347
-      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "700") Nothing) (CurrencyAmount (AmountString "750.75") Nothing)))
-  ]
-
 testPerson :: Person
 testPerson = Person
   (UTCTime (fromGregorian 2018 11 13) 0)
@@ -161,6 +151,32 @@ testTransactionDetail = TransactionDetail
   testTransaction5
   (TransactionExtendedData Nothing Nothing (Just (TEDExtendedDescription "ext description")) X2P101)
 
+
+testBalances :: AccountBalances
+testBalances = AccountBalances
+  [ Balance a12345
+      (BalanceDeposit
+        (DepositBalanceType
+          (CurrencyAmount (AmountString "500") Nothing)
+          (CurrencyAmount (AmountString "550.55") Nothing)
+      ))
+  , Balance a12346
+      (BalanceLending
+        (LendingBalanceType
+          (CurrencyAmount (AmountString "600") Nothing)
+          (CurrencyAmount (AmountString "650.65") Nothing)
+          (CurrencyAmount (AmountString "660.65") Nothing)
+          Nothing
+      ))
+  , Balance a12347
+      (BalancePurses
+        (MultiCurrencyPursesType
+          [ (CurrencyAmount (AmountString "700") Nothing)
+          , (CurrencyAmount (AmountString "750.75") Nothing)
+          ]
+        )
+      )
+  ]
 
 testDirectDebitAuthorisations :: DirectDebitAuthorisations
 testDirectDebitAuthorisations = DirectDebitAuthorisations

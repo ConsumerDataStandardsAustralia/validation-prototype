@@ -25,6 +25,7 @@ import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDetail
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit
     (DirectDebitAuthorisations)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Accounts
+import Web.ConsumerData.Au.Api.Types.Banking.Common.Balances
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Products
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
     (TransactionId, Transactions)
@@ -95,11 +96,11 @@ type AccountsBalancesGetRoute r = AccountsBalancesRoute r
   ( AccountOpenStatusParam
   :> AccountIsOwnedParam
   :> AccountProductCategoryParam
-  :> PaginatedRoute (Get '[WaargJSON OB] AccountBulkBalanceResponse)
+  :> PaginatedRoute (Get '[WaargJSON OB] AccountsBalancesResponse)
   )
 type AccountsBalancesPostRoute r = AccountsBalancesRoute r
   ( ReqBody '[WaargJSON OB] RequestAccountIds
-  :> Post '[WaargJSON OB] AccountBalanceByIdsResponse
+  :> (PaginatedRoute (Post '[WaargJSON OB] AccountsBalancesByAccountIdsResponse))
   )
 type AccountsTransactionsRoute r e = r :- "transactions" :> e
 type AccountsTransactionsGetRoute r = AccountsTransactionsRoute r
@@ -196,8 +197,8 @@ accountDirectDebitsGet = to _accountDirectDebitsGet
 
 type AccountsGetResponse = PaginatedResponse Accounts
 type AccountByIdResponse = StandardResponse AccountDetail
-type AccountBulkBalanceResponse = PaginatedResponse AccountBalances
-type AccountBalanceByIdsResponse = StandardResponse AccountBalances
+type AccountsBalancesResponse = PaginatedResponse AccountBalances
+type AccountsBalancesByAccountIdsResponse = PaginatedResponse AccountBalances
 type AccountDirectDebitsResponse = PaginatedResponse DirectDebitAuthorisations
 type AccountDirectDebitsPostResponse = PaginatedResponse DirectDebitAuthorisations
 type AccountTransactionsResponse = PaginatedResponse Transactions

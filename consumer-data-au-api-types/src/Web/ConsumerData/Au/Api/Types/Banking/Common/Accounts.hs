@@ -25,11 +25,8 @@ import           Waargonaut.Types.Json      (Json)
 
 import Waargonaut.Helpers
     (atKeyOptional', maybeOrAbsentE)
-import Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount
-    (CurrencyAmount, currencyAmountDecoder, currencyAmountEncoder)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Products
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
-import Web.ConsumerData.Au.Api.Types.SumTypeHelpers
 import Web.ConsumerData.Au.Api.Types.Tag
 
 
@@ -57,7 +54,6 @@ data Account = Account
   , _accountIsOwned         :: Maybe Bool
   , _accountProductCategory :: EnumProductCategory
   , _accountProductName     :: Text
-  -- , _accountBalance         :: Balance
   }
   deriving (Eq, Show)
 
@@ -93,24 +89,6 @@ accountFields a =
 
 instance JsonEncode OB Account where
   mkEncoder = tagOb accountEncoder
-
-
-balanceTypeDecoder :: Monad f => Decoder f Balance
-balanceTypeDecoder = typeTaggedDecoder "balanceUType" $ \case
-  "deposits" -> Just $ (TypedTagField BalanceDeposit depositBalanceTypeDecoder)
-  "lending"  -> Just $ (TypedTagField BalanceLending lendingBalanceTypeDecoder)
-  "purses"   -> Just $ (TypedTagField BalancePurses multiCurrencyPursesTypeDecoder)
-  _          -> Nothing
-
-balanceTypeFields ::
-  (Monoid ws, Semigroup ws)
-  => Balance -> MapLikeObj ws Json -> MapLikeObj ws Json
-balanceTypeFields = \case
-  BalanceDeposit b -> fields "deposits" depositBalanceTypeEncoder b
-  BalanceLending b -> fields "lending" lendingBalanceTypeEncoder b
-  BalancePurses b  -> fields "purses" multiCurrencyPursesTypeEncoder b
-  where
-    fields = typeTaggedField "balanceUType"
 
 
 newtype AccountIds = AccountIds { unAccountIds :: [AccountId] } deriving (Eq, Show)
@@ -187,102 +165,3 @@ accOpenStatusDecoder = D.prismDOrFail
   (D._ConversionFailure # "Not a valid AccountOpen Status type")
   _AccOpenStatus
   D.text
-
--- | The type of the balance object
-data Balance =
-    BalanceDeposit DepositBalanceType
-  | BalanceLending LendingBalanceType
-  | BalancePurses MultiCurrencyPursesType
-  deriving (Eq, Show)
-
-data DepositBalanceType = DepositBalanceType
-  { _dbtCurrentBalance   :: CurrencyAmount
-  , _dbtAvailableBalance :: CurrencyAmount
-  }  deriving (Eq, Show)
-
-depositBalanceTypeDecoder :: Monad f => Decoder f DepositBalanceType
-depositBalanceTypeDecoder =
-  DepositBalanceType
-    <$> D.atKey "currentBalance" currencyAmountDecoder
-    <*> D.atKey "availableBalance" currencyAmountDecoder
-
-depositBalanceTypeEncoder :: Applicative f => Encoder f DepositBalanceType
-depositBalanceTypeEncoder = E.mapLikeObj $ \b ->
-  E.atKey' "currentBalance" currencyAmountEncoder (_dbtCurrentBalance b) .
-  E.atKey' "availableBalance" currencyAmountEncoder (_dbtAvailableBalance b)
-
-
-data LendingBalanceType = LendingBalanceType
-  { _lbtAccountBalance   :: CurrencyAmount
-  , _lbtAvailableBalance :: CurrencyAmount
-  , _lbtCreditLimit      :: CurrencyAmount
-  , _lbtAmortisedLimit   :: Maybe CurrencyAmount
-  }  deriving (Eq, Show)
-
-lendingBalanceTypeDecoder :: Monad f => Decoder f LendingBalanceType
-lendingBalanceTypeDecoder =
-  LendingBalanceType
-    <$> D.atKey "accountBalance" currencyAmountDecoder
-    <*> D.atKey "availableBalance" currencyAmountDecoder
-    <*> D.atKey "creditLimit" currencyAmountDecoder
-    <*> atKeyOptional' "amortisedLimit" currencyAmountDecoder
-
-lendingBalanceTypeEncoder :: Applicative f => Encoder f LendingBalanceType
-lendingBalanceTypeEncoder = E.mapLikeObj $ \b ->
-  E.atKey' "accountBalance" currencyAmountEncoder (_lbtAccountBalance b) .
-  E.atKey' "availableBalance" currencyAmountEncoder (_lbtAvailableBalance b) .
-  E.atKey' "creditLimit" currencyAmountEncoder (_lbtCreditLimit b) .
-  maybeOrAbsentE "amortisedLimit" currencyAmountEncoder (_lbtAmortisedLimit b)
-
-
-data MultiCurrencyPursesType = MultiCurrencyPursesType
-  { _mcptPurses :: [CurrencyAmount]
-  }  deriving (Eq, Show)
-
-multiCurrencyPursesTypeDecoder :: Monad f => Decoder f MultiCurrencyPursesType
-multiCurrencyPursesTypeDecoder =
-  MultiCurrencyPursesType
-    <$> D.atKey "purses" (D.list currencyAmountDecoder)
-
-multiCurrencyPursesTypeEncoder :: Applicative f => Encoder f MultiCurrencyPursesType
-multiCurrencyPursesTypeEncoder = E.mapLikeObj $ \(MultiCurrencyPursesType purses) ->
-  E.atKey' "purses" (E.list currencyAmountEncoder) purses
-
-
-
-newtype AccountBalances =
-  AccountBalances { getBalances :: [AccountBalance] }
-  deriving (Eq, Show)
-
-accountBalancesDecoder :: Monad f => Decoder f AccountBalances
-accountBalancesDecoder =
-  AccountBalances
-   <$> D.atKey "balances" (D.list accountBalanceDecoder)
-
-accountBalancesEncoder :: Applicative f => Encoder f AccountBalances
-accountBalancesEncoder = E.mapLikeObj $ \(AccountBalances ps) ->
-  E.atKey' "balances" (E.list accountBalanceEncoder) ps
-
-instance JsonDecode OB AccountBalances where
-  mkDecoder = tagOb accountBalancesDecoder
-
-instance JsonEncode OB AccountBalances where
-  mkEncoder = tagOb accountBalancesEncoder
-
-
-data AccountBalance = AccountBalance
-  { _accountBalanceAccountId :: AccountId
-  , _accountBalanceBalance   :: Balance
-  }
-  deriving (Eq, Show)
-
-accountBalanceDecoder :: Monad f => Decoder f AccountBalance
-accountBalanceDecoder =
-  AccountBalance
-    <$> D.atKey "accountId" accountIdDecoder
-    <*> balanceTypeDecoder
-
-accountBalanceEncoder :: Applicative f => Encoder f AccountBalance
-accountBalanceEncoder = E.mapLikeObj $ \ab ->
-    E.atKey' "accountId" accountIdEncoder (_accountBalanceAccountId ab) .
-    balanceTypeFields (_accountBalanceBalance ab)

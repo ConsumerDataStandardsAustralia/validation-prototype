@@ -3,6 +3,7 @@ module Web.ConsumerData.Au.Api.Types.Banking.Common
   , module AccountDetail
   , module AccountDirectDebit
   , module AuthorisedEntity
+  , module Balances
   , module CurrencyAmount
   , module Identified
   , module PayeeDetail
@@ -19,6 +20,7 @@ import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDetail as AccountDeta
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AccountDirectDebit as AccountDirectDebit
 import Web.ConsumerData.Au.Api.Types.Banking.Common.AuthorisedEntity as AuthorisedEntity
 import Web.ConsumerData.Au.Api.Types.Banking.Common.CurrencyAmount as CurrencyAmount
+import Web.ConsumerData.Au.Api.Types.Banking.Common.Balances as Balances
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Identified as Identified
 import Web.ConsumerData.Au.Api.Types.Banking.Common.PayeeDetail as PayeeDetail
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Payees as Payees
