@@ -12,6 +12,8 @@ that it looks heinous for now!
 
 import Web.ConsumerData.Au.Api.Types
 
+import Control.Concurrent.STM.TVar (TVar, newTVarIO)
+import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.Reader     (runReaderT)
 import Network.Wai              (Application)
 import Network.Wai.Handler.Warp (run)
@@ -19,7 +21,8 @@ import Servant.Server           (Handler)
 import Servant.Server.Generic   (AsServerT)
 
 import Web.ConsumerData.Au.LambdaBank.Alien.Servant.Server (genericServeT)
-import Web.ConsumerData.Au.LambdaBank.Model                (runModelM)
+import Web.ConsumerData.Au.LambdaBank.LambdaModel          (runLambdaModelM)
+import Web.ConsumerData.Au.LambdaBank.Server.Auth          (authServer)
 import Web.ConsumerData.Au.LambdaBank.Server.Banking       (bankingServer)
 import Web.ConsumerData.Au.LambdaBank.Server.Common        (commonServer)
 import Web.ConsumerData.Au.LambdaBank.Server.Internal      (LambdaBankM)
@@ -28,13 +31,17 @@ routes :: Api (AsServerT LambdaBankM)
 routes = Api
   { _common = commonServer
   , _banking = bankingServer
+  , _auth = authServer
   }
 
-app :: LinkQualifier -> Application
-app lq = genericServeT runLambdaBankM routes
+app :: TVar Integer -> LinkQualifier -> Application
+app tv lq = genericServeT runLambdaBankM routes
   where
     runLambdaBankM :: LambdaBankM a -> Handler a
-    runLambdaBankM m = runModelM . runReaderT m $ lq
+    runLambdaBankM m =
+      liftIO . runLambdaModelM tv . runReaderT m $ lq
 
 runServer :: Int -> LinkQualifier -> IO ()
-runServer port lq = run port (app $ lq)
+runServer port lq = do
+  tv <- newTVarIO 0
+  run port (app tv lq)
