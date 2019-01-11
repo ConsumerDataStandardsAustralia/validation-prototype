@@ -182,17 +182,17 @@ testDirectDebitAuthorisations :: DirectDebitAuthorisations
 testDirectDebitAuthorisations = DirectDebitAuthorisations
   [ AccountDirectDebit
       a12345
-      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
+      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing Nothing))
       Nothing
       (Just (AmountString "50.00"))
   , AccountDirectDebit
       a12346
-      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
+      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing Nothing))
       Nothing
       (Just (AmountString "60.00"))
   , AccountDirectDebit
       a12347
-      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
+      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing Nothing))
       Nothing
       (Just (AmountString "70.00"))
   ]

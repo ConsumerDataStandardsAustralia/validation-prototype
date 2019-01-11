@@ -23,9 +23,9 @@ import Web.ConsumerData.Au.Api.Types.Tag
 data AuthorisedEntity = AuthorisedEntity
   { _authorisedEntityName                 :: Text -- ^ Name of the authorised entity.
   , _authorisedEntityFinancialInstitution :: Text -- ^ Name of the financial institution through which the direct debit will be executed.
--- WARNING website name mistyped `financialInsitution`
   , _authorisedEntityAbn                  :: Maybe Abn -- ^ Australian Business Number for the authorised entity.
   , _authorisedEntityAcn                  :: Maybe Acn -- ^ Australian Company Number for the authorised entity.
+  , _authorisedEntityArbn                 :: Maybe Arbn
   } deriving (Eq, Show)
 
 authorisedEntityDecoder :: Monad f => Decoder f AuthorisedEntity
@@ -35,6 +35,7 @@ authorisedEntityDecoder =
     <*> D.atKey "financialInstitution" D.text -- WARNING miss typed in swagger `financialInsitution`
     <*> atKeyOptional' "abn" abnDecoder
     <*> atKeyOptional' "acn" acnDecoder
+    <*> atKeyOptional' "arbn" arbnDecoder
 
 instance JsonDecode OB AuthorisedEntity where
   mkDecoder = tagOb authorisedEntityDecoder
@@ -44,7 +45,8 @@ authorisedEntityEncoder = E.mapLikeObj $ \ p ->
   E.atKey' "name" E.text (_authorisedEntityName p) .
   E.atKey' "financialInstitution" E.text (_authorisedEntityFinancialInstitution p) .
   maybeOrAbsentE "abn" abnEncoder (_authorisedEntityAbn p) .
-  maybeOrAbsentE "acn" acnEncoder (_authorisedEntityAcn p)
+  maybeOrAbsentE "acn" acnEncoder (_authorisedEntityAcn p) .
+  maybeOrAbsentE "arbn" arbnEncoder (_authorisedEntityArbn p)
 
 instance JsonEncode OB AuthorisedEntity where
   mkEncoder = tagOb authorisedEntityEncoder
@@ -72,3 +74,14 @@ acnDecoder = Acn <$> D.text
 
 acnEncoder :: Applicative f => Encoder f Acn
 acnEncoder = unAcn >$< E.text
+
+
+data Arbn =
+  Arbn { unArbn :: Text }
+  deriving (Eq, Show)
+
+arbnDecoder :: Monad f => Decoder f Arbn
+arbnDecoder = Arbn <$> D.text
+
+arbnEncoder :: Applicative f => Encoder f Arbn
+arbnEncoder = unArbn >$< E.text
