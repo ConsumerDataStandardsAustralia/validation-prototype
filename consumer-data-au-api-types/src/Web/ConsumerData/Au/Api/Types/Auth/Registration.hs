@@ -76,7 +76,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
 where
 
 import           Aeson.Helpers
-    (parseJSONWithPrism, parseSpaceSeperatedSet, toJsonSpaceSeperatedSet, _URI)
+    (parseJSONWithPrism, parseSpaceSeparatedSet, toJsonSpaceSeparatedSet, _URI)
 import           Control.Applicative                       (liftA2, (<|>))
 import           Control.Lens
     (Prism', at, makePrisms, makeWrapped, prism, prism', to, ( # ), (&), (.~),
@@ -182,10 +182,10 @@ newtype GrantTypes = GrantTypes (Set GrantType)
   deriving (Generic, Show, Eq)
 
 instance ToJSON GrantTypes where
-  toJSON (GrantTypes s) = toJsonSpaceSeperatedSet (_GrantType #) s
+  toJSON (GrantTypes s) = toJsonSpaceSeparatedSet (_GrantType #) s
 
 instance FromJSON GrantTypes where
-  parseJSON = fmap GrantTypes . parseSpaceSeperatedSet _GrantType "GrantType"
+  parseJSON = fmap GrantTypes . parseSpaceSeparatedSet _GrantType "GrantType"
 
 newtype FapiGrantTypes = FapiGrantTypes GrantTypes
   deriving (Generic, Show, Eq)
@@ -257,10 +257,10 @@ newtype RegistrationContacts = RegistrationContacts (Set EmailAddress)
   deriving (Generic, Show, Eq)
 
 instance ToJSON RegistrationContacts where
-  toJSON (RegistrationContacts s) = toJsonSpaceSeperatedSet fromEmailAddress s
+  toJSON (RegistrationContacts s) = toJsonSpaceSeparatedSet fromEmailAddress s
 
 instance FromJSON RegistrationContacts where
-  parseJSON = fmap RegistrationContacts . parseSpaceSeperatedSet _Unwrapped "EmailAddress"
+  parseJSON = fmap RegistrationContacts . parseSpaceSeparatedSet _Unwrapped "EmailAddress"
 
 -- | Text with support for BCP47 [RFC5646] language tags in keys. e.g.
 -- client_name#ja-Jpan-JP :: クライアント名", as required by
@@ -502,10 +502,10 @@ newtype RequestUris = RequestUris {
   deriving (Generic, Show, Eq)
 
 instance ToJSON RequestUris where
-  toJSON (RequestUris set) = toJsonSpaceSeperatedSet (render . getRequestUri) set
+  toJSON (RequestUris set) = toJsonSpaceSeparatedSet (render . getRequestUri) set
 
 instance FromJSON RequestUris where
-  parseJSON = fmap RequestUris . parseSpaceSeperatedSet (_URI . _Unwrapped) "RequestUris"
+  parseJSON = fmap RequestUris . parseSpaceSeparatedSet (_URI . _Unwrapped) "RequestUris"
 
 newtype RequestUri =
   RequestUri {getRequestUri :: URI}
@@ -520,10 +520,10 @@ newtype RedirectUrls = RedirectUrls {
   deriving (Generic, Show, Eq)
 
 instance ToJSON RedirectUrls where
-  toJSON (RedirectUrls set) = toJsonSpaceSeperatedSet (render . getRedirectUri) set
+  toJSON (RedirectUrls set) = toJsonSpaceSeparatedSet (render . getRedirectUri) set
 
 instance FromJSON RedirectUrls where
-  parseJSON = fmap RedirectUrls . parseSpaceSeperatedSet (_URI . _Unwrapped) "RedirectUrls"
+  parseJSON = fmap RedirectUrls . parseSpaceSeparatedSet (_URI . _Unwrapped) "RedirectUrls"
 
 -- | Constructor for @redirect_url@ array; all URLs must be HTTPS, none may be
 -- localhost, as mandated by CDR.
@@ -548,10 +548,10 @@ newtype FapiResponseTypes = FapiResponseTypes (Set ResponseType)
   deriving (Generic, Show, Eq)
 
 instance ToJSON FapiResponseTypes where
-  toJSON (FapiResponseTypes set) = toJsonSpaceSeperatedSet (responseTypeText #) set
+  toJSON (FapiResponseTypes set) = toJsonSpaceSeparatedSet (responseTypeText #) set
 
 instance FromJSON FapiResponseTypes where
-  parseJSON = fmap FapiResponseTypes . parseSpaceSeperatedSet responseTypeText "FapiResponseTypes"
+  parseJSON = fmap FapiResponseTypes . parseSpaceSeparatedSet responseTypeText "FapiResponseTypes"
 
 newtype FapiScopes = FapiScopes Scopes
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
@@ -617,11 +617,11 @@ data JwsRegisteredClaims = JwsRegisteredClaims
 data JwsHeaders = JwsHeaders
   {
   -- | The JWK @alg@ to sign the request with.
-    _alg     :: FapiPermittedAlg
+    _alg :: FapiPermittedAlg
 
   -- | @kid@ is a required header for
   -- <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header §CDR>.
-  , _kid     :: FapiKid
+  , _kid :: FapiKid
 } deriving (Generic, Show, Eq)
 
 -- | The following claims are specified in
@@ -659,7 +659,7 @@ data ClientMetaData = ClientMetaData {
   , _clientUri                              :: Maybe ScriptUri
 
   -- | Array of e-mail addresses of people responsible for the client.
-  , _contacts                               :: Maybe RegistrationContacts 
+  , _contacts                               :: Maybe RegistrationContacts
 
   -- | URL that references a logo for the client application.
   , _logoUri                                :: Maybe ScriptUri
@@ -744,7 +744,7 @@ data ClientMetaData = ClientMetaData {
   -- but by using FAPI the implication is that it is mandatory
   -- (<https://openid.net/specs/openid-financial-api-part-2.html#public-client §FAPI RW - Section 5.2.3 >).
   -- Mandatory field according to CDR.
-  , _idTokenSignedResponseAlg               :: FapiPermittedAlg 
+  , _idTokenSignedResponseAlg               :: FapiPermittedAlg
 
   -- | A set of scopes, containing at least @openid@.
   , _scope                                  :: Maybe FapiScopes
@@ -756,7 +756,7 @@ data ClientMetaData = ClientMetaData {
 
   -- | The version number of the software should a TPP choose to register and / or
   -- maintain it.
-  , _softwareVersion                        :: Maybe SoftwareVersion 
+  , _softwareVersion                        :: Maybe SoftwareVersion
 
   -- | @mutual_tls_sender_constrained_access_tokens@ indicating the client's
   -- intention to use mutual TLS sender constrained access tokens; CDR required
