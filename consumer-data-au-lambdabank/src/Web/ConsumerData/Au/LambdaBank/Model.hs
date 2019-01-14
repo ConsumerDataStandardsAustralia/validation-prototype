@@ -29,7 +29,7 @@ data ModelF next where
   GetTransactionDetailForAccountTransaction :: AccountId -> TransactionId -> (TransactionDetailResponse -> next) -> ModelF next
   GetDirectDebitsForAccount                 :: AccountId -> (DirectDebitAuthorisations -> next) -> ModelF next
   GetPayeesAll
-    :: Maybe PayeeType
+    :: Maybe PayeeTypeParam
     -> Maybe PageNumber
     -> Maybe PageSize
     -> (Payees -> next)
@@ -86,7 +86,7 @@ getTransactionDetailForAccountTransaction aId xactId = liftF $ GetTransactionDet
 getDirectDebitsForAccount :: MonadFree ModelF m => AccountId -> m DirectDebitAuthorisations
 getDirectDebitsForAccount accountId = liftF $ GetDirectDebitsForAccount accountId id
 
-getPayeesAll :: MonadFree ModelF m => Maybe PayeeType -> Maybe PageNumber -> Maybe PageSize -> m Payees
+getPayeesAll :: MonadFree ModelF m => Maybe PayeeTypeParam -> Maybe PageNumber -> Maybe PageSize -> m Payees
 getPayeesAll pt pn ps = liftF $ GetPayeesAll pt pn ps id
 
 getPayeeDetail :: MonadFree ModelF m => PayeeId -> m PayeeDetail

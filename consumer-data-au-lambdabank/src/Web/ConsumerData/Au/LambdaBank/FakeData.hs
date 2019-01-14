@@ -198,14 +198,14 @@ testDirectDebitAuthorisations = DirectDebitAuthorisations
   ]
 
 testPayee :: Payee
-testPayee = Payee (PayeeId "5") "payee-nickname" Nothing Domestic
+testPayee = Payee (PayeeId "5") "payee-nickname" Nothing Domestic Nothing
 
 testPayees :: Payees
 testPayees = Payees [testPayee]
 
 testPayeeDetail :: PayeeDetail
 testPayeeDetail = PayeeDetail testPayee $ PTDDomestic $ DPPayeeId $ DomesticPayeePayId
-  "payee" "hello" OrgNumber
+  (Just "payee") "hello" OrgNumber
 
 testProduct :: Product
 testProduct = Product (AsciiString "product-id-5") Nothing Nothing (DateTimeString (UTCTime (fromGregorian 2018 1 1) 0))
