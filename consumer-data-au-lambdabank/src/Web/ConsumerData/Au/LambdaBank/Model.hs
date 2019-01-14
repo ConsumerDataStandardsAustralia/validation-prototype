@@ -1,8 +1,10 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveFunctor      #-}
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE GADTs              #-}
-{-# LANGUAGE LambdaCase         #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators      #-}
 
 module Web.ConsumerData.Au.LambdaBank.Model where
 
@@ -10,8 +12,8 @@ import Web.ConsumerData.Au.Api.Types
 
 import Data.Text                 (Text)
 import Control.Monad.Free        (MonadFree, liftF)
-import Control.Monad.Free.Church (F, iterM)
 
+import Data.Functor.Coproduct ((:<:), inj)
 import Web.ConsumerData.Au.LambdaBank.FakeData
 
 data ModelF next where
@@ -47,64 +49,65 @@ data ModelF next where
 
 deriving instance Functor ModelF
 
-getCustomer :: MonadFree ModelF m => m CustomerResponse
-getCustomer = liftF $ GetCustomer id
+type ModelFree a = forall f m. (ModelF :<: f, MonadFree f m) => m a
 
-getCustomerDetail :: MonadFree ModelF m => m CustomerDetailResponse
-getCustomerDetail = liftF $ GetCustomerDetail id
+getCustomer :: ModelFree CustomerResponse
+getCustomer = liftF . inj $ GetCustomer id
 
-getAccounts :: MonadFree ModelF m => m Accounts
-getAccounts = liftF $ GetAccounts id
+getCustomerDetail :: ModelFree CustomerDetailResponse
+getCustomerDetail = liftF . inj $ GetCustomerDetail id
 
-getBalancesAll :: MonadFree ModelF m => m AccountBalances
-getBalancesAll = liftF $ GetBalancesAll id
+getAccounts :: ModelFree Accounts
+getAccounts = liftF . inj $ GetAccounts id
 
-getBalancesForAccounts :: MonadFree ModelF m => AccountIds -> m AccountBalances
-getBalancesForAccounts aIds = liftF $ GetBalancesForAccounts aIds id
+getBalancesAll :: ModelFree AccountBalances
+getBalancesAll = liftF . inj $ GetBalancesAll id
 
-getTransactionsAll :: MonadFree ModelF m => m BulkTransactions
-getTransactionsAll = liftF $ GetTransactionsAll id
+getBalancesForAccounts :: AccountIds -> ModelFree AccountBalances
+getBalancesForAccounts aIds = liftF . inj $ GetBalancesForAccounts aIds id
 
-getTransactionsForAccounts :: MonadFree ModelF m => AccountIds -> m BulkTransactions
-getTransactionsForAccounts aIds = liftF $ GetTransactionsForAccounts aIds id
+getTransactionsAll :: ModelFree BulkTransactions
+getTransactionsAll = liftF . inj $ GetTransactionsAll id
 
-getDirectDebitsAll :: MonadFree ModelF m => m DirectDebitAuthorisations
-getDirectDebitsAll = liftF $ GetDirectDebitsAll id
+getTransactionsForAccounts :: AccountIds -> ModelFree BulkTransactions
+getTransactionsForAccounts aIds = liftF . inj $ GetTransactionsForAccounts aIds id
 
-getDirectDebitsForAccounts :: MonadFree ModelF m => AccountIds -> m DirectDebitAuthorisations
-getDirectDebitsForAccounts aIds = liftF $ GetDirectDebitsForAccounts aIds id
+getDirectDebitsAll :: ModelFree DirectDebitAuthorisations
+getDirectDebitsAll = liftF . inj $ GetDirectDebitsAll id
 
-getAccountById :: MonadFree ModelF m => AccountId -> m AccountDetail
-getAccountById accountId = liftF $ GetAccountById accountId id
+getDirectDebitsForAccounts :: AccountIds -> ModelFree DirectDebitAuthorisations
+getDirectDebitsForAccounts aIds = liftF . inj $ GetDirectDebitsForAccounts aIds id
 
-getTransactionsForAccount :: MonadFree ModelF m => AccountId -> m AccountTransactions
-getTransactionsForAccount accountId = liftF $ GetTransactionsForAccount accountId id
+getAccountById :: AccountId -> ModelFree AccountDetail
+getAccountById accountId = liftF . inj $ GetAccountById accountId id
 
-getTransactionDetailForAccountTransaction :: MonadFree ModelF m => AccountId -> TransactionId -> m TransactionsDetail
-getTransactionDetailForAccountTransaction aId xactId = liftF $ GetTransactionDetailForAccountTransaction aId xactId id
+getTransactionsForAccount :: AccountId -> ModelFree AccountTransactions
+getTransactionsForAccount accountId = liftF . inj $ GetTransactionsForAccount accountId id
 
-getDirectDebitsForAccount :: MonadFree ModelF m => AccountId -> m DirectDebitAuthorisations
-getDirectDebitsForAccount accountId = liftF $ GetDirectDebitsForAccount accountId id
+getTransactionDetailForAccountTransaction :: AccountId -> TransactionId -> ModelFree TransactionsDetail
+getTransactionDetailForAccountTransaction aId xactId = liftF . inj $ GetTransactionDetailForAccountTransaction aId xactId id
 
-getPayeesAll :: MonadFree ModelF m => Maybe PayeeType -> Maybe PageNumber -> Maybe PageSize -> m Payees
-getPayeesAll pt pn ps = liftF $ GetPayeesAll pt pn ps id
+getDirectDebitsForAccount :: AccountId -> ModelFree DirectDebitAuthorisations
+getDirectDebitsForAccount accountId = liftF . inj $ GetDirectDebitsForAccount accountId id
 
-getPayeeDetail :: MonadFree ModelF m => PayeeId -> m PayeeDetail
-getPayeeDetail pId = liftF $ GetPayeeDetail pId id
+getPayeesAll :: Maybe PayeeType -> Maybe PageNumber -> Maybe PageSize -> ModelFree Payees
+getPayeesAll pt pn ps = liftF . inj $ GetPayeesAll pt pn ps id
+
+getPayeeDetail :: PayeeId -> ModelFree PayeeDetail
+getPayeeDetail pId = liftF . inj $ GetPayeeDetail pId id
 
 getProductsAll
-  :: MonadFree ModelF m
-  => Maybe ProductEffective
+  :: Maybe ProductEffective
   -> Maybe DateTimeString
   -> Maybe Text
   -> Maybe ProductCategory
   -> Maybe PageNumber
   -> Maybe PageSize
-  -> m Products
-getProductsAll pe dts t pc pn ps = liftF $ GetProductsAll pe dts t pc pn ps id
+  -> ModelFree Products
+getProductsAll pe dts t pc pn ps = liftF . inj $ GetProductsAll pe dts t pc pn ps id
 
-getProductDetail :: MonadFree ModelF m => ProductId -> m ProductDetail
-getProductDetail pId = liftF $ GetProductDetail pId id
+getProductDetail :: ProductId -> ModelFree ProductDetail
+getProductDetail pId = liftF . inj $ GetProductDetail pId id
 
 
 filterBalancesByAccountIds :: AccountIds -> AccountBalances -> AccountBalances
@@ -121,14 +124,12 @@ filterDirectDebitsByAccountIds (AccountIds aIds) (DirectDebitAuthorisations dds)
   DirectDebitAuthorisations $ filter (\dd -> elem (_accountDirectDebitAccountId dd) aIds) dds
 
 
-type ModelM = F ModelF
-
 -- This will have to take some kind of config later and the calls should actually
 -- take proper inputs (like the user id for get customer). But this works well
 -- enough for now.
-runModelM :: Monad m => ModelM a -> m a
-runModelM = iterM $ \case
-  (GetCustomer next) -> next (CustomerPerson testPerson)
+runModelF :: Monad m => ModelF a -> m a
+runModelF m = pure $ case m of
+  (GetCustomer next)       -> next (CustomerPerson testPerson)
   (GetCustomerDetail next) -> next (CustomerDetailPerson testPersonDetail)
   (GetAccounts next) -> next testAccounts
   (GetBalancesAll next) -> next testBalances
