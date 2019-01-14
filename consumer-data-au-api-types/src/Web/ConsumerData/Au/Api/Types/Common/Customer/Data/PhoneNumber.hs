@@ -59,7 +59,7 @@ data PhoneNumberPurpose =
   | PhoneNumberPurposeOther -- ^ "OTHER"
   | PhoneNumberPurposeInternational -- ^ "INTERNATIONAL"
   | PhoneNumberPurposeUnspecified -- ^ "UNSPECIFIED"
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 phoneNumberPurposeText :: Prism' Text PhoneNumberPurpose
 phoneNumberPurposeText =
@@ -86,6 +86,6 @@ phoneNumberPurposeEncoder = E.prismE phoneNumberPurposeText E.text
 
 phoneNumberPurposeDecoder :: Monad f => Decoder f PhoneNumberPurpose
 phoneNumberPurposeDecoder = D.prismDOrFail
-  (D._ConversionFailure # "Not a valid phone number")
+  (D._ConversionFailure # "Not a valid phone number purpose")
   phoneNumberPurposeText
   D.text

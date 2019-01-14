@@ -43,13 +43,13 @@ data EmailAddressPurpose =
   | EmailAddressPurposeHome -- ^ "HOME"
   | EmailAddressPurposeOther -- ^ "OTHER"
   | EmailAddressPurposeUnspecified -- ^ "UNSPECIFIED"
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 emailAddressPurposeText :: Prism' Text EmailAddressPurpose
 emailAddressPurposeText =
   prism (\case
           EmailAddressPurposeWork -> "WORK"
-          EmailAddressPurposeHome ->    "HOME"
+          EmailAddressPurposeHome -> "HOME"
           EmailAddressPurposeOther -> "OTHER"
           EmailAddressPurposeUnspecified -> "UNSPECIFIED"
       )

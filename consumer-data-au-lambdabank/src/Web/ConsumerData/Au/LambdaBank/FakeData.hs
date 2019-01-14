@@ -32,10 +32,10 @@ a12347 = AccountId (AsciiString "12347")
 testPerson :: Person
 testPerson = Person
   (UTCTime (fromGregorian 2018 11 13) 0)
-  "Ben"
+  (Just "Ben")
   "Kolera"
   ["Leigh"]
-  "Mr"
+  (Just "Mr")
   Nothing
   (Just $ OccupationCode (V6 DecDigit2 DecDigit6 DecDigit1 DecDigit3 DecDigit1 DecDigit3))
 testPhoneNumber :: PhoneNumber
@@ -44,9 +44,17 @@ testPhoneNumber = PhoneNumber True PhoneNumberPurposeMobile (Just "+61") (Just "
 testEmailAddress :: EmailAddress
 testEmailAddress = EmailAddress True EmailAddressPurposeWork "ben.kolera@data61.csiro.au"
 
-testAddress :: PhysicalAddress
-testAddress = PhysicalAddress
+testAddressWithPurpose :: PhysicalAddressWithPurpose
+testAddressWithPurpose = PhysicalAddressWithPurpose
   AddressPurposeRegistered
+  testAddress
+
+testPhysicalAddress :: PhysicalAddress
+testPhysicalAddress = PhysicalAddress
+  testAddress
+
+testAddress :: Address
+testAddress =
   (AddressSimple $ SimpleAddress
     (Just "Ben Kolera")
     "Level 3, T.C Beirne Centre"
@@ -63,7 +71,7 @@ testPersonDetail = PersonDetail
   -- TODO: Fix waargonaut bug where nonempty fails on a single element NEL. :)
   (testPhoneNumber :| [])
   [testEmailAddress]
-  [testAddress]
+  (testAddressWithPurpose :| [])
 
 testOrganisation :: Organisation
 testOrganisation = Organisation
@@ -78,14 +86,14 @@ testOrganisation = Organisation
   (Just "acn123")
   (Just True)
   (Just (IndustryCode (V5 x3 x3 x6 x6 x1)))
-  (Just OrgTypeCompany)
+  OrgTypeCompany
   (Just australia)
   (Just $ UTCTime (fromGregorian 2015 8 1) 0)
 
 testOrganisationDetail :: OrganisationDetail
 testOrganisationDetail = OrganisationDetail
   testOrganisation
-  [testAddress]
+  (testAddressWithPurpose :| [])
 
 fakePaginator :: Maybe PageNumber -> Maybe PageSize -> (Maybe PageNumber -> Maybe PageSize -> Link) -> Paginator
 fakePaginator pMay psMay = Paginator p p psMay 0 . (lmap Just)

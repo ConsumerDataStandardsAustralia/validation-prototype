@@ -1,17 +1,18 @@
 module Web.ConsumerData.Au.Api.Types.Common.Gens where
 
-import Hedgehog (Gen)
-import qualified Hedgehog.Gen as Gen
+import           Hedgehog       (Gen)
+import qualified Hedgehog.Gen   as Gen
 import qualified Hedgehog.Range as Range
 
-import Country.Gens (countryGen)
+import Country.Gens   (countryGen)
 import Data.Text.Gens (textGen)
 import Data.Time.Gens (utcTimeGen)
 
-import Data.Vector.V6
 import Data.Vector.V5
+import Data.Vector.V6
 import Web.ConsumerData.Au.Api.Types.Common.Customer
 import Web.ConsumerData.Au.Api.Types.Data.Gens
+
 
 customerResponseGen :: Gen CustomerResponse
 customerResponseGen = Gen.choice
@@ -27,8 +28,14 @@ customerDetailResponseGen = Gen.choice
 
 personGen :: Gen Person
 personGen =
-  Person <$> utcTimeGen <*> textGen <*> textGen <*> Gen.list (Range.linear 0 2) textGen
-  <*> textGen <*> Gen.maybe textGen <*> Gen.maybe occupationCodeGen
+  Person
+    <$> utcTimeGen
+    <*> Gen.maybe textGen
+    <*> textGen
+    <*> Gen.list (Range.linear 0 2) textGen
+    <*> Gen.maybe textGen
+    <*> Gen.maybe textGen
+    <*> Gen.maybe occupationCodeGen
 
 occupationCodeGen :: Gen OccupationCode
 occupationCodeGen = OccupationCode <$> v6Gen Gen.enumBounded
@@ -53,7 +60,7 @@ organisationGen =
     <*> Gen.maybe textGen
     <*> Gen.maybe Gen.bool
     <*> Gen.maybe industryCodeGen
-    <*> Gen.maybe organisationTypeGen
+    <*> organisationTypeGen
     <*> Gen.maybe countryGen
     <*> Gen.maybe utcTimeGen
 
@@ -61,14 +68,8 @@ industryCodeGen :: Gen IndustryCode
 industryCodeGen = IndustryCode <$> v5Gen Gen.enumBounded
 
 organisationTypeGen :: Gen OrganisationType
-organisationTypeGen = Gen.element
-  [ OrgTypeSoleTrader
-  , OrgTypeCompany
-  , OrgTypePartnership
-  , OrgTypeTrust
-  , OrgTypeGovermentEntity
-  , OrgTypeOther
-  ]
+organisationTypeGen = Gen.enumBounded
+
 
 personDetailGen :: Gen PersonDetail
 personDetailGen =
@@ -76,24 +77,19 @@ personDetailGen =
     <$> personGen
     <*> Gen.nonEmpty (Range.linear 1 3) phoneNumberGen
     <*> Gen.list (Range.linear 0 3) emailAddressGen
-    <*> Gen.list (Range.linear 0 3) physicalAddressGen
+    <*> Gen.nonEmpty (Range.linear 1 3) physicalAddressWithPurposeGen
 
 organisationDetailGen :: Gen OrganisationDetail
 organisationDetailGen =
   OrganisationDetail
     <$> organisationGen
-    <*> Gen.list (Range.linear 0 3) physicalAddressGen
+    <*> Gen.nonEmpty (Range.linear 1 3) physicalAddressWithPurposeGen
 
 emailAddressGen :: Gen EmailAddress
 emailAddressGen = EmailAddress <$> Gen.bool <*> emailAddressPurposeGen <*> textGen
 
 emailAddressPurposeGen :: Gen EmailAddressPurpose
-emailAddressPurposeGen = Gen.element
-  [ EmailAddressPurposeWork
-  , EmailAddressPurposeHome
-  , EmailAddressPurposeOther
-  , EmailAddressPurposeUnspecified
-  ]
+emailAddressPurposeGen = Gen.enumBounded
 
 phoneNumberGen :: Gen PhoneNumber
 phoneNumberGen =
@@ -107,11 +103,4 @@ phoneNumberGen =
     <*> textGen
 
 phoneNumberPurposeGen :: Gen PhoneNumberPurpose
-phoneNumberPurposeGen = Gen.element
-  [ PhoneNumberPurposeMobile
-  , PhoneNumberPurposeWork
-  , PhoneNumberPurposeHome
-  , PhoneNumberPurposeOther
-  , PhoneNumberPurposeInternational
-  , PhoneNumberPurposeUnspecified
-  ]
+phoneNumberPurposeGen = Gen.enumBounded

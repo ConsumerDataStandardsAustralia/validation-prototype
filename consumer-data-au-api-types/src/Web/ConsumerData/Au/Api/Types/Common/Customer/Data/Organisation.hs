@@ -31,7 +31,6 @@ import           Waargonaut.Types.Json      (Json)
 -- | The authorisation was given to a business agent and this type represents that business. This type should not be used where a retail customer was authorised.
 -- <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocCommonCommonSchemas CDR AU v0.1.0>
 data Organisation = Organisation
-  -- Last Update time in the new swagger is mandatory everywhere
   { _organisationLastUpdateTime    :: UTCTime -- ^ The date and time this this record was last updated.
   , _organisationAgentFirstName    :: Maybe Text -- ^ WARNING: firstName is optional as per specification!!! The first name of the individual providing access on behalf of the organisation. For people with single names this field need not be present. The single name should be in the lastName field
   , _organisationAgentLastName     :: Text -- ^ The last name of the individual providing access on behalf of the organisation. For people with single names the single name should be in this field
@@ -43,7 +42,7 @@ data Organisation = Organisation
   , _organisationAcn               :: Maybe Text -- ^ Australian Company Number.
   , _organisationIsACNCRegistered  :: Maybe Bool -- ^ @True@ if registered with the ACNC. @False@ if not. @Absent@ or @null@ if not confirmed.
   , _organisationIndustryCode      :: Maybe IndustryCode -- ^ ANZIC (2006) code for the organisation.
-  , _organisationOrganisationType  :: Maybe OrganisationType
+  , _organisationOrganisationType  :: OrganisationType
   , _organisationRegisteredCountry :: Maybe Country -- ^ A valid ISO 3166 Alpha-3 country code.
   , _organisationEstablishmentDate :: Maybe UTCTime -- ^ The date the organisation described was established.
   }
@@ -67,7 +66,7 @@ organisationFields o =
   maybeOrAbsentE "acn" E.text (_organisationAcn o ) .
   maybeOrAbsentE "isACNRegistered" E.bool (_organisationIsACNCRegistered o ) .
   maybeOrAbsentE "industryCode" industryCodeEncoder (_organisationIndustryCode o ) .
-  maybeOrAbsentE "organisationType" organisationTypeEncoder (_organisationOrganisationType o ) .
+  E.atKey' "organisationType" organisationTypeEncoder (_organisationOrganisationType o ) .
   maybeOrAbsentE "registeredCountry" countryAlphaThreeEncoder (_organisationRegisteredCountry o ) .
   maybeOrAbsentE "establishmentDate" utcTimeEncoder (_organisationEstablishmentDate o )
 
@@ -85,7 +84,7 @@ organisationDecoder =
     <*> atKeyOptional' "acn" D.text
     <*> atKeyOptional' "isACNRegistered" D.bool
     <*> atKeyOptional' "industryCode" industryCodeDecoder
-    <*> atKeyOptional' "organisationType" organisationTypeDecoder
+    <*> D.atKey "organisationType" organisationTypeDecoder
     <*> atKeyOptional' "registeredCountry" countryAlphaThreeDecoder
     <*> atKeyOptional' "establishmentDate" utcTimeDecoder
 
@@ -106,7 +105,7 @@ data OrganisationType =
   | OrgTypeTrust -- ^ "TRUST"
   | OrgTypeGovermentEntity -- ^ "GOVERNMENT_ENTITY"
   | OrgTypeOther -- ^ "OTHER"
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 organisationTypeText ::
   Prism' Text OrganisationType

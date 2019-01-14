@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Web.ConsumerData.Au.Api.Types.Data.Gens
-  (amountStringGen, rateStringGen, asciiStringGen, physicalAddressGen, currencyGen)
+  (amountStringGen, rateStringGen, asciiStringGen,
+   physicalAddressGen, physicalAddressWithPurposeGen, currencyGen)
 where
 
 import           Control.Applicative (liftA3)
@@ -54,20 +55,19 @@ asciiStringGen = AsciiString . Text.pack <$> Gen.list (Range.linear 1 50) Gen.as
 currencyGen :: Gen Alpha
 currencyGen = Gen.enumBounded
 
-physicalAddressGen ::  Gen PhysicalAddress
-physicalAddressGen =
-  PhysicalAddress
+physicalAddressWithPurposeGen ::  Gen PhysicalAddressWithPurpose
+physicalAddressWithPurposeGen =
+  PhysicalAddressWithPurpose
     <$> addressPurposeGen
     <*> addressGen
 
+physicalAddressGen ::  Gen PhysicalAddress
+physicalAddressGen =
+  PhysicalAddress
+    <$> addressGen
+
 addressPurposeGen :: Gen AddressPurpose
-addressPurposeGen = Gen.element
-  [ AddressPurposeRegistered
-  , AddressPurposeMail
-  , AddressPurposePhysical
-  , AddressPurposeWork
-  , AddressPurposeOther
-  ]
+addressPurposeGen = Gen.enumBounded
 
 addressGen :: Gen Address
 addressGen =  Gen.choice
@@ -94,16 +94,7 @@ addressStateGen = Gen.choice
   ]
 
 australiaStateGen :: Gen AustraliaState
-australiaStateGen = Gen.element
-  [ AustraliaStateACT
-  , AustraliaStateNSW
-  , AustraliaStateNT
-  , AustraliaStateQLD
-  , AustraliaStateSA
-  , AustraliaStateTAS
-  , AustraliaStateVIC
-  , AustraliaStateWA
-  ]
+australiaStateGen = Gen.enumBounded
 
 -- helpers
 positiveRational, positiveInteger, postDecimal, dot :: Gen Text

@@ -26,24 +26,24 @@ import Web.ConsumerData.Au.Api.Types.Stub
     (emptyObjDecoder, emptyObjEncoder)
 import Web.ConsumerData.Au.Api.Types.SumTypeHelpers
 
--- | PhysicalAddress <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaphysicaladdress CDR AU v0.1.0 PhysicalAddress >
-data PhysicalAddress = PhysicalAddress
-  { _physicalAddressPurpose :: AddressPurpose
-  , _physicalAddressAddress :: Address
+
+data PhysicalAddressWithPurpose = PhysicalAddressWithPurpose
+  { _physicalAddressWPPurpose :: AddressPurpose
+  , _physicalAddressWPAddress :: Address
   } deriving (Generic, Show, Eq)
 
-physicalAddressEncoder :: Applicative f => Encoder f PhysicalAddress
-physicalAddressEncoder = E.mapLikeObj $ \pa ->
-  (E.atKey' "purpose" addressPurposeEncoder (_physicalAddressPurpose pa)) .
-  addressFields (_physicalAddressAddress pa)
+physicalAddressWithPurposeEncoder :: Applicative f => Encoder f PhysicalAddressWithPurpose
+physicalAddressWithPurposeEncoder = E.mapLikeObj $ \pa ->
+  (E.atKey' "purpose" addressPurposeEncoder (_physicalAddressWPPurpose pa)) .
+  addressFields (_physicalAddressWPAddress pa)
   where
     addressFields = \case
       AddressSimple a -> fields "simple" simpleAddressEncoder a
       AddressPaf      -> fields "paf" emptyObjEncoder ()
     fields = typeTaggedField "addressUType"
 
-physicalAddressDecoder :: Monad f => Decoder f PhysicalAddress
-physicalAddressDecoder = PhysicalAddress
+physicalAddressWithPurposeDecoder :: Monad f => Decoder f PhysicalAddressWithPurpose
+physicalAddressWithPurposeDecoder = PhysicalAddressWithPurpose
   <$> D.atKey "purpose" addressPurposeDecoder
   <*> addyDecoder
 
@@ -53,13 +53,37 @@ physicalAddressDecoder = PhysicalAddress
       "paf"    -> Just $ (TypedTagField (const AddressPaf) (emptyObjDecoder ()))
       _        -> Nothing
 
+
+-- | PhysicalAddress <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaphysicaladdress CDR AU v0.1.0 PhysicalAddress >
+data PhysicalAddress = PhysicalAddress
+  { _physicalAddressAddress :: Address } deriving (Generic, Show, Eq)
+
+physicalAddressEncoder :: Applicative f => Encoder f PhysicalAddress
+physicalAddressEncoder = E.mapLikeObj $ \pa ->
+  addressFields (_physicalAddressAddress pa)
+  where
+    addressFields = \case
+      AddressSimple a -> fields "simple" simpleAddressEncoder a
+      AddressPaf      -> fields "paf" emptyObjEncoder ()
+    fields = typeTaggedField "addressUType"
+
+physicalAddressDecoder :: Monad f => Decoder f PhysicalAddress
+physicalAddressDecoder = PhysicalAddress
+  <$> addyDecoder
+  where
+    addyDecoder = typeTaggedDecoder "addressUType" $ \case
+      "simple" -> Just $ (TypedTagField AddressSimple simpleAddressDecoder)
+      "paf"    -> Just $ (TypedTagField (const AddressPaf) (emptyObjDecoder ()))
+      _        -> Nothing
+
+
 data AddressPurpose =
     AddressPurposeRegistered -- ^ "REGISTERED"
   | AddressPurposeMail -- ^ "MAIL"
   | AddressPurposePhysical -- ^ "PHYSICAL"
   | AddressPurposeWork -- ^ "WORK"
   | AddressPurposeOther -- ^ "OTHER"
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 addressPurposeText :: Prism' Text AddressPurpose
 addressPurposeText =
@@ -157,7 +181,7 @@ data AustraliaState =
   | AustraliaStateTAS -- ^ "Tasmania"
   | AustraliaStateVIC -- ^ "Victoria"
   | AustraliaStateWA -- ^ "Western Australia"
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 australiaStateText ::
   Prism' Text AustraliaState
