@@ -18,6 +18,13 @@ tested-with:         GHC == 8.4.4
 library
   exposed-modules:
                        Aeson.Helpers
+                     , AuPost.PAF
+                     , AuPost.PAF.FlatType
+                     , AuPost.PAF.FloorType
+                     , AuPost.PAF.PostalDeliveryType
+                     , AuPost.PAF.StateType
+                     , AuPost.PAF.StreetSuffix
+                     , AuPost.PAF.StreetType
                      , Country.Waargonaut
                      , Crypto.JWT.Pretty
                      , Data.GADT.Aeson
@@ -159,6 +166,7 @@ test-suite tasty
                      , jose == 0.7.*
                      , lens == 4.16.*
                      , mtl == 2.2.*
+                     , nat == 0.3.*
                      , modern-uri == 0.2.*
                      , network-uri == 2.6.*
                      , profunctors == 5.*
@@ -180,6 +188,7 @@ test-suite tasty
                      , warp == 3.2.*
   other-modules:
                        AesonGolden
+                     , AuPost.PAF.Gens
                      , Country.Gens
                      , Data.Text.Gens
                      , Data.Time.Gens

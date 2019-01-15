@@ -9,15 +9,16 @@ that it looks heinous for now!
 --}
 
 -- import Data.Currency            (Alpha(AUD))
-import Country.Identifier       (australia)
-import Data.Profunctor          (lmap)
+import Country.Identifier (australia)
 import Data.Digit.Decimal
-import Data.List.NonEmpty       (NonEmpty((:|)))
-import Data.Maybe               (fromMaybe)
-import Data.Time (fromGregorian, UTCTime(..))
-import Servant.Links            (Link)
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Maybe         (fromMaybe)
+import Data.Profunctor    (lmap)
+import Data.Time          (UTCTime (..), fromGregorian)
+import Servant.Links      (Link)
 
-import Web.ConsumerData.Au.Api.Types
+import qualified AuPost.PAF                    as PAF
+import           Web.ConsumerData.Au.Api.Types
 
 a12345 :: AccountId
 a12345 = AccountId (AsciiString "12345")
@@ -47,15 +48,16 @@ testEmailAddress = EmailAddress True EmailAddressPurposeWork "ben.kolera@data61.
 testAddressWithPurpose :: PhysicalAddressWithPurpose
 testAddressWithPurpose = PhysicalAddressWithPurpose
   AddressPurposeRegistered
-  testAddress
+  testPhysicalAddress
 
 testPhysicalAddress :: PhysicalAddress
 testPhysicalAddress = PhysicalAddress
-  testAddress
+  -- testAddressSimple
+  testAddressPaf
 
-testAddress :: Address
-testAddress =
-  (AddressSimple $ SimpleAddress
+testAddressSimple :: Address
+testAddressSimple =
+  AddressSimple $ SimpleAddress
     (Just "Ben Kolera")
     "Level 3, T.C Beirne Centre"
     (Just "315 Brunswick St")
@@ -63,7 +65,32 @@ testAddress =
     (Just "4006")
     "Fortitude Valley"
     (AustralianState AustraliaStateQLD)
-    (Just australia))
+    (Just australia)
+
+testAddressPaf :: Address
+testAddressPaf =
+  AddressPaf $ PAFAddress
+    (Just "bla")
+    (Just 1)
+    (Just "bla")
+    (Just 100)
+    Nothing
+    Nothing
+    Nothing
+    (Just 55)
+    Nothing
+    Nothing
+    Nothing
+    (Just PAF.StreetTypeST)
+    (Just PAF.StreetSuffixW)
+    (Just PAF.PdtRsd)
+    (Just 1234)
+    Nothing
+    Nothing
+    "Fortitude Valley"
+    "4006"
+    PAF.StateQLD
+
 
 testPersonDetail :: PersonDetail
 testPersonDetail = PersonDetail

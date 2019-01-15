@@ -8,14 +8,16 @@ where
 import           Control.Applicative (liftA3)
 import           Data.Currency       (Alpha)
 import           Data.Foldable       (Foldable (toList))
+import           Data.Number.Nat     (Nat, toNat)
 import           Data.Text           (Text)
 import qualified Data.Text           as Text
 import           Hedgehog            (Gen)
 import qualified Hedgehog.Gen        as Gen
 import qualified Hedgehog.Range      as Range
 
-import Country.Gens   (countryGen)
-import Data.Text.Gens (textGen)
+import qualified AuPost.PAF.Gens as PAF
+import           Country.Gens    (countryGen)
+import           Data.Text.Gens  (textGen)
 
 import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
 import Web.ConsumerData.Au.Api.Types.Data.PhysicalAddress
@@ -59,7 +61,7 @@ physicalAddressWithPurposeGen ::  Gen PhysicalAddressWithPurpose
 physicalAddressWithPurposeGen =
   PhysicalAddressWithPurpose
     <$> addressPurposeGen
-    <*> addressGen
+    <*> physicalAddressGen
 
 physicalAddressGen ::  Gen PhysicalAddress
 physicalAddressGen =
@@ -72,7 +74,7 @@ addressPurposeGen = Gen.enumBounded
 addressGen :: Gen Address
 addressGen =  Gen.choice
   [ AddressSimple <$> simpleAddressGen
-  , pure AddressPaf
+  , AddressPaf <$> pafAddressGen
   ]
 
 simpleAddressGen :: Gen SimpleAddress
@@ -95,6 +97,34 @@ addressStateGen = Gen.choice
 
 australiaStateGen :: Gen AustraliaState
 australiaStateGen = Gen.enumBounded
+
+pafAddressGen :: Gen PAFAddress
+pafAddressGen =
+  PAFAddress
+    <$> Gen.maybe textGen
+    <*> Gen.maybe natGen
+    <*> Gen.maybe textGen
+    <*> Gen.maybe natGen
+    <*> Gen.maybe textGen
+    <*> Gen.maybe textGen
+    <*> Gen.maybe textGen
+    <*> Gen.maybe natGen
+    <*> Gen.maybe textGen
+    <*> Gen.maybe textGen
+    <*> Gen.maybe textGen
+    <*> Gen.maybe PAF.streetTypeGen
+    <*> Gen.maybe PAF.streetSuffixGen
+    <*> Gen.maybe PAF.postalDeliveryTypeGen
+    <*> Gen.maybe natGen
+    <*> Gen.maybe textGen
+    <*> Gen.maybe textGen
+    <*> textGen
+    <*> textGen
+    <*> PAF.stateTypeGen
+
+natGen :: Gen Nat
+natGen = fmap toNat (Gen.int (Range.linear 1 10000))
+
 
 -- helpers
 positiveRational, positiveInteger, postDecimal, dot :: Gen Text

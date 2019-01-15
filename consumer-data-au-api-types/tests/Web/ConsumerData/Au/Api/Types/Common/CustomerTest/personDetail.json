@@ -1,47 +1,68 @@
 {
-    "customerUType": "person",
-    "person" : {
-        "lastUpdateTime": "2018-11-01T05:32:18Z",
-        "firstName": "first name",
-        "lastName": "last name",
-        "middleNames": [
-            "middle name 1"
-        ],
-        "prefix": "prefix",
-        "suffix": "suffix",
-        "occupationCode": "121322",
-        "phoneNumbers": [
-            {
-                "isPreferred": true,
-                "purpose": "MOBILE",
-                "countryCode": "61",
-                "areaCode": "04",
-                "number": "88145427",
-                "fullNumber": "+61488145427"
-            }
-        ],
-        "emailAddresses": [
-            {
-                "isPreferred": true,
-                "purpose": "WORK",
-                "address": "user@example.com"
-            }
-        ],
-        "physicalAddresses": [
-            {
-                "purpose": "REGISTERED",
-                "addressUType": "simple",
-                "simple": {
-                    "mailingName": "mailing name",
-                    "addressLine1": "addy line 1",
-                    "addressLine2": "addy line 2",
-                    "addressLine3": "addy line 3",
-                    "postcode": "4000",
-                    "city": "Brisbane",
-                    "state": "AU-QLD",
-                    "country": "AUS"
-                }
-            }
-        ]
-    }
+  "customerUType": "person",
+  "person": {
+    "lastUpdateTime": "2018-11-01T05:32:18Z",
+    "firstName": "first name",
+    "lastName": "last name",
+    "middleNames": [
+      "middle name 1"
+    ],
+    "prefix": "prefix",
+    "suffix": "suffix",
+    "occupationCode": "121322",
+    "phoneNumbers": [{
+      "isPreferred": true,
+      "purpose": "MOBILE",
+      "countryCode": "61",
+      "areaCode": "04",
+      "number": "88145427",
+      "fullNumber": "+61488145427"
+    }],
+    "emailAddresses": [{
+      "isPreferred": true,
+      "purpose": "WORK",
+      "address": "user@example.com"
+    }],
+    "physicalAddresses": [{
+        "purpose": "REGISTERED",
+        "addressUType": "simple",
+        "simple": {
+          "mailingName": "mailing name",
+          "addressLine1": "addy line 1",
+          "addressLine2": "addy line 2",
+          "addressLine3": "addy line 3",
+          "postcode": "4000",
+          "city": "Brisbane",
+          "state": "AU-QLD",
+          "country": "AUS"
+        }
+      },
+      {
+        "purpose": "PHYSICAL",
+        "addressUType": "paf",
+        "paf": {
+          "dpid": "string",
+          "thoroughfareNumber1": 0,
+          "thoroughfareNumber1Suffix": "string",
+          "thoroughfareNumber2": 0,
+          "thoroughfareNumber2Suffix": "string",
+          "flatUnitNumber": "string",
+          "floorLevelNumber": "string",
+          "lotNumber": 0,
+          "buildingName1": "string",
+          "buildingName2": "string",
+          "streetName": "string",
+          "streetType": "ST",
+          "streetSuffix": "E",
+          "postalDeliveryType": "MS",
+          "postalDeliveryNumber": 0,
+          "postalDeliveryNumberPrefix": "string",
+          "postalDeliveryNumberSuffix": "string",
+          "localityName": "string",
+          "postcode": "string",
+          "state": "QLD"
+        }
+      }
+    ]
+  }
 }
