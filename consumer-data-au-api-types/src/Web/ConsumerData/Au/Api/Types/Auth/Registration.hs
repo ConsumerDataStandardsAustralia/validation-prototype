@@ -38,7 +38,6 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
   , FapiAcrValues(..)
   , FapiScopes(..)
   , FapiKid(..)
-  , X509ThumbPrint(..)
   , RedirectUrls(..)
   , RequestObjectEncryption(..)
   , IdTokenEncryption(..)
@@ -61,10 +60,6 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
   , JwksUri(..)
   , _FapiTokenEndpointAuthMethod
   , GrantTypes(..)
-  , isX5t
-  , _X5T
-  , _X5T256
-  , x509ByteString
   , fapiEnc
   , _MutualTlsSCAT
   , _RegistrationErrorType
@@ -82,11 +77,13 @@ where
 
 import           Aeson.Helpers
     (parseJSONWithPrism, parseSpaceSeparatedSet, toJsonSpaceSeparatedSet, _URI)
-import           Control.Applicative                       (liftA2)
+import           Control.Applicative                       (liftA2, (<|>))
 import           Control.Lens
-    (Lens', Prism', at, makePrisms, makeWrapped, prism, prism', to, ( # ), (&),
-    (.~), (?~), (^.), (^?), _Right)
+    (Prism', at, makePrisms, makeWrapped, prism, prism', to, ( # ), (&), (.~),
+    (?~), (^.), (^?), _Right)
+import           Control.Lens.Combinators                  (_Just)
 import           Control.Lens.Wrapped                      (_Unwrapped)
+import           Control.Monad                             (join, liftM2)
 import           Control.Monad.Error.Class
     (MonadError, throwError)
 import           Control.Monad.Time                        (MonadTime)
@@ -95,23 +92,20 @@ import           Crypto.JOSE.JWA.JWE                       (Enc)
 import qualified Crypto.JOSE.JWA.JWE                       as JWE
 import           Crypto.JOSE.JWK                           (JWK)
 import           Crypto.JOSE.JWS
-    (HeaderParam (..), kid, newJWSHeader, x5t, x5tS256)
-import           Crypto.JOSE.Types
-    (Base64SHA1 (..), Base64SHA256 (..))
+    (HeaderParam (..), alg, header, kid, newJWSHeader, signatures)
 import           Crypto.JWT
     (AsJWTError, Audience, ClaimsSet, NumericDate, SignedJWT, StringOrURI,
     claimAud, claimExp, claimIat, claimIss, claimJti, decodeCompact,
     defaultJWTValidationSettings, emptyClaimsSet, encodeCompact,
-    issuerPredicate, signClaims, unregisteredClaims, verifyClaims)
+    issuerPredicate, param, signClaims, unregisteredClaims, verifyClaims)
 import           Crypto.Random.Types                       (MonadRandom)
 import           Data.Aeson
     (FromJSON (..), Result (..), ToJSON (..), Value (..), fromJSON)
-import           Data.Bool                                 (bool)
-import           Data.ByteString                           (ByteString)
 import qualified Data.ByteString.Lazy                      as BSL
     (fromStrict, toStrict)
 import           Data.HashMap.Strict                       (HashMap)
 import qualified Data.HashMap.Strict                       as M
+import           Data.Maybe                                (isJust)
 import           Data.Set                                  (Set, isSubsetOf)
 import qualified Data.Set                                  as Set
 import qualified Data.Text                                 as T
@@ -127,7 +121,12 @@ import           Web.ConsumerData.Au.Api.Types.Auth.Common
     (ClientId, ClientIss (..), FapiPermittedAlg, HttpsUrl, RedirectUri,
     ResponseType, Scopes, getRedirectUri, responseTypeText, _FapiPermittedAlg)
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
-    (AsError, Error, _MissingClaim, _ParseError)
+    (AsError, Error, _InvalidClaim, _MissingClaim, _ParseError)
+-- | The client registration endpoint is an OAuth 2.0 endpoint that is designed to allow a client to be dynamically registered with the authorization server. 'RegistrationRequest' represents a client request for registration containing meta-data elements specified in <https://tools.ietf.org/html/rfc7591 §RFC7591 - OAuth 2.0 Dynamic Client Registration Protocol> and <https://openid.net/specs/openid-connect-registration-1_0.html §OIDC registration>. Each request must contain a software statement assertion (a JWT is issued and signed by the OpenBanking Directory). Metadata values may be duplicated in the registration request, but if different, those in the software statement will take precedence and override those in the request.
+--
+--A RP will submit the registration request to a OP in order to receive `client_id` credentials. The registration request parameters are sent in a JWT signed by the RP [UK OB mandates this] and include the signed software statement assertion as a JWT claim.
+--
+-- Full details of CDR dynamic client registration can be found in the <https://consumerdatastandardsaustralia.github.io/infosec/#discovery-and-registration §CDR infosec standards>.
 
 -- | The client registration endpoint is an OAuth 2.0 endpoint that is designed to
 -- allow a client to be dynamically registered with the authorization server.
@@ -212,42 +211,6 @@ _FapiGrantTypes = prism'
   permittedGrantTypes =
     Set.fromList [Implicit, AuthorizationCode, RefreshToken]
   requiredGrantTypes = Set.fromList [Implicit, AuthorizationCode]
-
--- | The X.509 Certificate Thumbprint (SHA-1) field (@x5t@) must be included in
--- the headers if present on the JWK, as must the @x5t#S256@ header (SHA-256).
--- See
--- <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header §CDR spec>,
--- <https://tools.ietf.org/html/rfc7515#section-4.1.7 §RFC7515 4.1.7> has
--- further details.
-
--- TODO: check if we can borrow Jose types
-data X509ThumbPrint = X5T ByteString | X5T256 ByteString
-  deriving (Generic, Show, Eq)
-
--- TODO: NB: this may be being used instead of the KID
-_X5T :: Prism' X509ThumbPrint ByteString
-_X5T = prism'
-  X5T
-  (\case
-    X5T a -> Just a
-    _     -> Nothing
-  )
-
-_X5T256 :: Prism' X509ThumbPrint ByteString
-_X5T256 = prism'
-  X5T256
-  (\case
-    X5T256 a -> Just a
-    _        -> Nothing
-  )
-
-isX5t :: Lens' X509ThumbPrint Bool
-isX5t f o@(X5T    a) = fmap (bool (X5T256 a) o) (f True)
-isX5t f o@(X5T256 a) = fmap (bool o (X5T a)) (f False)
-
-x509ByteString :: Lens' X509ThumbPrint ByteString
-x509ByteString f (X5T    a) = fmap X5T (f a)
-x509ByteString f (X5T256 a) = fmap X5T256 (f a)
 
 data ApplicationType = Web | Native
   deriving (Generic, Show, Eq)
@@ -351,13 +314,19 @@ newtype JwksUri = JwksUri URI
 data JwkSet =
   -- | @jwks_uri@ parameter that specifies a URL for the client's JSON Web Key
   -- Set for pass-by-reference
-  JwksRef JwksUri
 
+  JwksRef JwksUri
   -- | @jwks@ parameter that specifies client's JSON Web Key Set document
   -- (passed by value). It is recommended [OIDC-R] that keys are passed by
   -- reference if possible.
   | JwksVal T.Text
   deriving (Generic, FromJSON, ToJSON, Show, Eq)
+
+jwkSetClaims :: Maybe JwkSet -> AesonClaims
+jwkSetClaims = \case
+  Just (JwksVal v) -> M.empty & at "jwks" ?~ toJSON v
+  Just (JwksRef u) -> M.empty & at "jwks_uri" ?~ toJSON u
+  Nothing          -> M.empty
 
 -- | JWE @alg@ (and optional @enc@) algorithms for encrypting the ID token
 -- issued to the client (server must comply). @none@ is not permitted, unless
@@ -370,7 +339,7 @@ data JwkSet =
 data IdTokenEncryption = IdTokenEncryption
   {
     idTokenAlg :: FapiPermittedAlg
-  , idTokenEnc :: FapiEnc
+  , idTokenEnc :: Maybe FapiEnc
   }
   deriving (Generic, Show, Eq)
 
@@ -407,7 +376,10 @@ data TokenEndpointAuthMethod = ClientSecretPost
 _TokenEndpointAuthMethod :: Prism' AesonClaims TokenEndpointAuthMethod
 _TokenEndpointAuthMethod = prism
   tokEndPtMethMap
-  (\m -> either (const $ Left m) Right (getTokEndPtMeth m))
+  (\m -> either (const $ Left m)
+                Right
+                (getTokEndPtMeth m :: Either Error TokenEndpointAuthMethod)
+  )
 
 tokEndPtMethMap :: TokenEndpointAuthMethod -> AesonClaims
 tokEndPtMethMap = \case
@@ -428,7 +400,11 @@ tokEndPtMethMap = \case
   setApm (k, a) = M.empty & at k ?~ toJSON a
   setApm' a = M.empty & at "token_endpoint_auth_method" ?~ toJSON (a :: T.Text)
 
-getTokEndPtMeth :: AesonClaims -> Either Error TokenEndpointAuthMethod
+getTokEndPtMeth
+  :: forall e m
+   . (AsError e, MonadError e m)
+  => AesonClaims
+  -> m TokenEndpointAuthMethod
 getTokEndPtMeth m = do
   meth <- getClaim m "token_endpoint_auth_method"
   case meth :: T.Text of
@@ -440,7 +416,7 @@ getTokEndPtMeth m = do
       PrivateKeyJwt <$> getClaim m "token_endpoint_auth_signing_alg"
     "tls_client_auth" ->
       TlsClientAuth <$> getClaim m "tls_client_auth_subject_dn"
-    "none" -> Right None
+    "none" -> pure None
     _      -> throwError $ _ParseError # "Invalid token_endpoint_auth_method"
 
 instance ToJSON TokenEndpointAuthMethod where
@@ -641,14 +617,11 @@ data JwsRegisteredClaims = JwsRegisteredClaims
 data JwsHeaders = JwsHeaders
   {
   -- | The JWK @alg@ to sign the request with.
-    _alg     :: FapiPermittedAlg
+    _alg :: FapiPermittedAlg
 
   -- | @kid@ is a required header for
   -- <https://consumerdatastandardsaustralia.github.io/infosec/#jose-jwt-header §CDR>.
-  , _kid     :: FapiKid
-
-  -- | If present on the JWK, the X509 thumbprint must be included in the header.
-  , _thumbs :: Maybe X509ThumbPrint
+  , _kid :: FapiKid
 } deriving (Generic, Show, Eq)
 
 -- | The following claims are specified in
@@ -686,7 +659,7 @@ data ClientMetaData = ClientMetaData {
   , _clientUri                              :: Maybe ScriptUri
 
   -- | Array of e-mail addresses of people responsible for the client.
-  , _contacts                               :: Maybe RegistrationContacts 
+  , _contacts                               :: Maybe RegistrationContacts
 
   -- | URL that references a logo for the client application.
   , _logoUri                                :: Maybe ScriptUri
@@ -707,7 +680,7 @@ data ClientMetaData = ClientMetaData {
   , _sectorIdentifierUri                    :: Maybe HttpsUrl
 
   -- | Either the @jwks_uri@ or @jwks@ parameter specifying client's JWKS.
-  , _keySet                                 :: JwkSet
+  , _keySet                                 :: Maybe JwkSet
 
   -- | Array of @request_uri@ values that are pre-registered by the RP for use at
   -- the OP, which may cache their contents and not retrieve them at the time
@@ -736,7 +709,7 @@ data ClientMetaData = ClientMetaData {
   -- | The @id_token_encrypted_response_alg@ and @id_token_encrypted_response_enc@
   -- values for specifying how the ID token should be encrypted; see
   -- 'IdTokenEncryption' for more information. Mandatory field according to CDR.
-  , _idTokenEncryption                      :: IdTokenEncryption
+  , _idTokenEncryption                      :: Maybe IdTokenEncryption
 
   -- | JSON array containing a list of OAuth 2.0 @response_type@ values that the
   -- client will restrict itself to using; defaults to @code id_token@ if
@@ -771,7 +744,7 @@ data ClientMetaData = ClientMetaData {
   -- but by using FAPI the implication is that it is mandatory
   -- (<https://openid.net/specs/openid-financial-api-part-2.html#public-client §FAPI RW - Section 5.2.3 >).
   -- Mandatory field according to CDR.
-  , _idTokenSignedResponseAlg               :: FapiPermittedAlg 
+  , _idTokenSignedResponseAlg               :: FapiPermittedAlg
 
   -- | A set of scopes, containing at least @openid@.
   , _scope                                  :: Maybe FapiScopes
@@ -783,7 +756,7 @@ data ClientMetaData = ClientMetaData {
 
   -- | The version number of the software should a TPP choose to register and / or
   -- maintain it.
-  , _softwareVersion                        :: Maybe SoftwareVersion 
+  , _softwareVersion                        :: Maybe SoftwareVersion
 
   -- | @mutual_tls_sender_constrained_access_tokens@ indicating the client's
   -- intention to use mutual TLS sender constrained access tokens; CDR required
@@ -803,50 +776,6 @@ data SoftwareStatement = SoftwareStatement {
   , _ssMetaData    :: ClientMetaData -- ^ All the claims to include in the SSA; RFC7591 allows any/all that are included in the request object, however SSA claims take precedence over request object claims (3.1.1).
 }
   deriving (Generic, Show, Eq)
-
--- | The folowing fields are specified by UK OB. See <https://openbanking.atlassian.net/wiki/spaces/DZ/pages/36667724/The+OpenBanking+OpenID+Dynamic+Client+Registration+Specification+-+v1.0.0-rc2 §UK OB Spec> for more information) (NB: the OB naming convention deviates from OIDC-R/RFC7591 in that it includes a `software_` prefix in the field keys.)
-  -- , _clientId            :: Maybe ClientId -- ^ The Client ID Registered at OB used to access OB resources.
-  -- , _clientDescription   :: Maybe ClientDescription -- ^ Human-readable detailed description of the client.
-  -- , _environment         :: Maybe T.Text -- ^  Requested additional field to avoid certificate check. This field is not specified anywhere other than UK OB.
-  -- , _mode                :: Maybe SoftwareMode -- ^ ASPSP requested additional field to indicate that this software is "Test" or "Live" the default is "Live". Impact and support for "Test" software is up to the ASPSP. This field is not specified anywhere other than UK OB.
-  -- , _onBehalfOfOrg       :: Maybe URI -- ^ A reference to fourth party organsiation resource on the OB Directory if the registering TPP is acting on behalf of another. This field is not specified anywhere other than UK OB.
-  -- , _onBehalfOfOrgType   :: Maybe T.Text -- ^ The type of organisaion that this software has a relationship with. Regulated on OB Directory, Not regulated, Regulated not On OB Directory. This field is not specified anywhere other than UK OB.
-  -- , _roles               :: Maybe SoftwareRoles -- ^ A multi-value list of PSD2 roles that this software is authorized to perform e.g "PISP", "AISP". This field is not specified anywhere other than UK OB.
-  -- , _organisationCompetentAuthorityClaims :: Maybe OrgCompetentAuthClaims -- ^ Authorisations granted to the organsiation by an NCA.
-  -- , _orgStatus                            :: Maybe ClientStatus  -- ^ Included to cater for voluntary withdrawal from OB scenarios: Active, Revoked or Withdrawn
-  -- , _orgId                                :: Maybe OrgId -- ^ The Unique TPP or ASPSP ID held by OpenBanking.
-  -- , _orgName                              :: Maybe OrgName  -- ^  Legal Entity Identifier or other known organisation name.
-  -- , _orgContacts                          :: Maybe OrgContacts -- ^  JSON array of objects containing a triplet of name, email, and phone number.
-  -- , _orgJwksEndpoint                      :: Maybe JwksUri  -- ^ Contains all active signing and network certs for the organisation.
-  -- , _orgJwksRevokedEndpoint               :: Maybe JwksUri -- ^ Contains all revoked signing and network certs for the organisation.
-  -- , _obRegistryTos                        :: Maybe URI -- ^ A link to the OB registries terms of service page.
-  -- , _jwksRevokedEndpoint            :: Maybe HttpsUrl -- ^ Contains all revoked signing and network certs for the software.
- -- }
-
--- data OrgCompetentAuthClaims = OrgCompetentAuthClaims {
---     _authorityId    :: Maybe T.Text
---   , _registrationId :: Maybe T.Text
---   , _status         :: Maybe T.Text
---   , _authorisations :: Maybe AuthorityAuths
--- }
-
--- data AuthorityAuths = AuthorityAuths {
---     _memberState :: Maybe T.Text
---   , _roles       :: Maybe T.Text
--- }
-
--- UK OB implements contacts with names and phones alongside the (typically standard) email-address
--- data OrgContacts = OrgContacts {
---     _name  :: Maybe T.Text
---   , _email :: Maybe EmailAddress
---   , _phone :: Maybe T.Text
--- }
--- newtype OrganisationId = OrganisationId T.Text
--- newtype OrgId = OrgId T.Text
--- newtype OrgName = OrgName T.Text
--- newtype SoftwareRoles = SoftwareRoles T.Text
--- newtype SoftwareRoles = SoftwareRoles T.Text
--- data ClientStatus = Active | Revoked | Withdrawn
 
 newtype SoftwareId = SoftwareId T.Text
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
@@ -909,7 +838,6 @@ data RegistrationErrorType =
 
 newtype RegistrationErrorDescription = RegistrationErrorDescription T.Text
 
-
 _RegistrationErrorType :: Prism' T.Text RegistrationErrorType
 _RegistrationErrorType = prism
   (\case
@@ -948,10 +876,7 @@ metaDataToAesonClaims ClientMetaData {..} =
     ?~ toJSON _subjectType
     &  at "sector_identifier_uri"
     .~ (toJSON <$> _sectorIdentifierUri)
-    -- TODO: The spec on this is going to change, awaiting.
-    -- Either the jwks or the jwks_uri must be supplied.
-    -- & at "jwks".~ (toJSON <$> _keySet)
-    -- & at "jwks_uri".~ (toJSON <$> _keySet)
+    &  (<> jwkSetClaims _keySet)
     &  at "request_uris"
     .~ (toJSON <$> _requestUris)
     &  at "redirect_uris"
@@ -962,9 +887,10 @@ metaDataToAesonClaims ClientMetaData {..} =
     .~ (toJSON <$> (reqObjEnc =<< _requestObjectEncryption))
     &  at "userinfo_signed_response_alg"
     .~ (toJSON <$> _userinfoSignedResponseAlg)
-    -- TODO: The spec on this is going to change, awaiting.
-    -- & at "id_token_encrypted_response_alg".~ (toJSON . idTokenAlg <$> _idTokenEncryption)
-    -- & at "id_token_encrypted_response_enc".~ (toJSON <$> (idTokenEnc =<< _idTokenEncryption))
+    &  at "id_token_encrypted_response_alg"
+    .~ (toJSON . idTokenAlg <$> _idTokenEncryption)
+    &  at "id_token_encrypted_response_enc"
+    .~ (toJSON <$> (idTokenEnc <$> _idTokenEncryption))
     &  at "response_types"
     .~ (toJSON <$> _responseTypes)
     &  at "default_max_age"
@@ -1009,8 +935,9 @@ regoReqToJwt
   => JWK
   -> RegistrationRequest
   -> m SignedJWT
-regoReqToJwt jwk rr =
-  let mkCs h m =
+regoReqToJwt jwk rr
+  = let
+      mkCs h m =
         emptyClaimsSet & setRegisteredClaims h & unregisteredClaims .~ m
       ssClaims ssreg = mkCs (_ssSigningData ssreg) (ssToAesonClaims ssreg)
       reqAcm = metaDataToAesonClaims . _regReqClientMetaData $ rr
@@ -1018,15 +945,12 @@ regoReqToJwt jwk rr =
         mkCs (_regoReqRegClaims rr) (reqAcm & at "software_statement" ?~ ssb64)
       rrh = _regoReqJwtHeaders rr
       jwsHead =
-        newJWSHeader ((), _FapiPermittedAlg # _alg rrh)
-          &  kid
-          ?~ HeaderParam () (getFapiKid $ _kid rrh)
-          &  x5t
-          .~ (HeaderParam () . Base64SHA1 . (^. _X5T) <$> _thumbs rrh)
-          &  x5tS256
-          .~ (HeaderParam () . Base64SHA256 . (^. _X5T256) <$> _thumbs rrh)
-  in  do
-    -- get the b64 SSA as an aeson Value
+        newJWSHeader ((), _FapiPermittedAlg # _alg rrh) & kid ?~ HeaderParam
+          ()
+          (getFapiKid $ _kid rrh)
+    in
+      do
+      -- get the b64 SSA as an aeson Value
         ssb64 <- case _regReqsoftwareStatement rr of
           EncodedSs ss -> return $ toJSON ss
           DecodedSs ss -> jwtToJson <$> signClaims jwk jwsHead (ssClaims ss)
@@ -1054,16 +978,23 @@ jwtToRegoReq
   :: (MonadError e m, AsError e, AsJWTError e, JE.AsError e, MonadTime m)
   => (StringOrURI -> Bool)
   -> (StringOrURI -> Bool)
+  -> (StringOrURI -> Bool)
+  -> (StringOrURI -> Bool)
   -> JWK
   -> SignedJWT
   -> m RegistrationRequest
-jwtToRegoReq audPred issPred jwk jwt = do
-  let
-    -- TODO: seperate predicates here for the JWT?
-      validationSettings =
+jwtToRegoReq audPred issPred audPredSsa issPredSsa jwk jwt = do
+  let validationSettings =
         defaultJWTValidationSettings audPred & issuerPredicate .~ issPred
+      validationSettingsSsa =
+        defaultJWTValidationSettings audPredSsa & issuerPredicate .~ issPredSsa
       c2m c = c ^. unregisteredClaims . to aesonClaimsToMetaData
-      jwsHead = undefined
+      fapiAlg = jwt ^? signatures . header . alg . param . _FapiPermittedAlg
+      fapiKid = jwt ^? signatures . header . kid . _Just . param . to FapiKid
+      jwsHead =
+        JwsHeaders
+          <$> maybeErrors (_MissingClaim # "alg") fapiAlg
+          <*> maybeErrors (_MissingClaim # "kid") fapiKid
   claims <- verifyClaims validationSettings jwk jwt
   ssjwt  <-
     decodeCompact
@@ -1072,7 +1003,7 @@ jwtToRegoReq audPred issPred jwk jwt = do
     <$> claims
     ^.  unregisteredClaims
     .   to (`getClaim` "software_statement")
-  ssclaims <- verifyClaims validationSettings jwk ssjwt
+  ssclaims <- verifyClaims validationSettingsSsa jwk ssjwt
   -- Get the `software_statement` (ie a JWT), extract the headers and the claims
   ss <- SoftwareStatement <$> getRegisteredClaims ssclaims <*> c2m ssclaims
   -- ... putting that inside the software statement in the RegistrationRequest
@@ -1141,21 +1072,17 @@ aesonClaimsToMetaData m = do
   _tosUri              <- getmClaim m "tos_uri"
   _subjectType         <- getClaim m "subject_type"
   _sectorIdentifierUri <- getmClaim m "sector_identifier_uri"
-  -- TODO: The spec on this is going to change, awaiting.
-  -- mjwks         <- getmClaim m "jwks"
-  -- mjwksUri       <- getmClaim m "jwks_uri"
-  -- Fail if neither jwks or jwks_uri are supplied
-  --_keySet <- maybeErrors (_MissingClaim "jwks or jwks_uri required.") (mjwks <|> mjwksUri)
-  let _keySet = undefined
-  _requestUris  <- getmClaim m "request_uris"
-  _redirectUris <- getClaim m "redirect_uris"
-  ra            <- getmClaim m "request_object_encryption_alg"
-  re            <- getmClaim m "request_object_encryption_enc"
+  -- Fail if *both* jwks and jwks_uri are supplied
+  _keySet <- join $ liftM2 chkks (getmClaim m "jwks") (getmClaim m "jwks_uri")
+  _requestUris         <- getmClaim m "request_uris"
+  _redirectUris        <- getClaim m "redirect_uris"
+  ra                   <- getmClaim m "request_object_encryption_alg"
+  re                   <- getmClaim m "request_object_encryption_enc"
   let _requestObjectEncryption = RequestObjectEncryption <$> ra <*> pure re
   _userinfoSignedResponseAlg <- getmClaim m "userinfo_signed_response_alg"
-  ia                         <- getClaim m "id_token_encrypted_response_alg"
-  ie                         <- getClaim m "id_token_encrypted_response_enc"
-  let _idTokenEncryption = IdTokenEncryption ia ie
+  ia                         <- getmClaim m "id_token_encrypted_response_alg"
+  ie                         <- getmClaim m "id_token_encrypted_response_enc"
+  let _idTokenEncryption = IdTokenEncryption <$> ia <*> pure ie
   _responseTypes    <- getmClaim m "response_types"
   _defaultMaxAge    <- getmClaim m "default_max_age"
   _requireAuthTime  <- getmClaim m "require_auth_time"
@@ -1164,17 +1091,24 @@ aesonClaimsToMetaData m = do
   ua                <- getmClaim m "user_info_encrypted_response_alg"
   ue                <- getmClaim m "user_info_encrypted_response_enc"
   let _userInfoEncryption = UserInfoEncryption <$> ua <*> pure ue
-  _idTokenSignedResponseAlg   <- getClaim m "id_token_signed_response_alg"
-  _requestObjectSigningAlg    <- getClaim m "request_object_signing_alg"
-  _grantTypes                 <- getmClaim m "grant_types"
-  _applicationType            <- getClaim m "application_type"
-  --_tokenEndpointAuthMethod         <- getClaim m "token_endpoint_auth_method"
+  _idTokenSignedResponseAlg <- getClaim m "id_token_signed_response_alg"
+  _requestObjectSigningAlg  <- getClaim m "request_object_signing_alg"
+  _grantTypes               <- getmClaim m "grant_types"
+  _applicationType          <- getClaim m "application_type"
+  _tokenEndpointAuthMethod  <-
+    maybeErrors (_InvalidClaim # "Invalid endpoint auth method.")
+    =<< (^? _FapiTokenEndpointAuthMethod)
+    <$> getTokEndPtMeth m
   _scope                      <- getmClaim m "scope"
   _softwareId                 <- getmClaim m "software_id"
   _softwareVersion            <- getmClaim m "software_version"
   _mutualTlsSenderConstrainedAccessTokens <- getClaim m "software_version"
   _clientNotificationEndpoint <- getClaim m "software_version"
   pure ClientMetaData {..}
+ where
+  chkks ks u = if isJust ks && isJust u
+    then throwError (_InvalidClaim # "jwks xor jwks_uri required.")
+    else pure $ JwksVal <$> ks <|> JwksRef <$> u
 
 makePrisms ''TokenEndpointAuthMethod
 makePrisms ''JwkSet

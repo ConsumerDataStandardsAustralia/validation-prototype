@@ -11,6 +11,7 @@ import           Data.Text           (Text)
 
 data Error =
   MissingClaim Text
+  | InvalidClaim Text
   | ParseError String
   | JoseError JE.Error
   | JoseJwtError JWTError
