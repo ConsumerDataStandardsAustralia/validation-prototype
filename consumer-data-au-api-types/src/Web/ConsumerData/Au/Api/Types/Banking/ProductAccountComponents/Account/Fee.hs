@@ -56,18 +56,16 @@ instance JsonEncode OB AccountFees where
 
 
 
--- | ProductFee <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproductfee CDR AU v0.1.0 ProductFee>
--- WARNING This type is refering to *Account* only property, not as it defined in the above link
 data AccountFee = AccountFee
-  { _accountFeeName              :: Text -- ^ Name of the fee
-  , _accountFeeFeeType           :: AccountFeeType -- ^ The type of fee. See the note below for valid values and their meaning
-  , _accountFeeAmount            :: Maybe AmountString -- ^ The amount charged for the fee. Assumed to be in AUD. One of amount, balanceRate and transactionRate is mandatory.
-  , _accountFeeBalanceRate       :: Maybe RateString -- ^ A fee rate calculated based on a proportion of the balance. Assumed to be in AUD. One of amount, balanceRate and transactionRate is mandatory.
-  , _accountFeeTransactionRate   :: Maybe RateString -- ^ A fee rate calculated based on a proportion of a transaction. Assumed to be in AUD. One of amount, balanceRate and transactionRate is mandatory.
-  , _accountFeeCurrency          :: Maybe CurrencyString -- ^ The currency the fee will be charged in. Assumes AUD if absent
-  , _accountFeeAdditionalInfo    :: Maybe Text -- ^ Display text providing more information on the fee
-  , _accountFeeAdditionalInfoUri :: Maybe URI -- ^ Optional Link to a web page with more information on this fee
-  , _accountFeeDiscounts         :: Maybe AccountDiscounts -- ^ An optional list of discounts to this fee that may be available
+  { _accountFeeName              :: Text
+  , _accountFeeFeeType           :: AccountFeeType
+  , _accountFeeAmount            :: Maybe AmountString
+  , _accountFeeBalanceRate       :: Maybe RateString
+  , _accountFeeTransactionRate   :: Maybe RateString
+  , _accountFeeCurrency          :: Maybe CurrencyString
+  , _accountFeeAdditionalInfo    :: Maybe Text
+  , _accountFeeAdditionalInfoUri :: Maybe URI
+  , _accountFeeDiscounts         :: Maybe AccountDiscounts
   } deriving (Show, Eq)
 
 accountFeeDecoder :: Monad f => Decoder f AccountFee
@@ -104,18 +102,30 @@ instance JsonEncode OB AccountFee where
 
 -- | Description of the usage of the @feeType@ field as it applies to accounts. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#accountfeetypedoc CDR AU v0.1.0 Account Fee Types>
 data AccountFeeType =
-    AFeePeriodicPeriodic DurationString -- ^ "PERIODIC" A periodic fee such as a monthly account servicing fee. Use of @additionalValue@ field: The period of charge. Formatted according to ISO 8601 Durations.
-  | AFeePeriodicTransaction Text -- ^ "TRANSACTION" A fee for each transaction (above any free transactions in a period). Use of @additionalValue@ field: A description of the type of transaction (eg. Assisted Transaction, Teller Transaction, Cheque).
-  | AFeePeriodicExit -- ^ "EXIT" A fee for closing the product.
-  | AFeePeriodicOverdraw -- ^ "OVERDRAW" A fee for overdrawing the account.
-  | AFeePeriodicMinBalance DurationString -- ^ "MIN_BALANCE" A periodic fee for being below the minimum balance. Use of @additionalValue@ field: The period of charge. Formatted according to ISO 8601 Durations.
-  | AFeePeriodicRedraw -- ^ "REDRAW" A fee for performing a redraw transaction.
-  | AFeePeriodicChequeCash -- ^ "CHEQUE_CASH" A fee for cashing a cheque.
-  | AFeePeriodicChequeStop -- ^ "CHEQUE_STOP" A fee for stopping a cheque.
-  | AFeePeriodicChequeBook -- ^ "CHEQUE_BOOK" A fee for ordering a new cheque book.
-  | AFeePeriodicCardReplace -- ^ "CARD_REPLACE" A fee for ordering a replacement card.
-  | AFeePeriodicPaperStatement -- ^ "PAPER_STATEMENT" A fee for obtaining a paper statement.
-  | AFeePeriodicOtherEvent Text -- ^ "OTHER_EVENT" A fee for another type of event not already specified in the list of valid values. Use of @additionalValue@ field: Text description of the event.
+    AFeePeriodicPeriodic DurationString
+    -- ^ "PERIODIC" A periodic fee such as a monthly account servicing fee. Use of @additionalValue@ field: The period of charge. Formatted according to ISO 8601 Durations.
+  | AFeePeriodicTransaction Text
+    -- ^ "TRANSACTION" A fee for each transaction (above any free transactions in a period). Use of @additionalValue@ field: A description of the type of transaction (eg. Assisted Transaction, Teller Transaction, Cheque).
+  | AFeePeriodicExit
+    -- ^ "EXIT" A fee for closing the product.
+  | AFeePeriodicOverdraw
+    -- ^ "OVERDRAW" A fee for overdrawing the account.
+  | AFeePeriodicMinBalance DurationString
+    -- ^ "MIN_BALANCE" A periodic fee for being below the minimum balance. Use of @additionalValue@ field: The period of charge. Formatted according to ISO 8601 Durations.
+  | AFeePeriodicRedraw
+    -- ^ "REDRAW" A fee for performing a redraw transaction.
+  | AFeePeriodicChequeCash
+    -- ^ "CHEQUE_CASH" A fee for cashing a cheque.
+  | AFeePeriodicChequeStop
+    -- ^ "CHEQUE_STOP" A fee for stopping a cheque.
+  | AFeePeriodicChequeBook
+    -- ^ "CHEQUE_BOOK" A fee for ordering a new cheque book.
+  | AFeePeriodicCardReplace
+    -- ^ "CARD_REPLACE" A fee for ordering a replacement card.
+  | AFeePeriodicPaperStatement
+    -- ^ "PAPER_STATEMENT" A fee for obtaining a paper statement.
+  | AFeePeriodicOtherEvent Text
+    -- ^ "OTHER_EVENT" A fee for another type of event not already specified in the list of valid values. Use of @additionalValue@ field: Text description of the event.
   deriving (Show, Eq)
 
 accountFeeTypeDecoder :: Monad f => Decoder f AccountFeeType

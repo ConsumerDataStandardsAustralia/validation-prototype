@@ -48,7 +48,6 @@ physicalAddressWithPurposeDecoder = PhysicalAddressWithPurpose
   <*> physicalAddressDecoder
 
 
--- | PhysicalAddress <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaphysicaladdress CDR AU v0.1.0 PhysicalAddress >
 data PhysicalAddress = PhysicalAddress
   { _physicalAddressAddress :: Address } deriving (Generic, Show, Eq)
 
@@ -112,24 +111,22 @@ addressPurposeDecoder = D.prismDOrFail
   D.text
 
 
--- | The type of address object
 data Address
   = AddressSimple SimpleAddress
-    -- ^ SimpleAddress < https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemasimpleaddress CDR AU v0.1.0 SimpleAddress>
   | AddressPaf PAFAddress
-    -- ^ <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemapafaddress CDR AU v0.1.0 PAFAddress>
   deriving (Generic, Show, Eq)
 
 
 data SimpleAddress = SimpleAddress
-  { _simpleAddressMailingName  :: Maybe Text -- ^ Name of the individual or business formatted for inclusion in an address used for physical mail.
+  { _simpleAddressMailingName  :: Maybe Text
   , _simpleAddressAddressLine1 :: Text
   , _simpleAddressAddressLine2 :: Maybe Text
   , _simpleAddressAddressLine3 :: Maybe Text
-  , _simpleAddressPostcode     :: Maybe Text -- ^ Mandatory for Australian address.
+  , _simpleAddressPostcode     :: Maybe Text
   , _simpleAddressCity         :: Text
-  , _simpleAddressState        :: AddressState -- ^ Free text if the country is not Australia. If country is Australia then must be one of the values defined by the <https://www.iso.org/obp/ui/#iso:code:3166:AU ISO 3166:AU> standard.
-  , _simpleAddressCountry      :: Maybe Country -- ^ A valid ISO 3166 Alpha-3 country code.
+  , _simpleAddressState        :: AddressState
+    -- ^ Free text if the country is not Australia. If country is Australia then must be one of the values defined by the <https://www.iso.org/obp/ui/#iso:code:3166:AU ISO 3166:AU> standard.
+  , _simpleAddressCountry      :: Maybe Country
   } deriving (Eq, Show, Generic)
 
 simpleAddressEncoder :: Applicative f => Encoder f SimpleAddress
@@ -154,7 +151,7 @@ simpleAddressDecoder = SimpleAddress
     <*> D.atKey "state" addressStateDecoder
     <*> atKeyOptional' "country" countryAlphaThreeDecoder
 
--- | @AddressState@ If country is Australia then must be one of the values defined by the <https://www.iso.org/obp/ui/#iso:code:3166:AU ISO 3166:AU> standard.
+-- | TODO @AddressState@ If country is Australia then must be one of the values defined by the <https://www.iso.org/obp/ui/#iso:code:3166:AU ISO 3166:AU> standard.
 data AddressState =
     AustralianState AustraliaState
   | OtherCountryState Text
@@ -218,8 +215,7 @@ australiaStateDecoder = D.prismDOrFail
   D.text
 
 
--- | PAFAddress < https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemapafaddress CDR AU v0.2.0 PAFAddress >
--- Australian address formatted according to the file format defined by <https://auspost.com.au/content/dam/auspost_corp/media/documents/australia-post-data-guide.pdf the PAF file format>
+-- | PAFAddress Australian address formatted according to the file format defined by <https://auspost.com.au/content/dam/auspost_corp/media/documents/australia-post-data-guide.pdf the PAF file format>
 data PAFAddress = PAFAddress
   { _pafAddressDpid                       :: Maybe Text
   , _pafAddressThoroughfareNumber1        :: Maybe Nat

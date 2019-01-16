@@ -19,12 +19,11 @@ import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Tag
 
 
--- | Information on the authorised entity that is able to perform a direct debit <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaauthorisedentity CDR AU v0.1.0 AuthorisedEntity>
 data AuthorisedEntity = AuthorisedEntity
-  { _authorisedEntityName                 :: Text -- ^ Name of the authorised entity.
-  , _authorisedEntityFinancialInstitution :: Text -- ^ Name of the financial institution through which the direct debit will be executed.
-  , _authorisedEntityAbn                  :: Maybe Abn -- ^ Australian Business Number for the authorised entity.
-  , _authorisedEntityAcn                  :: Maybe Acn -- ^ Australian Company Number for the authorised entity.
+  { _authorisedEntityName                 :: Text
+  , _authorisedEntityFinancialInstitution :: Text
+  , _authorisedEntityAbn                  :: Maybe Abn
+  , _authorisedEntityAcn                  :: Maybe Acn
   , _authorisedEntityArbn                 :: Maybe Arbn
   } deriving (Eq, Show)
 
@@ -32,7 +31,7 @@ authorisedEntityDecoder :: Monad f => Decoder f AuthorisedEntity
 authorisedEntityDecoder =
   AuthorisedEntity
     <$> D.atKey "name" D.text
-    <*> D.atKey "financialInstitution" D.text -- WARNING miss typed in swagger `financialInsitution`
+    <*> D.atKey "financialInstitution" D.text
     <*> atKeyOptional' "abn" abnDecoder
     <*> atKeyOptional' "acn" acnDecoder
     <*> atKeyOptional' "arbn" arbnDecoder
@@ -52,7 +51,6 @@ instance JsonEncode OB AuthorisedEntity where
   mkEncoder = tagOb authorisedEntityEncoder
 
 
--- | Australian Business Number. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaabn CDR AU v0.1.0 ABN>
 data Abn =
   Abn { unAbn :: Text }
   deriving (Eq, Show)
@@ -64,7 +62,6 @@ abnEncoder :: Applicative f => Encoder f Abn
 abnEncoder = unAbn >$< E.text
 
 
--- | Australian Company Number. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaacn CDR AU v0.1.0 ABN>
 data Acn =
   Acn { unAcn :: Text }
   deriving (Eq, Show)

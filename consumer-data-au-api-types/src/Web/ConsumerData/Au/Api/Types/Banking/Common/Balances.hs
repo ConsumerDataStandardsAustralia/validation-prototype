@@ -81,7 +81,6 @@ balanceTypeFields = \case
     fields = typeTaggedField "balanceUType"
 
 
--- | The type of the balance object
 data BalanceType =
     BalanceDeposit DepositBalanceType
   | BalanceLending LendingBalanceType

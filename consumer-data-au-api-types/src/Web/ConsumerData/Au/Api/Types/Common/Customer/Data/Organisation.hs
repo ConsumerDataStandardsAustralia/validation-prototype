@@ -28,23 +28,22 @@ import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 import           Waargonaut.Types.JObject   (MapLikeObj)
 import           Waargonaut.Types.Json      (Json)
 
--- | The authorisation was given to a business agent and this type represents that business. This type should not be used where a retail customer was authorised.
--- <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocCommonCommonSchemas CDR AU v0.1.0>
+
 data Organisation = Organisation
-  { _organisationLastUpdateTime    :: UTCTime -- ^ The date and time this this record was last updated.
-  , _organisationAgentFirstName    :: Maybe Text -- ^ WARNING: firstName is optional as per specification!!! The first name of the individual providing access on behalf of the organisation. For people with single names this field need not be present. The single name should be in the lastName field
-  , _organisationAgentLastName     :: Text -- ^ The last name of the individual providing access on behalf of the organisation. For people with single names the single name should be in this field
-  , _organisationAgentRole         :: Text -- ^     The role of the individual identifed by the Person record in this organisation. Expected to be used for display. Default to “Unspecified” if the role is not known
-  , _organisationBusinessName      :: Text -- ^ Name of the organisation.
-  , _organisationLegalName         :: Maybe Text -- ^ Legal name, if different to the business name.
-  , _organisationShortName         :: Maybe Text -- ^ Short name used for communication, if different to the business name.
-  , _organisationAbn               :: Maybe Text -- ^ Australian Business Number.
-  , _organisationAcn               :: Maybe Text -- ^ Australian Company Number.
-  , _organisationIsACNCRegistered  :: Maybe Bool -- ^ @True@ if registered with the ACNC. @False@ if not. @Absent@ or @null@ if not confirmed.
-  , _organisationIndustryCode      :: Maybe IndustryCode -- ^ ANZIC (2006) code for the organisation.
+  { _organisationLastUpdateTime    :: UTCTime
+  , _organisationAgentFirstName    :: Maybe Text
+  , _organisationAgentLastName     :: Text
+  , _organisationAgentRole         :: Text
+  , _organisationBusinessName      :: Text
+  , _organisationLegalName         :: Maybe Text
+  , _organisationShortName         :: Maybe Text
+  , _organisationAbn               :: Maybe Text
+  , _organisationAcn               :: Maybe Text
+  , _organisationIsACNCRegistered  :: Maybe Bool
+  , _organisationIndustryCode      :: Maybe IndustryCode
   , _organisationOrganisationType  :: OrganisationType
-  , _organisationRegisteredCountry :: Maybe Country -- ^ A valid ISO 3166 Alpha-3 country code.
-  , _organisationEstablishmentDate :: Maybe UTCTime -- ^ The date the organisation described was established.
+  , _organisationRegisteredCountry :: Maybe Country
+  , _organisationEstablishmentDate :: Maybe UTCTime
   }
   deriving (Generic, Eq, Show)
 
@@ -97,7 +96,7 @@ industryCodeEncoder = getIndustryCode >$< v5DigitEncoder
 industryCodeDecoder :: Monad m => Decoder m IndustryCode
 industryCodeDecoder = IndustryCode <$> v5DigitDecoder
 
--- | List of organisation types.
+
 data OrganisationType =
     OrgTypeSoleTrader -- ^ "SOLE_TRADER"
   | OrgTypeCompany -- ^ "COMPANY"

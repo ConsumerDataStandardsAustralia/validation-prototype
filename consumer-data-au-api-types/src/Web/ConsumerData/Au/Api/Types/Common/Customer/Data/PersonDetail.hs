@@ -23,8 +23,6 @@ import Web.ConsumerData.Au.Api.Types.Common.Customer.Data.PhoneNumber  as PhoneN
 import Web.ConsumerData.Au.Api.Types.Data.PhysicalAddress              as PhysicalAddress
 
 
--- | The individual who authorised the session.
--- <https://consumerdatastandardsaustralia.github.io/standards/#schemapersondetail>
 data PersonDetail = PersonDetail
   { _personDetailPerson            :: Person
   , _personDetailPhoneNumbers      :: NonEmpty PhoneNumber

@@ -46,13 +46,10 @@ instance JsonEncode OB ProductDiscounts where
   mkEncoder = tagOb productDiscountsEncoder
 
 
--- | ProductDiscount <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproductdiscount CDR AU v0.1.0 ProductDiscount>
 data ProductDiscount = ProductDiscount
--- WARNING This type is refering to *Product* only property, not as it defined in the above link
-  { _productDiscountDescription  :: Text -- ^ Description of the discount
-  , _productDiscountDiscountType :: ProductDiscountType -- ^ The type of discount. See the note below for valid values and their meaning
--- WARNING
-  , _productDiscountAmount       :: AmountString -- ^ Value of the discount. Note that the currency of the fee discount is expected to be the same as the currency of the fee itself
+  { _productDiscountDescription  :: Text
+  , _productDiscountDiscountType :: ProductDiscountType
+  , _productDiscountAmount       :: AmountString
   } deriving (Show, Eq)
 
 productDiscountDecoder :: Monad f => Decoder f ProductDiscount
@@ -76,12 +73,15 @@ instance JsonEncode OB ProductDiscount where
 
 
 
--- | Description of the usage of the @discountType@ field as it applies to products. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#productdiscounttypedoc CDR AU v0.1.0 Product Discount Types>
 data ProductDiscountType =
-    PDiscountBalance AmountString -- ^ "BALANCE" Discount on a fee for maintaining a set balance. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The minimum balance in AmountString format.
-  | PDiscountDeposits AmountString -- ^ "DEPOSITS" Discount for depositing a certain amount of money in a period. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The minimum deposit amount in AmountString format.
-  | PDiscountPayments AmountString -- ^ "PAYMENTS" Discount for outbound payments from the account under a certain amount of money in a period. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The payment threshold amount in AmountString format.
-  | PDiscountBundle Text -- ^ "BUNDLE" Discount for originating a bundle instead of a standalone product. Use of @additionalValue@ field: The name of the applicable bundle.
+    PDiscountBalance AmountString
+    -- ^ "BALANCE" Discount on a fee for maintaining a set balance. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The minimum balance in AmountString format.
+  | PDiscountDeposits AmountString
+    -- ^ "DEPOSITS" Discount for depositing a certain amount of money in a period. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The minimum deposit amount in AmountString format.
+  | PDiscountPayments AmountString
+    -- ^ "PAYMENTS" Discount for outbound payments from the account under a certain amount of money in a period. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The payment threshold amount in AmountString format.
+  | PDiscountBundle Text
+    -- ^ "BUNDLE" Discount for originating a bundle instead of a standalone product. Use of @additionalValue@ field: The name of the applicable bundle.
   deriving (Show, Eq)
 
 productDiscountTypeDecoder :: Monad f => Decoder f ProductDiscountType

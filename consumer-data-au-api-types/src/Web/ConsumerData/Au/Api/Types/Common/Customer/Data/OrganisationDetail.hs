@@ -20,8 +20,7 @@ import Web.ConsumerData.Au.Api.Types.Data.PhysicalAddress
     (PhysicalAddressWithPurpose, physicalAddressWithPurposeDecoder,
     physicalAddressWithPurposeEncoder)
 
--- | The individual who authorised the session.
--- <https://consumerdatastandardsaustralia.github.io/standards/#schemaorganisationdetail>
+
 data OrganisationDetail = OrganisationDetail
   { _organisationDetailOrganisation :: Organisation
   , _organisationDetailAddresses    :: NonEmpty PhysicalAddressWithPurpose

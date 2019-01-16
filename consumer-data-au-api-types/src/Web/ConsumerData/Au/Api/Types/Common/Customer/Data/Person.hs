@@ -24,16 +24,15 @@ import           Waargonaut.Types.Json      (Json)
 
 import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 
--- | The individual who authorised the session.
--- <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocCommonCommonSchemas CDR AU v0.1.0>
+
 data Person = Person
-  { _personLastUpdateTime :: UTCTime -- ^ The date and time this this record was last updated.
+  { _personLastUpdateTime :: UTCTime
   , _personFirstName      :: Maybe Text
   , _personLastName       :: Text
   , _personMiddleNames    :: [Text]
-  , _personPrefix         :: Maybe Text -- ^ Title or salutation.
-  , _personSuffix         :: Maybe Text -- ^ Used for a trailing suffix to the name.
-  , _personOccupationCode :: Maybe OccupationCode -- ^ Value should be a valid <http://www.abs.gov.au/ANZSCO ANZCO v1.2> Standard Occupation classification.
+  , _personPrefix         :: Maybe Text
+  , _personSuffix         :: Maybe Text
+  , _personOccupationCode :: Maybe OccupationCode
   }
   deriving (Generic, Eq, Show)
 

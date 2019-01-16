@@ -47,12 +47,10 @@ instance JsonEncode OB AccountDiscounts where
 
 
 
--- | AccountDiscount <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproductdiscount CDR AU v0.1.0 ProductDiscount>
--- WARNING This type is refering to *Account* only property, not as it defined in the above link
 data AccountDiscount = AccountDiscount
-  { _accountDiscountDescription  :: Text -- ^ Description of the discount
-  , _accountDiscountDiscountType :: AccountDiscountType -- ^ The type of discount. See the note below for valid values and their meaning
-  , _accountDiscountAmount       :: AmountString -- ^ Value of the discount. Note that the currency of the fee discount is expected to be the same as the currency of the fee itself
+  { _accountDiscountDescription  :: Text
+  , _accountDiscountDiscountType :: AccountDiscountType
+  , _accountDiscountAmount       :: AmountString
   } deriving (Show, Eq)
 
 accountDiscountDecoder :: Monad f => Decoder f AccountDiscount
@@ -76,12 +74,15 @@ instance JsonEncode OB AccountDiscount where
 
 
 
--- | Description of the usage of the @discountType@ field as it applies to accounts. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#accountdiscounttypedoc CDR AU v0.1.0 Accountt Discount Types>
 data AccountDiscountType =
-    ADiscountBalance AmountString -- ^ "BALANCE" Discount on a fee for maintaining a set balance. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The minimum balance in AmountString format.
-  | ADiscountDeposits AmountString -- ^ "DEPOSITS" Discount for depositing a certain amount of money in a period. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The minimum deposit amount in AmountString format.
-  | ADiscountPayments AmountString -- ^ "PAYMENTS" Discount for outbound payments from the account under a certain amount of money in a period. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The payment threshold amount in AmountString format.
-  | ADiscountBundle Text -- ^ "BUNDLE" Discount for originating a bundle instead of a standalone product. Use of @additionalValue@ field: The name of the applicable bundle.
+    ADiscountBalance AmountString
+    -- ^ "BALANCE" Discount on a fee for maintaining a set balance. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The minimum balance in AmountString format.
+  | ADiscountDeposits AmountString
+    -- ^ "DEPOSITS" Discount for depositing a certain amount of money in a period. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The minimum deposit amount in AmountString format.
+  | ADiscountPayments AmountString
+    -- ^ "PAYMENTS" Discount for outbound payments from the account under a certain amount of money in a period. As the discount applies to a fee the period is the same as for the fee. Use of @additionalValue@ field: The payment threshold amount in AmountString format.
+  | ADiscountBundle Text
+    -- ^ "BUNDLE" Discount for originating a bundle instead of a standalone product. Use of @additionalValue@ field: The name of the applicable bundle.
   deriving (Show, Eq)
 
 accountDiscountTypeDecoder :: Monad f => Decoder f AccountDiscountType

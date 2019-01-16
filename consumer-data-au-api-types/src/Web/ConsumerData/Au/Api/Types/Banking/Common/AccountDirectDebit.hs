@@ -45,11 +45,10 @@ instance JsonEncode OB DirectDebitAuthorisations where
   mkEncoder = tagOb directDebitAuthorisationsEncoder
 
 
--- | AccountDirectDebit <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaaccountdirectdebit CDR AU v0.1.0 AccountDirectDebit>
 data AccountDirectDebit = AccountDirectDebit
-  { _accountDirectDebitAccountId         :: AccountId -- ^ A unique ID of the account adhering to the standards for ID permanence.
+  { _accountDirectDebitAccountId         :: AccountId
   , _accountDirectDebitAuthorisedEntity  :: Maybe AuthorisedEntity
-  , _accountDirectDebitLastDebitDateTime :: Maybe DateTimeString -- ^ The date and time of the last debit executed under this authorisation
+  , _accountDirectDebitLastDebitDateTime :: Maybe DateTimeString
   , _accountDirectDebitLastDebitAmount   :: Maybe AmountString
   } deriving (Eq, Show)
 

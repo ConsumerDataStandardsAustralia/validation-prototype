@@ -52,13 +52,11 @@ instance JsonEncode OB AccountDepositRates where
 
 
 
--- | AccountDepositRate <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproductdepositerate CDR AU v0.1.0 ProductDepositRate>
--- WARNING This type is refering to *Account* only property, not as it defined in the above link
 data AccountDepositRate = AccountDepositRate
-  { _accountDepositRateDepositRateType   :: AccountDepositRateType -- ^ The type of rate (base, bonus, etc). See the next section for an overview of valid values and their meaning
-  , _accountDepositRateRate              :: RateString -- ^ The rate to be applied
-  , _accountDepositRateAdditionalInfo    :: Maybe Text -- ^ Display text providing more information on the rate
-  , _accountDepositRateAdditionalInfoUri :: Maybe URI -- ^ Link to a web page with more information on this fee
+  { _accountDepositRateDepositRateType   :: AccountDepositRateType
+  , _accountDepositRateRate              :: RateString
+  , _accountDepositRateAdditionalInfo    :: Maybe Text
+  , _accountDepositRateAdditionalInfoUri :: Maybe URI
   } deriving (Show, Eq)
 
 accountDepositRateDecoder :: Monad f => Decoder f AccountDepositRate
@@ -83,15 +81,17 @@ instance JsonEncode OB AccountDepositRate where
   mkEncoder = tagOb accountDepositRateEncoder
 
 
--- | Description of the usage of the @depositRateType@ field as it applies to accounts. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#accountdepositratetypedoc CDR AU v0.1.0 Account Deposit Rate Types>
 data AccountDepositRateType =
--- different type for accounts
-    ADepositRateTypeFixed DateTimeString -- ^ "FIXED" Fixed rate for a period of time. Use of @additionalValue@ field: DateTimeString representing when the fixed rate will expire.
-  | ADepositRateTypeBonus Text -- ^ "BONUS" A bonus rate available by meeting a specific criteria. Use of @additionalValue@ field: A description of the criteria to obtain the bonus.
-  | ADepositRateTypeBundleBonus Text -- ^ "BUNDLE_BONUS" A bonus rate obtained by originating a bundle instead of a standalone product. Use of @additionalValue@ field: The name of the bundle.
-  | ADepositRateTypeVariable -- ^ "VARIABLE" A variable base rate for the product
--- different type for accounts
-  | ADepositRateTypeIntroductory DateTimeString -- ^ "INTRODUCTORY" An introductory bonus that will expire after a set period. Use of @additionalValue@ field: DateTimeString representing when the introductory rate will expire.
+    ADepositRateTypeFixed DateTimeString
+    -- ^ "FIXED" Fixed rate for a period of time. Use of @additionalValue@ field: DateTimeString representing when the fixed rate will expire.
+  | ADepositRateTypeBonus Text
+    -- ^ "BONUS" A bonus rate available by meeting a specific criteria. Use of @additionalValue@ field: A description of the criteria to obtain the bonus.
+  | ADepositRateTypeBundleBonus Text
+    -- ^ "BUNDLE_BONUS" A bonus rate obtained by originating a bundle instead of a standalone product. Use of @additionalValue@ field: The name of the bundle.
+  | ADepositRateTypeVariable
+    -- ^ "VARIABLE" A variable base rate for the product
+  | ADepositRateTypeIntroductory DateTimeString
+    -- ^ "INTRODUCTORY" An introductory bonus that will expire after a set period. Use of @additionalValue@ field: DateTimeString representing when the introductory rate will expire.
   deriving (Eq, Show)
 
 accountDepositRateTypeDecoder :: Monad f => Decoder f AccountDepositRateType

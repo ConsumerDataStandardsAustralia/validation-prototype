@@ -54,16 +54,16 @@ instance JsonEncode OB Transactions where
 
 data Transaction = Transaction
   { _transactionAccountId            :: AccountId
-  , _transactionTransactionId        :: Maybe TransactionId -- ^ A unique ID of the transaction adhering to the standards for ID permanence. This field is mandatory in this payload as it is a reflection of the requested transaction in the path parameter.
-  , _transactionIsDetailAvailable    :: Bool -- ^ True if extended information is available using the transaction detail end point. False if extended data is not available
+  , _transactionTransactionId        :: Maybe TransactionId
+  , _transactionIsDetailAvailable    :: Bool
   , _transactionType                 :: TransactionType
-  , _transactionStatus               :: TransactionStatus -- ^ Status of the transaction.
-  , _transactionDescription          :: Text -- ^ The transaction description as applied by the financial institution.
+  , _transactionStatus               :: TransactionStatus
+  , _transactionDescription          :: Text
   , _transactionValueDateTime        :: Maybe DateTimeString
-  , _transactionExecutionDateTime    :: Maybe DateTimeString -- ^ The time the transaction was executed by the originating customer, if available.
-  , _transactionAmount               :: Maybe AmountString -- ^ The value of the transaction. Negative values mean money was outgoing.
-  , _transactionCurrency             :: Maybe CurrencyString -- ^ The currency for the transaction amount. AUD assumed if not present.
-  , _transactionReference            :: Text -- ^ The reference for the transaction provided by the originating institution.
+  , _transactionExecutionDateTime    :: Maybe DateTimeString
+  , _transactionAmount               :: Maybe AmountString
+  , _transactionCurrency             :: Maybe CurrencyString
+  , _transactionReference            :: Text
   , _transactionMerchantName         :: Maybe Text
   , _transactionMerchantCategoryCode :: Maybe Text
   , _transactionBillerCode           :: Maybe Text
@@ -123,7 +123,6 @@ instance JsonEncode OB Transaction where
   mkEncoder = tagOb transactionEncoder
 
 
--- | A unique ID of the transaction adhering to the standards for ID permanence. This field is mandatory in this payload as it is a reflection of the requested transaction in the path parameter. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schematransactionid CDR AU v0.1.0 TransactionId>
 newtype TransactionId =
   TransactionId { unTransactionId :: AsciiString }
   deriving (Eq, Show)
@@ -140,7 +139,6 @@ instance FromHttpApiData TransactionId where
   parseUrlPiece = fmap TransactionId . parseUrlPiece
 
 
--- | Status of the transaction. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schematransactionstatus CDR AU v0.1.0 TransactionStatus>
 data TransactionType =
     TransactionTypeFee -- ^"FEE"
   | TransactionTypeInterestCharged -- ^"INTEREST_CHARGED"
@@ -187,7 +185,6 @@ transactionTypeDecoder = D.prismDOrFail
   D.text
 
 
--- | Status of the transaction. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schematransactionstatus CDR AU v0.1.0 TransactionStatus>
 data TransactionStatus =
     TransactionStatusPending -- ^ "PENDING"
   | TransactionStatusPosted DateTimeString -- ^ "POSTED"

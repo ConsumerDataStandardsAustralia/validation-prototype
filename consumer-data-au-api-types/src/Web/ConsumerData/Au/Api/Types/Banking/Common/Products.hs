@@ -48,20 +48,20 @@ productsEncoder = E.mapLikeObj $ \(Products ps) ->
 instance JsonEncode OB Products where
   mkEncoder = tagOb productsEncoder
 
--- | Product <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocBankingCommonSchemas CDR AU v0.1.0 Product>
+
 data Product = Product
-  { _productProductId             :: AsciiString -- ^ A provider specific unique identifier for this product. This identifier must be unique to a product but does not otherwise need to adhere to ID permanence guidelines.
-  , _productEffectiveFrom         :: Maybe DateTimeString -- ^ A description of the product.
-  , _productEffectiveTo           :: Maybe DateTimeString -- ^ The date and time at which this product will be retired and will no longer be offered.
-  , _productLastUpdated           :: DateTimeString -- ^ A description of the product.
-  , _productProductCategory       :: EnumProductCategory -- ^ The product category an account aligns withs.
-  , _productName                  :: Text -- ^ The display name of the product.
-  , _productDescription           :: Text -- ^ The description of the product.
-  , _productBrand                 :: Text -- ^ A label of the brand for the product. Able to be used for filtering. For data providers with single brands this value is still required.
-  , _productBrandName             :: Maybe Text -- ^ An optional display name of the brand
-  , _productApplicationUri        :: Maybe URI -- ^ A link to an application web page where this product can be applied for.
-  , _productIsNegotiable          :: Bool -- ^ Indicates whether the product is specifically designed so that fees and prices are negotiated depending on context. While all products are open to a degree of negotiation this flag indicates that negotiation is expected and thus that the provision of specific fees and rates is not applicable.
-  , _productAdditionalInformation :: Maybe ProductAdditionalInformation -- ^ Object that contains links to additional information on specific topics.
+  { _productProductId             :: AsciiString
+  , _productEffectiveFrom         :: Maybe DateTimeString
+  , _productEffectiveTo           :: Maybe DateTimeString
+  , _productLastUpdated           :: DateTimeString
+  , _productProductCategory       :: EnumProductCategory
+  , _productName                  :: Text
+  , _productDescription           :: Text
+  , _productBrand                 :: Text
+  , _productBrandName             :: Maybe Text
+  , _productApplicationUri        :: Maybe URI
+  , _productIsNegotiable          :: Bool
+  , _productAdditionalInformation :: Maybe ProductAdditionalInformation
   } deriving (Eq, Show)
 
 productDecoder :: Monad f => Decoder f Product
@@ -108,11 +108,11 @@ instance JsonEncode OB Product where
 
 
 data ProductAdditionalInformation = ProductAdditionalInformation
-  { _paiOverviewUri       :: Maybe URI -- ^ General overview of the product.
-  , _paiTermsUri          :: Maybe URI -- ^ Terms and conditions for the product.
-  , _paiEligibilityUri    :: Maybe URI -- ^ Eligibility rules and criteria for the product.
-  , _paiDeesAndPricingUri :: Maybe URI -- ^ Description of fees, pricing, discounts, exemptions and bonuses for the product.
-  , _paiBundleUri         :: Maybe URI -- ^ Description of a bundle that this product can be part of.
+  { _paiOverviewUri       :: Maybe URI
+  , _paiTermsUri          :: Maybe URI
+  , _paiEligibilityUri    :: Maybe URI
+  , _paiDeesAndPricingUri :: Maybe URI
+  , _paiBundleUri         :: Maybe URI
   } deriving (Eq, Show)
 
 productAdditionalInformationDecoder :: Monad f => Decoder f ProductAdditionalInformation
@@ -139,7 +139,6 @@ instance JsonEncode OB ProductAdditionalInformation where
   mkEncoder = tagOb productAdditionalInformationEncoder
 
 
--- | The product category an account aligns withs. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproductcategory CDR AU v0.1.0 ProductCategory>
 data EnumProductCategory =
     PCPersAtCallDeposits -- ^ "PERS_AT_CALL_DEPOSITS"
   | PCBusAtCallDeposits -- ^ "BUS_AT_CALL_DEPOSITS"

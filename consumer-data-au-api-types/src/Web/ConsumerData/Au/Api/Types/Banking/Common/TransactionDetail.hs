@@ -48,10 +48,9 @@ instance JsonEncode OB TransactionDetailResponse where
   mkEncoder = tagOb transactionDetailResponseEncoder
 
 
--- | TransactionDetail <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schematransactiondetail CDR AU v0.1.0 TransactionDetail>
 data TransactionDetail = TransactionDetail
   { _transactionDetailTransaction  :: Transaction
-  , _transactionDetailExtendedData :: TransactionExtendedData -- ^ Contains more detailed information specific to transactions originated via NPP.
+  , _transactionDetailExtendedData :: TransactionExtendedData
   } deriving (Generic, Show, Eq)
 
 transactionDetailDecoder :: Monad f => Decoder f TransactionDetail
@@ -66,12 +65,11 @@ transactionDetailEncoder = E.mapLikeObj $ \td ->
   E.atKey' "extendedData" transactionExtendedDataEncoder (_transactionDetailExtendedData td)
 
 
--- Contains more detailed information specific to transactions originated via NPP. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaextendedtransactiondata CDR AU v0.1.0 TransactionExtendedData>
 data TransactionExtendedData = TransactionExtendedData
-  { _transactionExtendedDataPayer         :: Maybe Text -- ^ Label of the originating payer. Mandatory for an inbound payment.
-  , _transactionExtendedDataPayee         :: Maybe Text -- ^ Label of the target PayID. Mandatory for an outbound payment.
-  , _transactionExtendedDataExtensionType :: Maybe TransactionExtendedDataExtensionType -- ^ The type of transaction data extension.
-  , _transactionExtendedDataService       :: TransactionExtendedDataService -- ^ Identifier of the applicable overlay service.
+  { _transactionExtendedDataPayer         :: Maybe Text
+  , _transactionExtendedDataPayee         :: Maybe Text
+  , _transactionExtendedDataExtensionType :: Maybe TransactionExtendedDataExtensionType
+  , _transactionExtendedDataService       :: TransactionExtendedDataService
   } deriving (Generic, Show, Eq)
 
 transactionExtendedDataDecoder :: Monad f => Decoder f TransactionExtendedData
