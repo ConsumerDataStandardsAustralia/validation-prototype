@@ -70,7 +70,46 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
   , RegistrationClientUri(..)
   , RegistrationAccessToken(..)
   , RegistrationResponse(..)
+  , requestObjectSigningAlg
+  , applicationType
+  , tokenEndpointAuthMethod
+  , grantTypes
+  , clientName
+  , contacts
+  , logoUri
+  , policyUri
+  , tosUri
+  , subjectType
+  , sectorIdentifierUri
+  , keySet
+  , requestUris
+  , redirectUris
+  , requestObjectEncryption
+  , userinfoSignedResponseAlg
+  , idTokenEncryption
+  , responseTypes
+  , defaultMaxAge
+  , requireAuthTime
+  , defaultAcrValues
+  , initiateLoginUri
+  , userInfoEncryption
+  , idTokenSignedResponseAlg
+  , scope
+  , softwareId
+  , softwareVersion
+  , clientNotificationEndpoint
   , _FapiGrantTypes
+  , clientMetaData
+  , softwareStatement
+  , iss
+  , aud
+  , iat
+  , exp
+  , jti
+  , _EncodedSs
+  , _DecodedSs
+  , ssSigningData
+  , ssMetaData
   )
 where
 
@@ -79,8 +118,8 @@ import           Aeson.Helpers
     toJsonSpaceSeperatedSet, _URI)
 import           Control.Applicative                       (liftA2, (<|>))
 import           Control.Lens
-    (Prism', at, makePrisms, makeWrapped, prism, prism', to, ( # ), (&), (.~),
-    (?~), (^.), (^?), _Right)
+    (Prism', at, makeLenses, makePrisms, makeWrapped, prism, prism', to, ( # ),
+    (&), (.~), (?~), (^.), (^?), _Right)
 import           Control.Lens.Combinators                  (_Just)
 import           Control.Lens.Wrapped                      (_Unwrapped)
 import           Control.Monad                             (join)
@@ -565,10 +604,10 @@ newtype NotificationEndpoint = NotificationEndpoint HttpsUrl
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 data RegistrationRequest = RegistrationRequest {
-   _regReqClientMetaData     :: ClientMetaData
+   _clientMetaData     :: ClientMetaData
   -- | A signed JWT containing metadata about the client software. RFC7591
   -- mandates that this is a JWS.
-  , _regReqsoftwareStatement :: RegoReqSoftwareStatement
+  , _softwareStatement :: RegoReqSoftwareStatement
 } deriving (Generic, Show, Eq)
 
 --TODO better type only allowing {YYYY-MM-DD | YYYY-MM-DD.<V>} format.
@@ -925,13 +964,13 @@ regoReqToJwt j h c rr
       mkCs rc m =
         emptyClaimsSet & setRegisteredClaims rc & unregisteredClaims .~ m
       ssClaims ssreg = mkCs (_ssSigningData ssreg) (ssToAesonClaims ssreg)
-      reqAcm = metaDataToAesonClaims . _regReqClientMetaData $ rr
+      reqAcm = metaDataToAesonClaims . _clientMetaData $ rr
       reqClaims ssb64 =
         mkCs c (reqAcm & at "software_statement" ?~ ssb64)
     in
       do
         -- get the b64 SSA as an aeson Value
-        ssb64 <- case _regReqsoftwareStatement rr of
+        ssb64 <- case _softwareStatement rr of
           EncodedSs ss -> return $ toJSON ss
           DecodedSs ss -> jwtToJson <$> signClaims j (mkHeaders h) (ssClaims ss)
         -- .. and now sign the rego request
@@ -1003,48 +1042,17 @@ getRegisteredClaims
   => ClaimsSet
   -> m JwsRegisteredClaims
 getRegisteredClaims claims = do
-  iss <- getRegClaim claimIss "iss" claims
-  aud <- getRegClaim claimAud "aud" claims
-  iat <- getRegClaim claimIat "iat" claims
-  jti <- getRegClaim claimJti "jti" claims
-  exp <- getRegClaim claimExp "exp" claims
-  return $ JwsRegisteredClaims (Just $ ClientIss iss)
-                               (Just aud)
-                               (Just iat)
-                               (Just exp)
-                               (Just $ JTI jti)
+  i <- getRegClaim claimIss "iss" claims
+  a <- getRegClaim claimAud "aud" claims
+  t <- getRegClaim claimIat "iat" claims
+  j <- getRegClaim claimJti "jti" claims
+  e <- getRegClaim claimExp "exp" claims
+  return $ JwsRegisteredClaims (Just $ ClientIss i)
+                               (Just a)
+                               (Just t)
+                               (Just e)
+                               (Just $ JTI j)
   where getRegClaim g name cs = cs ^. g & maybeErrors (_MissingClaim # name)
-
--- convert a signed jwt to base64 then make it a json Value (for a claim)
-jwtToJson :: SignedJWT -> Value
-jwtToJson = toJSON . TE.decodeUtf8 . BSL.toStrict . encodeCompact
-
-getClaim
-  :: forall e m a
-   . (AsError e, MonadError e m, FromJSON a)
-  => AesonClaims
-  -> T.Text
-  -> m a
-getClaim m n = m ^. at n & (>>= fromVal) . maybeErrors (_MissingClaim # n)
-
-getmClaim
-  :: forall e m a
-   . (AsError e, MonadError e m, FromJSON a)
-  => AesonClaims
-  -> T.Text
-  -> m (Maybe a)
-getmClaim m n = m ^. at n & traverse fromVal
-
-fromVal
-  :: forall e m a . (AsError e, MonadError e m, FromJSON a) => Value -> m a
-fromVal = rToM . fromJSON
- where
-  rToM = \case
-    Error   s -> throwError . (_ParseError #) $ s
-    Success a -> pure a
-
-maybeErrors :: (AsError e, MonadError e m) => e -> Maybe a -> m a
-maybeErrors e = maybe (throwError e) pure
 
 aesonClaimsToMetaData
   :: forall e m . (AsError e, MonadError e m) => AesonClaims -> m ClientMetaData
@@ -1094,6 +1102,46 @@ aesonClaimsToMetaData m = do
     then throwError (_InvalidClaim # "jwks xor jwks_uri required.")
     else pure $ JwksVal <$> ks <|> JwksRef <$> u
 
+
+-- convert a signed jwt to base64 then make it a json Value (for a claim)
+jwtToJson :: SignedJWT -> Value
+jwtToJson = toJSON . TE.decodeUtf8 . BSL.toStrict . encodeCompact
+
+getClaim
+  :: forall e m a
+   . (AsError e, MonadError e m, FromJSON a)
+  => AesonClaims
+  -> T.Text
+  -> m a
+getClaim m n = m ^. at n & (>>= fromVal n) . maybeErrors (_MissingClaim # n)
+
+getmClaim
+  :: forall e m a
+   . (AsError e, MonadError e m, FromJSON a)
+  => AesonClaims
+  -> T.Text
+  -> m (Maybe a)
+getmClaim m n = maybe (pure Nothing) (n2n) (m ^. at n)
+  where
+    n2n Null = pure Nothing
+    n2n v    = fromVal n v
+
+fromVal
+  :: forall e m a . (AsError e, MonadError e m, FromJSON a) => T.Text -> Value -> m a
+fromVal n = rToM . fromJSON
+ where
+  rToM = \case
+    Error   s -> throwError (_ParseError # (T.unpack n<>": "<>s))
+    Success a -> pure a
+
+maybeErrors :: (AsError e, MonadError e m) => e -> Maybe a -> m a
+maybeErrors e = maybe (throwError e) pure
+
+makeLenses ''RegistrationRequest
+makeLenses ''SoftwareStatement
+makePrisms ''RegoReqSoftwareStatement
+makeLenses ''JwsRegisteredClaims
+makeLenses ''ClientMetaData
 makePrisms ''TokenEndpointAuthMethod
 makePrisms ''JwkSet
 makeWrapped ''EmailAddress

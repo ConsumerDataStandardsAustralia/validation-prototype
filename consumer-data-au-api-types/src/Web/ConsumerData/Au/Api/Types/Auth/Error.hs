@@ -43,7 +43,7 @@ instance AsJWTError Error where
           \case JoseJwtError e -> Right e
                 e -> Left e
 
-data GoldenError = InvalidGoldenE | AuthE Error | PrettyJwtE PrettyJwtError deriving (Eq, Show)
+data GoldenError = InvalidGoldenE Error | AuthE Error | PrettyJwtE PrettyJwtError deriving (Eq, Show)
 
 makeClassyPrisms ''GoldenError
 
