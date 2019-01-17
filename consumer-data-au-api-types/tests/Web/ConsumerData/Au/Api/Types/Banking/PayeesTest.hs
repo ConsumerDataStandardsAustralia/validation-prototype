@@ -27,7 +27,7 @@ test_payeesLinks =
   [ paginatedLinkTest "Get Payees no params"
     ((links^.bankingLinks.bankingPayeesLinks.payeesGet) Nothing) [uri|http://localhost/banking/payees|]
   , paginatedLinkTest "Get Payees all params"
-    ((links^.bankingLinks.bankingPayeesLinks.payeesGet) (Just International)) [uri|http://localhost/banking/payees?type=INTERNATIONAL|]
+    ((links^.bankingLinks.bankingPayeesLinks.payeesGet) (Just PayeeTypeParamInternational)) [uri|http://localhost/banking/payees?type=INTERNATIONAL|]
   , linkTest "Get Payee Detail"
     (links^.bankingLinks.bankingPayeesLinks.payeesByIdGet.to ($ PayeeId "123")) [uri|http://localhost/banking/payees/123|]
   ]

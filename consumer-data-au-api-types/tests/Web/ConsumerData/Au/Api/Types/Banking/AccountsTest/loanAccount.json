@@ -1,0 +1,19 @@
+{
+  "originalStartDate": "2018-11-01",
+  "originalLoanAmount": "10000.00",
+  "originalLoanCurrency": "AUD",
+  "loanEndDate": "2020-11-01",
+  "nextInstalmentDate": "2019-01-01",
+  "minInstalmentAmount": "100.00",
+  "minInstalmentCurrency": "AUD",
+  "maxRedraw": "1000.00",
+  "maxRedrawCurrency": "AUD",
+  "minRedraw": "100.00",
+  "minRedrawCurrency": "AUD",
+  "offsetAccountEnabled": true,
+  "offsetAccountIds": [
+    "123456"
+  ],
+  "repaymentFrequency": "string",
+  "repaymentType": "INTEREST_ONLY"
+}

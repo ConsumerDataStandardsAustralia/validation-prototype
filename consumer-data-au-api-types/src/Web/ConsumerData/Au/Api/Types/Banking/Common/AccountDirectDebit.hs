@@ -25,11 +25,30 @@ import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
 import           Web.ConsumerData.Au.Api.Types.Tag
 
 
--- | AccountDirectDebit <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaaccountdirectdebit CDR AU v0.1.0 AccountDirectDebit>
+newtype DirectDebitAuthorisations =
+  DirectDebitAuthorisations { getAuthorisations :: [AccountDirectDebit] }
+    deriving (Eq, Show)
+
+directDebitAuthorisationsDecoder :: Monad f => Decoder f DirectDebitAuthorisations
+directDebitAuthorisationsDecoder =
+  DirectDebitAuthorisations
+    <$> D.atKey "directDebitAuthorisations" (D.list accountDirectDebitDecoder)
+
+directDebitAuthorisationsEncoder :: Applicative f => Encoder f DirectDebitAuthorisations
+directDebitAuthorisationsEncoder = E.mapLikeObj $ \dda ->
+  E.atKey' "directDebitAuthorisations" (E.list accountDirectDebitEncoder) (getAuthorisations dda)
+
+instance JsonDecode OB DirectDebitAuthorisations where
+  mkDecoder = tagOb directDebitAuthorisationsDecoder
+
+instance JsonEncode OB DirectDebitAuthorisations where
+  mkEncoder = tagOb directDebitAuthorisationsEncoder
+
+
 data AccountDirectDebit = AccountDirectDebit
-  { _accountDirectDebitAccountId         :: AccountId -- ^ A unique ID of the account adhering to the standards for ID permanence.
+  { _accountDirectDebitAccountId         :: AccountId
   , _accountDirectDebitAuthorisedEntity  :: Maybe AuthorisedEntity
-  , _accountDirectDebitLastDebitDateTime :: Maybe DateTimeString -- ^ The date and time of the last debit executed under this authorisation
+  , _accountDirectDebitLastDebitDateTime :: Maybe DateTimeString
   , _accountDirectDebitLastDebitAmount   :: Maybe AmountString
   } deriving (Eq, Show)
 
@@ -53,22 +72,3 @@ accountDirectDebitEncoder = E.mapLikeObj $ \ p ->
 
 instance JsonEncode OB AccountDirectDebit where
   mkEncoder = tagOb accountDirectDebitEncoder
-
-newtype DirectDebitAuthorisations =
-  DirectDebitAuthorisations { getAuthorisations :: [AccountDirectDebit] }
-    deriving (Eq, Show)
-
-directDebitAuthorisationsDecoder :: Monad f => Decoder f DirectDebitAuthorisations
-directDebitAuthorisationsDecoder =
-  DirectDebitAuthorisations
-    <$> D.atKey "directDebitAuthorisations" (D.list accountDirectDebitDecoder)
-
-directDebitAuthorisationsEncoder :: Applicative f => Encoder f DirectDebitAuthorisations
-directDebitAuthorisationsEncoder = E.mapLikeObj $ \dda ->
-  E.atKey' "directDebitAuthorisations" (E.list accountDirectDebitEncoder) (getAuthorisations dda)
-
-instance JsonDecode OB DirectDebitAuthorisations where
-  mkDecoder = tagOb directDebitAuthorisationsDecoder
-
-instance JsonEncode OB DirectDebitAuthorisations where
-  mkEncoder = tagOb directDebitAuthorisationsEncoder

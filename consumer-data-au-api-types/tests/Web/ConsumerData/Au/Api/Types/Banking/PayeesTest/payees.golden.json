@@ -5,7 +5,8 @@
         "payeeId": "payee 42",
         "nickname": "savings",
         "description": "my savings account",
-        "type": "DOMESTIC"
+        "type": "DOMESTIC",
+        "creationDate": "2019-01-01"
       }
     ]
   },

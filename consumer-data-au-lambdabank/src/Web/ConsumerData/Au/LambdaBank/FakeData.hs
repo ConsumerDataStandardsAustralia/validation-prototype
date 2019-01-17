@@ -8,16 +8,17 @@ and not all in one file. Don't be too upset
 that it looks heinous for now!
 --}
 
-import Data.Currency            (Alpha(AUD))
-import Country.Identifier       (australia)
-import Data.Profunctor          (lmap)
+-- import Data.Currency            (Alpha(AUD))
+import Country.Identifier (australia)
 import Data.Digit.Decimal
-import Data.List.NonEmpty       (NonEmpty((:|)))
-import Data.Maybe               (fromMaybe)
-import Data.Time (fromGregorian, UTCTime(..))
-import Servant.Links            (Link)
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Maybe         (fromMaybe)
+import Data.Profunctor    (lmap)
+import Data.Time          (UTCTime (..), fromGregorian)
+import Servant.Links      (Link)
 
-import Web.ConsumerData.Au.Api.Types
+import qualified AuPost.PAF                    as PAF
+import           Web.ConsumerData.Au.Api.Types
 
 a12345 :: AccountId
 a12345 = AccountId (AsciiString "12345")
@@ -29,23 +30,13 @@ a12347 :: AccountId
 a12347 = AccountId (AsciiString "12347")
 
 
-testBalances :: AccountBalances
-testBalances = AccountBalances
-  [ AccountBalance a12345
-      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "500") Nothing) (CurrencyAmount (AmountString "550.55") Nothing)))
-  , AccountBalance a12346
-      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "600") Nothing) (CurrencyAmount (AmountString "650.65") Nothing)))
-  , AccountBalance a12347
-      (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "700") Nothing) (CurrencyAmount (AmountString "750.75") Nothing)))
-  ]
-
 testPerson :: Person
 testPerson = Person
   (UTCTime (fromGregorian 2018 11 13) 0)
-  "Ben"
+  (Just "Ben")
   "Kolera"
   ["Leigh"]
-  "Mr"
+  (Just "Mr")
   Nothing
   (Just $ OccupationCode (V6 DecDigit2 DecDigit6 DecDigit1 DecDigit3 DecDigit1 DecDigit3))
 testPhoneNumber :: PhoneNumber
@@ -54,10 +45,19 @@ testPhoneNumber = PhoneNumber True PhoneNumberPurposeMobile (Just "+61") (Just "
 testEmailAddress :: EmailAddress
 testEmailAddress = EmailAddress True EmailAddressPurposeWork "ben.kolera@data61.csiro.au"
 
-testAddress :: PhysicalAddress
-testAddress = PhysicalAddress
+testAddressWithPurpose :: PhysicalAddressWithPurpose
+testAddressWithPurpose = PhysicalAddressWithPurpose
   AddressPurposeRegistered
-  (AddressSimple $ SimpleAddress
+  testPhysicalAddress
+
+testPhysicalAddress :: PhysicalAddress
+testPhysicalAddress = PhysicalAddress
+  -- testAddressSimple
+  testAddressPaf
+
+testAddressSimple :: Address
+testAddressSimple =
+  AddressSimple $ SimpleAddress
     (Just "Ben Kolera")
     "Level 3, T.C Beirne Centre"
     (Just "315 Brunswick St")
@@ -65,7 +65,32 @@ testAddress = PhysicalAddress
     (Just "4006")
     "Fortitude Valley"
     (AustralianState AustraliaStateQLD)
-    (Just australia))
+    (Just australia)
+
+testAddressPaf :: Address
+testAddressPaf =
+  AddressPaf $ PAFAddress
+    (Just "bla")
+    (Just 1)
+    (Just "bla")
+    (Just 100)
+    Nothing
+    Nothing
+    Nothing
+    (Just 55)
+    Nothing
+    Nothing
+    Nothing
+    (Just PAF.StreetTypeST)
+    (Just PAF.StreetSuffixW)
+    (Just PAF.PdtRsd)
+    (Just 1234)
+    Nothing
+    Nothing
+    "Fortitude Valley"
+    "4006"
+    PAF.StateQLD
+
 
 testPersonDetail :: PersonDetail
 testPersonDetail = PersonDetail
@@ -73,7 +98,7 @@ testPersonDetail = PersonDetail
   -- TODO: Fix waargonaut bug where nonempty fails on a single element NEL. :)
   (testPhoneNumber :| [])
   [testEmailAddress]
-  [testAddress]
+  (testAddressWithPurpose :| [])
 
 testOrganisation :: Organisation
 testOrganisation = Organisation
@@ -88,14 +113,14 @@ testOrganisation = Organisation
   (Just "acn123")
   (Just True)
   (Just (IndustryCode (V5 x3 x3 x6 x6 x1)))
-  (Just OrgTypeCompany)
+  OrgTypeCompany
   (Just australia)
   (Just $ UTCTime (fromGregorian 2015 8 1) 0)
 
 testOrganisationDetail :: OrganisationDetail
 testOrganisationDetail = OrganisationDetail
   testOrganisation
-  [testAddress]
+  (testAddressWithPurpose :| [])
 
 fakePaginator :: Maybe PageNumber -> Maybe PageSize -> (Maybe PageNumber -> Maybe PageSize -> Link) -> Paginator
 fakePaginator pMay psMay = Paginator p p psMay 0 . (lmap Just)
@@ -111,11 +136,13 @@ testAccountIds = AccountIds
 testAccount :: Account
 testAccount =
   Account a12345 "acc12345" (Just "my savings")
-    (MaskedAccountNumber "abcde") (Just PCTermDeposits) "saving"
-    (BalanceDeposit (DepositBalanceType (CurrencyAmount (AmountString "201.30") (Just $ CurrencyString AUD)) (CurrencyAmount (AmountString "198.80") Nothing)))
+    (MaskedAccountNumber "abcde") (Just AccOpen) (Just True) PCTermDeposits "Saving for the Future Account"
 
 testAccountDetail :: AccountDetail
-testAccountDetail = AccountDetail (Just testAccount) Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+testAccountDetail =
+  AccountDetail testAccount Nothing Nothing Nothing
+    (Just (TermDeposit (TermDepositAccountType (DateString "2019-01-01") (DateString "2019-01-02") Nothing Nothing MaturityInstructionsRolledOver)))
+    Nothing Nothing Nothing Nothing Nothing
 
 identified :: a -> Identified a
 identified = Identified a12345 "acc12345" (Just "my savings")
@@ -125,64 +152,95 @@ testAccounts = Accounts
   [ testAccount
   ]
 
-testAccountTransactions :: AccountTransactions
-testAccountTransactions = AccountTransactions a12345 "name" (Just "nick name") (Transactions [testTransaction])
-
-testTransaction :: Transaction
-testTransaction = Transaction
-  (Just (TransactionId (AsciiString "reference"))) False TransactionStatusPosted "" Nothing Nothing Nothing Nothing "ref"
-
-testTransactionDetail :: TransactionDetail
-testTransactionDetail = TransactionDetail Nothing TransactionStatusPosted "" Nothing Nothing Nothing Nothing "" Nothing
-
-testAccountsTransactions :: BulkTransactions
-testAccountsTransactions = BulkTransactions
-  [ testBulkTransaction5
-  , testBulkTransaction6
-  , testBulkTransaction7
+testTransactions :: Transactions
+testTransactions = Transactions
+  [ testTransaction5
+  , testTransaction6
+  , testTransaction7
   ]
 
-testBulkTransaction5 :: BulkTransaction
-testBulkTransaction5 = BulkTransaction a12345 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+testTransaction5 :: Transaction
+testTransaction5 = Transaction
+  a12345 (Just (TransactionId (AsciiString "tr56789"))) True TransactionTypePayment (TransactionStatusPosted (DateTimeString (UTCTime (fromGregorian 2018 1 1) 0)))"description here"
+  Nothing Nothing Nothing Nothing "ref"
+  Nothing Nothing Nothing Nothing Nothing Nothing
 
-testBulkTransaction6 :: BulkTransaction
-testBulkTransaction6 = BulkTransaction a12346 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+testTransaction6 :: Transaction
+testTransaction6 = Transaction
+  a12346 (Just (TransactionId (AsciiString "tr67890"))) False TransactionTypeFee TransactionStatusPending "description here"
+  Nothing Nothing Nothing Nothing "ref"
+  Nothing Nothing Nothing Nothing Nothing Nothing
 
-testBulkTransaction7 :: BulkTransaction
-testBulkTransaction7 = BulkTransaction a12347 Nothing True BulkTransactionStatusPending "" Nothing Nothing Nothing Nothing ""
+testTransaction7 :: Transaction
+testTransaction7 = Transaction
+  a12347 (Just (TransactionId (AsciiString "tr78901"))) True TransactionTypePayment TransactionStatusPending "description here"
+  Nothing Nothing Nothing Nothing "ref"
+  Nothing Nothing Nothing Nothing Nothing Nothing
 
 
-testAccountTransactionsDetail :: TransactionsDetail
-testAccountTransactionsDetail = TransactionsDetail a12345 "" Nothing (TransactionDetails [testTransactionDetail])
+testTransactionDetailResponse :: TransactionDetailResponse
+testTransactionDetailResponse = TransactionDetailResponse testTransactionDetail
+
+testTransactionDetail :: TransactionDetail
+testTransactionDetail = TransactionDetail
+  testTransaction5
+  (TransactionExtendedData Nothing Nothing (Just (TEDExtendedDescription "ext description")) X2P101)
+
+
+testBalances :: AccountBalances
+testBalances = AccountBalances
+  [ Balance a12345
+      (BalanceDeposit
+        (DepositBalanceType
+          (CurrencyAmount (AmountString "500") Nothing)
+          (CurrencyAmount (AmountString "550.55") Nothing)
+      ))
+  , Balance a12346
+      (BalanceLending
+        (LendingBalanceType
+          (CurrencyAmount (AmountString "600") Nothing)
+          (CurrencyAmount (AmountString "650.65") Nothing)
+          (CurrencyAmount (AmountString "660.65") Nothing)
+          Nothing
+      ))
+  , Balance a12347
+      (BalancePurses
+        (MultiCurrencyPursesType
+          [ (CurrencyAmount (AmountString "700") Nothing)
+          , (CurrencyAmount (AmountString "750.75") Nothing)
+          ]
+        )
+      )
+  ]
 
 testDirectDebitAuthorisations :: DirectDebitAuthorisations
 testDirectDebitAuthorisations = DirectDebitAuthorisations
   [ AccountDirectDebit
       a12345
-      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
+      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing Nothing))
       Nothing
       (Just (AmountString "50.00"))
   , AccountDirectDebit
       a12346
-      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
+      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing Nothing))
       Nothing
       (Just (AmountString "60.00"))
   , AccountDirectDebit
       a12347
-      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing))
+      (Just (AuthorisedEntity "me" "my bank" Nothing Nothing Nothing))
       Nothing
       (Just (AmountString "70.00"))
   ]
 
 testPayee :: Payee
-testPayee = Payee (PayeeId "5") "payee-nickname" Nothing Domestic
+testPayee = Payee (PayeeId "5") "payee-nickname" Nothing Domestic Nothing
 
 testPayees :: Payees
 testPayees = Payees [testPayee]
 
 testPayeeDetail :: PayeeDetail
 testPayeeDetail = PayeeDetail testPayee $ PTDDomestic $ DPPayeeId $ DomesticPayeePayId
-  "payee" "hello" OrgNumber
+  (Just "payee") "hello" OrgNumber
 
 testProduct :: Product
 testProduct = Product (AsciiString "product-id-5") Nothing Nothing (DateTimeString (UTCTime (fromGregorian 2018 1 1) 0))

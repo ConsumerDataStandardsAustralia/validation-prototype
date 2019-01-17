@@ -24,16 +24,15 @@ import           Waargonaut.Types.Json      (Json)
 
 import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
 
--- | The individual who authorised the session.
--- <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocCommonCommonSchemas CDR AU v0.1.0>
+
 data Person = Person
-  { _personLastUpdateTime :: UTCTime -- ^ The date and time this this record was last updated.
-  , _personFirstName      :: Text
+  { _personLastUpdateTime :: UTCTime
+  , _personFirstName      :: Maybe Text
   , _personLastName       :: Text
   , _personMiddleNames    :: [Text]
-  , _personPrefix         :: Text -- ^ Title or salutation.
-  , _personSuffix         :: Maybe Text -- ^ Used for a trailing suffix to the name.
-  , _personOccupationCode :: Maybe OccupationCode -- ^ Value should be a valid <http://www.abs.gov.au/ANZSCO ANZCO v1.2> Standard Occupation classification.
+  , _personPrefix         :: Maybe Text
+  , _personSuffix         :: Maybe Text
+  , _personOccupationCode :: Maybe OccupationCode
   }
   deriving (Generic, Eq, Show)
 
@@ -57,10 +56,10 @@ personFields
   => Person -> MapLikeObj ws Json -> MapLikeObj ws Json
 personFields p =
   E.atKey' "lastUpdateTime" utcTimeEncoder (_personLastUpdateTime p) .
-  E.atKey' "firstName" E.text (_personFirstName p) .
+  maybeOrAbsentE "firstName" E.text (_personFirstName p) .
   E.atKey' "lastName" E.text (_personLastName p) .
   E.atKey' "middleNames" (E.list E.text) (_personMiddleNames p) .
-  E.atKey' "prefix" E.text (_personPrefix p) .
+  maybeOrAbsentE "prefix" E.text (_personPrefix p) .
   maybeOrAbsentE "suffix" E.text (_personSuffix p) .
   maybeOrAbsentE "occupationCode" occupationCodeEncoder (_personOccupationCode p)
 
@@ -68,9 +67,9 @@ personDecoder :: Monad f => Decoder f Person
 personDecoder =
   Person
     <$> D.atKey "lastUpdateTime" utcTimeDecoder
-    <*> D.atKey "firstName" D.text
+    <*> atKeyOptional' "firstName" D.text
     <*> D.atKey "lastName" D.text
     <*> D.atKey "middleNames" (D.list D.text)
-    <*> D.atKey "prefix" D.text
+    <*> atKeyOptional' "prefix" D.text
     <*> atKeyOptional' "suffix" D.text
     <*> atKeyOptional' "occupationCode" occupationCodeDecoder

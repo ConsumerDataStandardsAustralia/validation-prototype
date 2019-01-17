@@ -141,7 +141,7 @@ maskedPanStringEncoder = E.text
 
 data DomesticPayeePayId
   = DomesticPayeePayId
-  { _domesticPayeePayIdTypeName :: Text
+  { _domesticPayeePayIdTypeName :: Maybe Text
   , _domesticPayeePayIdTypeId   :: Text
   , _domesticPayeePayIdType     :: DomesticPayeePayIdType
   }
@@ -150,13 +150,13 @@ data DomesticPayeePayId
 domesticPayeePayIdDecoder :: Monad f => Decoder f DomesticPayeePayId
 domesticPayeePayIdDecoder =
   DomesticPayeePayId
-    <$> D.atKey "name" D.text
+    <$> atKeyOptional' "name" D.text
     <*> D.atKey "identifier" D.text
     <*> D.atKey "type" domesticPayeePayIdTypeDecoder
 
 domesticPayeePayIdEncoder :: Applicative f => Encoder f DomesticPayeePayId
 domesticPayeePayIdEncoder = E.mapLikeObj $ \(DomesticPayeePayId n i t) ->
-  E.atKey' "name" E.text n .
+  maybeOrAbsentE "name" E.text n .
   E.atKey' "identifier" E.text i .
   E.atKey' "type" domesticPayeePayIdTypeEncoder t
 
@@ -229,14 +229,15 @@ beneficiaryDetailsEncoder = E.mapLikeObj $ \(BeneficiaryDetails n c m) ->
 
 data BankDetails
   = BankDetails
-  { _bankDetailsCountry            :: Country
-  , _bankDetailsAccountNumber      :: Text
-  , _bankDetailsBankAddress        :: Maybe BankAddress
-  , _bankDetailsBeneficiaryBankBic :: Maybe Text
-  , _bankDetailsFedWireNumber      :: Maybe Text
-  , _bankDetailsSortCode           :: Maybe Text
-  , _bankDetailsChipNumber         :: Maybe Text
-  , _bankDetailsRoutingNumber      :: Maybe Text
+  { _bankDetailsCountry               :: Country
+  , _bankDetailsAccountNumber         :: Text
+  , _bankDetailsBankAddress           :: Maybe BankAddress
+  , _bankDetailsBeneficiaryBankBic    :: Maybe Text
+  , _bankDetailsFedWireNumber         :: Maybe Text
+  , _bankDetailsSortCode              :: Maybe Text
+  , _bankDetailsChipNumber            :: Maybe Text
+  , _bankDetailsRoutingNumber         :: Maybe Text
+  , _bankDetailsLegalEntityIdentifier :: Maybe Text
   }
   deriving (Eq, Show)
 
@@ -254,9 +255,10 @@ bankDetailsDecoder =
         <*> fm "sortCode"
         <*> fm "chipNumber"
         <*> fm "routingNumber"
+        <*> fm "legalEntityIdentifier"
 
 bankDetailsEncoder :: Applicative f => Encoder f BankDetails
-bankDetailsEncoder = E.mapLikeObj $ \(BankDetails c an ba bic fwn sc cn rn) ->
+bankDetailsEncoder = E.mapLikeObj $ \(BankDetails c an ba bic fwn sc cn rn lei) ->
   let f k x = E.atKey' k E.text x
       fm k x = maybeOrAbsentE k E.text x
   in
@@ -267,7 +269,8 @@ bankDetailsEncoder = E.mapLikeObj $ \(BankDetails c an ba bic fwn sc cn rn) ->
     fm "fedWireNumber" fwn .
     fm "sortCode" sc .
     fm "chipNumber" cn .
-    fm "routingNumber" rn
+    fm "routingNumber" rn .
+    fm "legalEntityIdentifier" lei
 
 
 data BankAddress
@@ -289,6 +292,9 @@ bankAddressEncoder = E.mapLikeObj $ \(BankAddress n a) ->
   E.atKey' "address" E.text a
 
 
+-- TODO  "crn"  BPay CRN of the Biller. If the contents of the CRN match
+-- the format of a Credit Card PAN then it should be masked using the rules
+-- applicable for the MaskedPANString common type
 data BillerPayee
   = BillerPayee
   { _billerPayeeBillerCode :: Text

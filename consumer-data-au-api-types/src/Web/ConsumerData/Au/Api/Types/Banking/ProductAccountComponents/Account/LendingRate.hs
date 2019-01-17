@@ -52,14 +52,11 @@ instance JsonEncode OB AccountLendingRates where
 
 
 
--- | AccountLendingRate <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproductlendingrate CDR AU v0.1.0 ProductLendingRate>
--- WARNING This type is refering to *Account* only property, not as it defined in the above link
 data AccountLendingRate = AccountLendingRate
-  { _accountLendingRateLendingRateType   :: AccountLendingRateType -- ^ The type of rate (base, bonus, etc). See the next section for an overview of valid values and their meaning
--- WARNING
-  , _accountLendingRateRate              :: RateString -- ^ The rate to be applied
-  , _accountLendingRateAdditionalInfo    :: Maybe Text -- ^ Display text providing more information on the rate
-  , _accountLendingRateAdditionalInfoUri :: Maybe URI -- ^ Link to a web page with more information on this fee
+  { _accountLendingRateLendingRateType   :: AccountLendingRateType
+  , _accountLendingRateRate              :: RateString
+  , _accountLendingRateAdditionalInfo    :: Maybe Text
+  , _accountLendingRateAdditionalInfoUri :: Maybe URI
   } deriving (Show, Eq)
 
 accountLendingRateDecoder :: Monad f => Decoder f AccountLendingRate
@@ -84,20 +81,27 @@ instance JsonEncode OB AccountLendingRate where
   mkEncoder = tagOb accountLendingRateEncoder
 
 
--- | Description of the usage of the @lendingRateType@ field as it applies to accounts. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#accountlendingratetypedoc CDR AU v0.1.0 Account Lending Rate Types>
 data AccountLendingRateType =
--- different type for accounts
-    ALendingRateFixed DateTimeString -- ^ "FIXED" Fixed rate for a period of time. Use of @additionalValue@ field: DateTimeString representing when the fixed rate will expire.
--- different type for accounts
-  | ALendingRateIntroductory DateTimeString -- ^ "INTRODUCTORY" An introductory discount that will expire after a set period. Use of @additionalValue@ field: DateTimeString representing when the introductory rate will expire
-  | ALendingRateDiscount Text -- ^ "DISCOUNT" A specific discount rate that may be applied. A discount rate reduces the interest payable. Use of @additionalValue@ field: Description of the discount rate that is applicable.
-  | ALendingRatePenalty Text -- ^ "PENALTY" A specific penalty rate that may be applied. A penalty rate increases the interest payable. Use of @additionalValue@ field: Description of the penalty rate that is applicable.
-  | ALendingRateBundleDiscount Text -- ^ "BUNDLE_DISCOUNT" A discount rate obtained by originating a bundle instead of a standalone product. Use of @additionalValue@ field: The name of the bundle.
-  | ALendingRateFloating Text -- ^ "FLOATING" A floating rate is relatively fixed but still adjusts under specific circumstances. Use of @additionalValue@ field: Details of the float parameters.
-  | ALendingRateMarketLinked Text -- ^ "MARKET_LINKED" A rate that is linked to a specific market, commodity or asset class. Use of @additionalValue@ field: Details of the market linkage.
-  | ALendingRateCashAdvance -- ^ "CASH_ADVANCE" Specific rate applied to case advances from the account.
-  | ALendingRateVariable -- ^ "VARIABLE" A variable base rate for the product.
-  | ALendingRateComparison Text -- ^ "COMPARISON" A comparison rate for the product. Use of @additionalValue@ field:
+    ALendingRateFixed DateTimeString
+    -- ^ "FIXED" Fixed rate for a period of time. Use of @additionalValue@ field: DateTimeString representing when the fixed rate will expire.
+  | ALendingRateIntroductory DateTimeString
+    -- ^ "INTRODUCTORY" An introductory discount that will expire after a set period. Use of @additionalValue@ field: DateTimeString representing when the introductory rate will expire
+  | ALendingRateDiscount Text
+    -- ^ "DISCOUNT" A specific discount rate that may be applied. A discount rate reduces the interest payable. Use of @additionalValue@ field: Description of the discount rate that is applicable.
+  | ALendingRatePenalty Text
+    -- ^ "PENALTY" A specific penalty rate that may be applied. A penalty rate increases the interest payable. Use of @additionalValue@ field: Description of the penalty rate that is applicable.
+  | ALendingRateBundleDiscount Text
+    -- ^ "BUNDLE_DISCOUNT" A discount rate obtained by originating a bundle instead of a standalone product. Use of @additionalValue@ field: The name of the bundle.
+  | ALendingRateFloating Text
+    -- ^ "FLOATING" A floating rate is relatively fixed but still adjusts under specific circumstances. Use of @additionalValue@ field: Details of the float parameters.
+  | ALendingRateMarketLinked Text
+    -- ^ "MARKET_LINKED" A rate that is linked to a specific market, commodity or asset class. Use of @additionalValue@ field: Details of the market linkage.
+  | ALendingRateCashAdvance
+    -- ^ "CASH_ADVANCE" Specific rate applied to case advances from the account.
+  | ALendingRateVariable
+    -- ^ "VARIABLE" A variable base rate for the product.
+  | ALendingRateComparison Text
+    -- ^ "COMPARISON" A comparison rate for the product. Use of @additionalValue@ field:
   deriving (Show, Eq)
 
 accountLendingRateTypeDecoder :: Monad f => Decoder f AccountLendingRateType

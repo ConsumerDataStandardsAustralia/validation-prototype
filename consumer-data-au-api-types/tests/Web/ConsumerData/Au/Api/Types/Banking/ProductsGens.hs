@@ -3,6 +3,7 @@
 module Web.ConsumerData.Au.Api.Types.Banking.ProductsGens where
 
 import           Control.Monad.Catch (MonadThrow)
+import           Data.Text.Gens      (textGen)
 import           Hedgehog            (MonadGen)
 import qualified Hedgehog.Gen        as Gen
 import qualified Hedgehog.Range      as Range
@@ -25,7 +26,7 @@ productGen  = Product
   <*> Gen.maybe dateTimeStringGen
   <*> Gen.maybe dateTimeStringGen
   <*> dateTimeStringGen
-  <*> productCategoryGen
+  <*> enumProductCategoryGen
   <*> textGen
   <*> textGen
   <*> textGen
@@ -42,8 +43,8 @@ productAdditionalInformationGen = ProductAdditionalInformation
   <*> Gen.maybe genUri
   <*> Gen.maybe genUri
 
-productCategoryGen :: (MonadGen m) => m ProductCategory
-productCategoryGen = Gen.enumBounded
+enumProductCategoryGen :: (MonadGen m) => m EnumProductCategory
+enumProductCategoryGen = Gen.enumBounded
 
 
 productDetailGen :: (MonadGen m, MonadThrow m) => m ProductDetail

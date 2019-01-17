@@ -6,6 +6,6 @@ module Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Additional
 import           Data.Text          (pack)
 import qualified Waargonaut.Decode  as D
 
--- | Helper decoder function from @additionalValue@
+-- Helper decoder function from @additionalValue@
 additionalValueDecoder :: Monad f => (D.Decoder f a) -> D.Decoder f a
 additionalValueDecoder = D.atKey $ pack "additionalValue"

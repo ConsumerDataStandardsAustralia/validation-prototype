@@ -52,14 +52,11 @@ instance JsonEncode OB ProductDepositRates where
 
 
 
--- | ProductDepositRate <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproductdepositerate CDR AU v0.1.0 ProductDepositRate>
 data ProductDepositRate = ProductDepositRate
--- WARNING This type is refering to *Product* only property, not as it defined in the above link
-  { _productDepositRateDepositRateType   :: ProductDepositRateType -- ^ The type of rate (base, bonus, etc). See the next section for an overview of valid values and their meaning
--- WARNING
-  , _productDepositRateRate              :: RateString -- ^ The rate to be applied
-  , _productDepositRateAdditionalInfo    :: Maybe Text -- ^ Display text providing more information on the rate
-  , _productDepositRateAdditionalInfoUri :: Maybe URI -- ^ Link to a web page with more information on this fee
+  { _productDepositRateDepositRateType   :: ProductDepositRateType
+  , _productDepositRateRate              :: RateString
+  , _productDepositRateAdditionalInfo    :: Maybe Text
+  , _productDepositRateAdditionalInfoUri :: Maybe URI
   } deriving (Show, Eq)
 
 productDepositRateDecoder :: Monad f => Decoder f ProductDepositRate
@@ -84,13 +81,17 @@ instance JsonEncode OB ProductDepositRate where
   mkEncoder = tagOb productDepositRateEncoder
 
 
--- | Description of the usage of the @depositRateType@ field as it applies to products. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#productdepositratetypedoc CDR AU v0.1.0 Product Deposit Rate Types>
 data ProductDepositRateType =
-    PDepositRateTypeFixed DurationString -- ^ "FIXED" Fixed rate for a period of time. Use of @additionalValue@ field: The period of time fixed. Formatted according to <https://en.wikipedia.org/wiki/ISO_8601#Durations ISO 8601 Durations>.
-  | PDepositRateTypeBonus Text -- ^ "BONUS" A bonus rate available by meeting a specific criteria. Use of @additionalValue@ field: A description of the criteria to obtain the bonus.
-  | PDepositRateTypeBundleBonus Text -- ^ "BUNDLE_BONUS" A bonus rate obtained by originating a bundle instead of a standalone product. Use of @additionalValue@ field: The name of the bundle.
-  | PDepositRateTypeVariable -- ^ "VARIABLE" A variable base rate for the product
-  | PDepositRateTypeIntroductory DurationString -- ^ "INTRODUCTORY" An introductory bonus that will expire after a set period. Use of @additionalValue@ field: The period of time for the introductory rate. Formatted according to <https://en.wikipedia.org/wiki/ISO_8601#Durations ISO 8601 Durations>.
+    PDepositRateTypeFixed DurationString
+    -- ^ "FIXED" Fixed rate for a period of time. Use of @additionalValue@ field: The period of time fixed. Formatted according to <https://en.wikipedia.org/wiki/ISO_8601#Durations ISO 8601 Durations>.
+  | PDepositRateTypeBonus Text
+    -- ^ "BONUS" A bonus rate available by meeting a specific criteria. Use of @additionalValue@ field: A description of the criteria to obtain the bonus.
+  | PDepositRateTypeBundleBonus Text
+    -- ^ "BUNDLE_BONUS" A bonus rate obtained by originating a bundle instead of a standalone product. Use of @additionalValue@ field: The name of the bundle.
+  | PDepositRateTypeVariable
+    -- ^ "VARIABLE" A variable base rate for the product
+  | PDepositRateTypeIntroductory DurationString
+    -- ^ "INTRODUCTORY" An introductory bonus that will expire after a set period. Use of @additionalValue@ field: The period of time for the introductory rate. Formatted according to <https://en.wikipedia.org/wiki/ISO_8601#Durations ISO 8601 Durations>.
   deriving (Show, Eq)
 
 productDepositRateTypeDecoder :: Monad f => Decoder f ProductDepositRateType

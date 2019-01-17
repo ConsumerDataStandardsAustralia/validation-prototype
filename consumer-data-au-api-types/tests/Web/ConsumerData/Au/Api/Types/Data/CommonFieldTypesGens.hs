@@ -1,6 +1,6 @@
 module Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypesGens where
 
-import           Data.Text           (Text)
+-- import           Data.Text           (Text)
 import           Data.Time.Gens      (utcTimeGen)
 import           Hedgehog            (MonadGen, Gen)
 import qualified Hedgehog.Gen        as Gen
@@ -28,6 +28,10 @@ currencyAmountGen = CurrencyAmount
   <$> amountStringGen
   <*> Gen.maybe currencyStringGen
 
+dateStringGen :: Gen DateString
+dateStringGen = DateString
+  <$> Gen.text (Range.linear 5 20) Gen.ascii
+
 dateTimeStringGen :: (MonadGen m) => m DateTimeString
 dateTimeStringGen = Gen.lift $ DateTimeString
   <$> utcTimeGen
@@ -45,7 +49,3 @@ intGen = Gen.int (Range.linear 0 maxBound)
 rateStringGen :: (MonadGen m) => m RateString
 rateStringGen = RateString
   <$> Gen.text (Range.linear 5 20) Gen.unicode
-
-
-textGen :: (MonadGen m) => m Text
-textGen = Gen.text (Range.linear 5 20) Gen.unicode

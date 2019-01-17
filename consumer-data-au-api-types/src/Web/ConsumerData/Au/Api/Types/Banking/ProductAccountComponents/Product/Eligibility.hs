@@ -50,13 +50,11 @@ instance JsonEncode OB ProductEligibilities where
   mkEncoder = tagOb productEligibilitiesEncoder
 
 
--- | ProductEligibility <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproducteligibility CDR AU v0.1.0 ProductEligibility>
 data ProductEligibility = ProductEligibility
-  { _productEligibilityDescription       :: Text -- ^ Description of the discount
-  , _productEligibilityEligibilityType   :: ProductEligibilityType -- ^ The type of eligibility criteria described. See the note below for valid values and their meaning
--- WARNING
-  , _productEligibilityAdditionalInfo    :: Maybe Text -- ^ Display text providing more information on the eligibility criteria. Mandatory if the eligibilityType field is set to OTHER
-  , _productEligibilityAdditionalInfoUri :: Maybe URI -- ^ Link to a web page with more information on this eligibility criteria
+  { _productEligibilityDescription       :: Text
+  , _productEligibilityEligibilityType   :: ProductEligibilityType
+  , _productEligibilityAdditionalInfo    :: Maybe Text
+  , _productEligibilityAdditionalInfoUri :: Maybe URI
   } deriving (Show, Eq)
 
 productEligibilityDecoder :: Monad f => Decoder f ProductEligibility
@@ -83,17 +81,28 @@ instance JsonEncode OB ProductEligibility where
 
 -- | Description of the usage of the @eligibilityType@ field as it applies to products. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#producteligibilitytypedoc CDR AU v0.1.0 Product Eligibility Types>
 data ProductEligibilityType =
-    PEligibilityBusiness -- ^ "BUSINESS" Only business may apply for the account.
-  | PEligibilityPensionRecipient -- ^ "PENSION_RECIPIENT" A recipient of a government pension may apply for the product.
-  | PEligibilityMinAge Int -- ^ "MIN_AGE" Only customers older than a minimum age may apply. Use of @additionalValue@ field: The minimum age in years.
-  | PEligibilityMaxAge Int -- ^ "MAX_AGE" Only customers younger than a maximum age may apply. Use of @additionalValue@ field: The minimum age in years.
-  | PEligibilityMinIncome AmountString -- ^ "MIN_INCOME" The customer must have an income greater than a specified threshold to obtain the product. Use of @additionalValue@ field: Minimum income in AmountString format.
-  | PEligibilityMinTurnover AmountString -- ^ "MIN_TURNOVER" Only a business with greater than a minimum turnover may apply. Use of @additionalValue@ field: Minimum turnover in AmountString format.
-  | PEligibilityStaff -- ^ "STAFF" Only a staff member of the provider may apply.
-  | PEligibilityStudent -- ^ "STUDENT" Only students may apply for the product.
-  | PEligibilityEmploymentStatus Text -- ^ "EMPLOYMENT_STATUS" An eligibility constraint based on employment status applies. Use of @additionalValue@ field: A description of the status required.
-  | PEligibilityResidencyStatus Text -- ^ "RESIDENCY_STATUS" An eligibility constraint based on residency status applies. Use of @additionalValue@ field: A description of the status required.
-  | PEligibilityOther Text -- ^ "OTHER" Another eligibility criteria exists as described in the additionalInfo field (if this option is specified then the additionalInfo field is mandatory). Use of @additionalValue@ field: Value relevant to the criteria.
+    PEligibilityBusiness
+    -- ^ "BUSINESS" Only business may apply for the account.
+  | PEligibilityPensionRecipient
+    -- ^ "PENSION_RECIPIENT" A recipient of a government pension may apply for the product.
+  | PEligibilityMinAge Int
+    -- ^ "MIN_AGE" Only customers older than a minimum age may apply. Use of @additionalValue@ field: The minimum age in years.
+  | PEligibilityMaxAge Int
+    -- ^ "MAX_AGE" Only customers younger than a maximum age may apply. Use of @additionalValue@ field: The minimum age in years.
+  | PEligibilityMinIncome AmountString
+    -- ^ "MIN_INCOME" The customer must have an income greater than a specified threshold to obtain the product. Use of @additionalValue@ field: Minimum income in AmountString format.
+  | PEligibilityMinTurnover AmountString
+    -- ^ "MIN_TURNOVER" Only a business with greater than a minimum turnover may apply. Use of @additionalValue@ field: Minimum turnover in AmountString format.
+  | PEligibilityStaff
+    -- ^ "STAFF" Only a staff member of the provider may apply.
+  | PEligibilityStudent
+    -- ^ "STUDENT" Only students may apply for the product.
+  | PEligibilityEmploymentStatus Text
+    -- ^ "EMPLOYMENT_STATUS" An eligibility constraint based on employment status applies. Use of @additionalValue@ field: A description of the status required.
+  | PEligibilityResidencyStatus Text
+    -- ^ "RESIDENCY_STATUS" An eligibility constraint based on residency status applies. Use of @additionalValue@ field: A description of the status required.
+  | PEligibilityOther Text
+    -- ^ "OTHER" Another eligibility criteria exists as described in the additionalInfo field (if this option is specified then the additionalInfo field is mandatory). Use of @additionalValue@ field: Value relevant to the criteria.
   deriving (Show, Eq)
 
 
