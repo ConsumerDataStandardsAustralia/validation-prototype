@@ -17,8 +17,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
   , JwsRegisteredClaims(..)
   , JwsHeaders(..)
   , ClientMetaData(..)
-    -- TODO: Not exporting data constructor for RegoReqSoftwareStatement --- use the smart constructor
-  , RegoReqSoftwareStatement(..)
+  , RegoReqSoftwareStatement(EncodedSs)
   , SoftwareStatement(..)
   , JTI(..)
   , RegReqAccessToken(..)
@@ -163,11 +162,6 @@ import           Web.ConsumerData.Au.Api.Types.Auth.Common
     ResponseType, Scopes, getRedirectUri, _FapiPermittedAlg)
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, Error, _InvalidClaim, _MissingClaim, _ParseError)
--- | The client registration endpoint is an OAuth 2.0 endpoint that is designed to allow a client to be dynamically registered with the authorization server. 'RegistrationRequest' represents a client request for registration containing meta-data elements specified in <https://tools.ietf.org/html/rfc7591 §RFC7591 - OAuth 2.0 Dynamic Client Registration Protocol> and <https://openid.net/specs/openid-connect-registration-1_0.html §OIDC registration>. Each request must contain a software statement assertion (a JWT is issued and signed by the OpenBanking Directory). Metadata values may be duplicated in the registration request, but if different, those in the software statement will take precedence and override those in the request.
---
---A RP will submit the registration request to a OP in order to receive `client_id` credentials. The registration request parameters are sent in a JWT signed by the RP [UK OB mandates this] and include the signed software statement assertion as a JWT claim.
---
--- Full details of CDR dynamic client registration can be found in the <https://consumerdatastandardsaustralia.github.io/infosec/#discovery-and-registration §CDR infosec standards>.
 
 -- | The client registration endpoint is an OAuth 2.0 endpoint that is designed to
 -- allow a client to be dynamically registered with the authorization server.
@@ -176,27 +170,24 @@ import           Web.ConsumerData.Au.Api.Types.Auth.Error
 -- <https://tools.ietf.org/html/rfc7591 §RFC7591 - OAuth 2.0 Dynamic Client Registration Protocol>
 -- and <https://openid.net/specs/openid-connect-registration-1_0.html §OIDC registration>.
 -- Each request must contain a software statement assertion (a
--- JWT is issued and signed by the OpenBanking Directory). Metadata values may
+-- JWT is issued and signed by the CDR Directory). Metadata values may
 -- be duplicated in the registration request, but if different, those in the
 -- software statement will take precedence and override those in the request. A
 -- RP will submit the registration request to a OP in order to receive
 -- `client_id` credentials. The registration request parameters are sent in a
--- JWT signed by the RP [UK OB mandates this] and include the signed software
--- statement assertion as a JWT claim. Full details of CDR dynamic client
--- registration can be found in the
+-- JWT signed by the RP and include a signed software
+-- statement assertion in the form of a JWT claim.
+-- Full details of CDR dynamic client registration can be found in the
 -- <https://consumerdatastandardsaustralia.github.io/infosec/#discovery-and-registration §CDR infosec standards>.
 
 -- | Determines the set of credentials that will be used by a client when
 -- accessing /token endpoint. OIDC requires a restricted subset of the allowed
 -- OAuth values (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>).
--- Also, because OZ OB only supports @code id_token@
+-- Also, because CDR only supports @code id_token@
 -- (i.e. the `hybrid` flow), this means @grant_types@ must contain at least
 -- @authorization_code@ and @implicit@, as per the OIDC Registration spec
 -- (<https://openid.net/specs/openid-connect-registration-1_0.html §2. Client Metadata>).
--- NB: For UK OB, @client_credentials@ is required as a grant type,
--- as is it needed for the client to submit a JWT to the /token endpoint to
--- obtain a consent ID / payment ID before sending the request to /payments.
-data GrantType = Implicit | AuthorizationCode | RefreshToken -- ClientCredentials
+data GrantType = Implicit | AuthorizationCode | RefreshToken -- `ClientCredentials` is not supported
   deriving (Generic, Show, Eq, Ord)
 
 _GrantType :: Prism' T.Text GrantType
@@ -373,8 +364,8 @@ jwkSetClaims = \case
 -- | JWE @alg@ (and optional @enc@) algorithms for encrypting the ID token
 -- issued to the client (server must comply). @none@ is not permitted, unless
 -- the client only uses response types that return no ID token from the
--- authorization endpoint (such as when only using the authorization code flow).
--- This is not currently an option in OB.
+-- authorization endpoint (such as when only using the authorization code flow),
+-- which is not currently an option in CDR.
 --
 -- Default @alg@ is @PS256@. If only the @id_token_encrypted_response_alg@ is
 -- specified, the default for @enc@ is @A128CBC-HS256@.
@@ -389,7 +380,7 @@ data IdTokenEncryption = IdTokenEncryption
 -- response sent to the client (server must comply). @none@ is not permitted,
 -- unless the client only uses response types that return no ID token from the
 -- authorization endpoint (such as when only using the authorization code flow).
--- This is not currently an option in OB.
+-- This is not currently an option in CDR.
 --
 -- Default @alg@ is @PS256@. If only the @id_token_encrypted_response_alg@ is
 -- specified, the default for @enc@ is @A128CBC-HS256@.
@@ -472,7 +463,7 @@ instance FromJSON TokenEndpointAuthMethod where
 newtype TlsClientAuthSubjectDn = TlsClientAuthSubjectDn T.Text
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
--- | Only PrivateKeyJwt and TlsClientAuth are supported by CDR.
+-- | Only PrivateKeyJwt is supported by CDR.
 -- @token_endpoint_auth_signing_alg@ is required if using @PrivateKeyJwt@
 -- @token_endpoint_auth_method@, and @tls_client_auth_subject_dn@ must be
 -- supplied if using @tls_client_auth@ (as per
@@ -492,8 +483,8 @@ _FapiTokenEndpointAuthMethod = prism
   )
   (\case
     -- ClientSecretJwt f -> Right . FapiTokenEndpointAuthMethod . ClientSecretJwt $ f -- Not supported in CDR.
+    -- TlsClientAuth f -> Right . FapiTokenEndpointAuthMethod . TlsClientAuth $ f
     PrivateKeyJwt f -> Right . FapiTokenEndpointAuthMethod . PrivateKeyJwt $ f
-    TlsClientAuth f -> Right . FapiTokenEndpointAuthMethod . TlsClientAuth $ f
     e               -> Left e
   )
 
@@ -622,8 +613,7 @@ newtype FapiKid = FapiKid {
   getFapiKid :: T.Text }
   deriving (Generic, Show, Eq)
 
--- | These claims are JWS registered claims required for the registration
--- requests.
+-- | The JWS registered claims for registration request.
 data JwsRegisteredClaims = JwsRegisteredClaims
   {
   -- | The name of the RP. RFC7591 2.3 mandates issuer claim is present if
@@ -653,8 +643,7 @@ data JwsHeaders = JwsHeaders
 -- <https://tools.ietf.org/html/rfc7591 §RFC7591: 3.1 Client Registration Request>
 -- to be used in both the registration request object and the software
 -- statement, all of them as optional. However, some fields are non-optional
--- under FAPI, and even fewer are optional under
--- <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration §CDR>
+-- under under <https://consumerdatastandardsaustralia.github.io/infosec/#recipient-client-registration §CDR>
 data ClientMetaData = ClientMetaData {
   -- | The `alg` algorithm that must be used for signing request objects sent to
   -- the OP.
@@ -677,7 +666,6 @@ data ClientMetaData = ClientMetaData {
   , _grantTypes                 :: Maybe FapiGrantTypes
 
   -- | Human-readable name of the client to be presented to the end user.
-  -- Mandatory field according to CDR.
   , _clientName                 :: Maybe Script
 
   -- | URL of the home page of the client.
@@ -697,7 +685,7 @@ data ClientMetaData = ClientMetaData {
   -- terms of service.
   , _tosUri                     :: Maybe ScriptUri
 
-  -- | Requested for responses to this client. Mandatory field according to CDR.
+  -- | Requested for responses to this client.
   , _subjectType                :: Maybe SubjectType
 
   -- | References an HTTPS URL of a remote file containing a single JSON array of
@@ -718,7 +706,7 @@ data ClientMetaData = ClientMetaData {
   -- Mandatory field, according to OIDC-R. FAPI restricts these to all be HTTPS.
   , _redirectUris               :: RedirectUrls
 
-  -- | The @request_object_encryption_alg@ and @request_object_encryption_enc@
+  -- | The @request_object_encryption_alg@ and optional @request_object_encryption_enc@
   -- parameters for specifying the JWS `alg` and `enc` algorithms (that might
   -- be) used when encrypting request objects. If both signed and encrypted,
   -- signing will occur first, and then encryption, with the result being a
@@ -733,12 +721,12 @@ data ClientMetaData = ClientMetaData {
 
   -- | The @id_token_encrypted_response_alg@ and @id_token_encrypted_response_enc@
   -- values for specifying how the ID token should be encrypted; see
-  -- 'IdTokenEncryption' for more information. Mandatory field according to CDR.
+  -- 'IdTokenEncryption' for more information.
   , _idTokenEncryption          :: Maybe IdTokenEncryption
 
   -- | JSON array containing a list of OAuth 2.0 @response_type@ values that the
   -- client will restrict itself to using; defaults to @code id_token@ if
-  -- omitted. FAPI restricts these to be either `code id_token` or `code
+  -- omitted. CDR restricts these to be only `code id_token`.
   -- id_token token`.
   , _responseTypes              :: Maybe FapiResponseTypes
 
@@ -771,7 +759,8 @@ data ClientMetaData = ClientMetaData {
   -- Mandatory field according to CDR.
   , _idTokenSignedResponseAlg   :: FapiPermittedAlg
 
-  -- | A set of scopes the client will restrict itself to, containing at least @openid@.
+  -- | A set of scopes the client will restrict itself to, containing at least
+  -- @openid@.
   , _scope                      :: Maybe FapiScopes
 
   -- | Unique identifier string for the client, which should remain the same
@@ -783,18 +772,19 @@ data ClientMetaData = ClientMetaData {
   -- maintain it.
   , _softwareVersion            :: Maybe SoftwareVersion
 
-  -- | @client_notification_endpoint@ - CDR required URI for CIBA callback.
+  -- | @client_notification_endpoint@ - CDR required URI if using CIBA.
   , _clientNotificationEndpoint :: Maybe NotificationEndpoint
 } deriving (Generic, Show, Eq)
 
--- TODO: Add smart constructor to only allow supply of encoded SS, depending on the CDR spec
 data RegoReqSoftwareStatement = EncodedSs T.Text | DecodedSs SoftwareStatement
   deriving (Show, Eq)
 
 data SoftwareStatement = SoftwareStatement {
     _ssSigningData :: JwsRegisteredClaims
-  , _ssMetaData    :: ClientMetaData -- ^ All the claims to include in the SSA; RFC7591 allows any/all that are included in the request object, however SSA claims take precedence over request object claims (3.1.1).
-}
+    -- | All the claims to include in the SSA;
+    -- RFC7591 allows any/all that are included in the request object,
+    -- however SSA claims take precedence over request object claims (3.1.1).
+  , _ssMetaData    :: ClientMetaData}
   deriving (Generic, Show, Eq)
 
 newtype SoftwareId = SoftwareId T.Text
@@ -1121,7 +1111,7 @@ getmClaim
   => AesonClaims
   -> T.Text
   -> m (Maybe a)
-getmClaim m n = maybe (pure Nothing) (n2n) (m ^. at n)
+getmClaim m n = maybe (pure Nothing) n2n (m ^. at n)
   where
     n2n Null = pure Nothing
     n2n v    = fromVal n v
