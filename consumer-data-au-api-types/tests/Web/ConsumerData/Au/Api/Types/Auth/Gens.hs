@@ -28,7 +28,7 @@ import           Text.URI.Gens
 import           Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
     (Claims (Claims))
 import           Web.ConsumerData.Au.Api.Types.Auth.Common.Common
-    (Acr (Acr), Claim (Claim), HttpsUrl, TokenSubject (..), mkHttpsUrl)
+    (Acr (Acr), Claim (Claim), HttpsUrl, TokenSubject (..), mkHttpsUrl, ConsentId (..))
 import           Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
     (IdToken (IdToken), IdTokenClaims, IdTokenKey (..))
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
@@ -51,7 +51,7 @@ genIdTokenClaims =
       -- , IdTokenSub
       ]
   in
-    IdToken Nothing Nothing (Claim [Acr "foo"] True) <$> (DM.fromList <$> gens)
+    IdToken Nothing Nothing (Claim [Acr "foo"] True) (Claim [ConsentId "fake consent id"] True) <$> (DM.fromList <$> gens)
       -- DM.traverseWithKey (const (fmap pure)) (DM.fromList <$> gens)
 
 genClaims ::
