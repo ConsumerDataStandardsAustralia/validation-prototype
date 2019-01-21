@@ -22,9 +22,10 @@ accountsServer = genericServerT AccountsApi
         balances <- getBalancesAll
         bankPaginatedResponse balances
           (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsBalancesGet.to (\f -> f status owned prodCat)))
-    , _accountsBalancesPost = \request -> getBalancesForAccounts (_requestData request) >>= \bs -> bankStandardResponse
-      bs
-      (links^.bankingLinks.bankingAccountsLinks.accountsBalancesPost)
+    , _accountsBalancesPost = \request pn ps-> do
+        xacts <- getBalancesForAccounts (_requestData request)
+        bankPaginatedResponse xacts
+          (fakePaginator pn ps (links^.bankingLinks.bankingAccountsLinks.accountsBalancesPost))
     , _accountsTransactionsGet = \st et minA maxA xactT status owned prodCat pn ps -> do
         xacts <- getTransactionsAll
         bankPaginatedResponse xacts

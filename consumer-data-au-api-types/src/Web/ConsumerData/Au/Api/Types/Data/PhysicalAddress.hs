@@ -8,50 +8,72 @@ module Web.ConsumerData.Au.Api.Types.Data.PhysicalAddress
   ( module Web.ConsumerData.Au.Api.Types.Data.PhysicalAddress
   ) where
 
-import           Control.Lens               (Prism', prism, ( # ))
-import           Country                    (Country)
+import           Control.Lens             (Prism', prism, ( # ))
+import           Country                  (Country)
 import           Country.Waargonaut
     (countryAlphaThreeDecoder, countryAlphaThreeEncoder)
-import           Data.Functor.Alt           ((<!>))
-import           Data.Text                  (Text)
-import           GHC.Generics               (Generic)
-import           Waargonaut.Decode          (Decoder)
-import qualified Waargonaut.Decode          as D
-import qualified Waargonaut.Decode.Error    as D
-import           Waargonaut.Encode          (Encoder)
-import qualified Waargonaut.Encode          as E
+import           Data.Functor.Alt         ((<!>))
+import           Data.Number.Nat          (Nat)
+import           Data.Text                (Text)
+import           GHC.Generics             (Generic)
+import           Waargonaut.Decode        (Decoder)
+import qualified Waargonaut.Decode        as D
+import qualified Waargonaut.Decode.Error  as D
+import           Waargonaut.Encode        (Encoder)
+import qualified Waargonaut.Encode        as E
+import           Waargonaut.Types.JObject (MapLikeObj)
+import           Waargonaut.Types.Json    (Json)
 
-import           Waargonaut.Helpers         (atKeyOptional', maybeOrAbsentE)
-import Web.ConsumerData.Au.Api.Types.Stub
-    (emptyObjDecoder, emptyObjEncoder)
-import Web.ConsumerData.Au.Api.Types.SumTypeHelpers
+import qualified AuPost.PAF                                   as PAF
+import           Waargonaut.Helpers
+    (atKeyOptional', maybeOrAbsentE)
+import           Web.ConsumerData.Au.Api.Types.Response
+    (natDecoder, natEncoder)
+import           Web.ConsumerData.Au.Api.Types.SumTypeHelpers
 
--- | PhysicalAddress <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaphysicaladdress CDR AU v0.1.0 PhysicalAddress >
-data PhysicalAddress = PhysicalAddress
-  { _physicalAddressPurpose :: AddressPurpose
-  , _physicalAddressAddress :: Address
+
+data PhysicalAddressWithPurpose = PhysicalAddressWithPurpose
+  { _physicalAddressWPPurpose :: AddressPurpose
+  , _physicalAddressWPAddress :: PhysicalAddress
   } deriving (Generic, Show, Eq)
 
+physicalAddressWithPurposeEncoder :: Applicative f => Encoder f PhysicalAddressWithPurpose
+physicalAddressWithPurposeEncoder = E.mapLikeObj $ \pa ->
+  (E.atKey' "purpose" addressPurposeEncoder (_physicalAddressWPPurpose pa)) .
+  physicalAddressFields (_physicalAddressWPAddress pa)
+
+physicalAddressWithPurposeDecoder :: Monad f => Decoder f PhysicalAddressWithPurpose
+physicalAddressWithPurposeDecoder = PhysicalAddressWithPurpose
+  <$> D.atKey "purpose" addressPurposeDecoder
+  <*> physicalAddressDecoder
+
+
+data PhysicalAddress = PhysicalAddress
+  { _physicalAddressAddress :: Address } deriving (Generic, Show, Eq)
+
 physicalAddressEncoder :: Applicative f => Encoder f PhysicalAddress
-physicalAddressEncoder = E.mapLikeObj $ \pa ->
-  (E.atKey' "purpose" addressPurposeEncoder (_physicalAddressPurpose pa)) .
+physicalAddressEncoder = E.mapLikeObj $ physicalAddressFields
+
+physicalAddressFields
+  :: (Monoid ws, Semigroup ws)
+  => PhysicalAddress -> MapLikeObj ws Json -> MapLikeObj ws Json
+physicalAddressFields pa =
   addressFields (_physicalAddressAddress pa)
   where
     addressFields = \case
       AddressSimple a -> fields "simple" simpleAddressEncoder a
-      AddressPaf      -> fields "paf" emptyObjEncoder ()
+      AddressPaf a    -> fields "paf" pafAddressEncoder a
     fields = typeTaggedField "addressUType"
 
 physicalAddressDecoder :: Monad f => Decoder f PhysicalAddress
 physicalAddressDecoder = PhysicalAddress
-  <$> D.atKey "purpose" addressPurposeDecoder
-  <*> addyDecoder
-
+  <$> addyDecoder
   where
     addyDecoder = typeTaggedDecoder "addressUType" $ \case
       "simple" -> Just $ (TypedTagField AddressSimple simpleAddressDecoder)
-      "paf"    -> Just $ (TypedTagField (const AddressPaf) (emptyObjDecoder ()))
+      "paf"    -> Just $ (TypedTagField AddressPaf pafAddressDecoder)
       _        -> Nothing
+
 
 data AddressPurpose =
     AddressPurposeRegistered -- ^ "REGISTERED"
@@ -59,7 +81,7 @@ data AddressPurpose =
   | AddressPurposePhysical -- ^ "PHYSICAL"
   | AddressPurposeWork -- ^ "WORK"
   | AddressPurposeOther -- ^ "OTHER"
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 addressPurposeText :: Prism' Text AddressPurpose
 addressPurposeText =
@@ -88,25 +110,24 @@ addressPurposeDecoder = D.prismDOrFail
   addressPurposeText
   D.text
 
--- | The type of address object
+
 data Address
   = AddressSimple SimpleAddress
-    -- ^ SimpleAddress < https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemasimpleaddress CDR AU v0.1.0 SimpleAddress>
-  | AddressPaf -- We don't know what this is yet
-    -- ^ <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemapafaddress CDR AU v0.1.0 PAFAddress>
+  | AddressPaf PAFAddress
   deriving (Generic, Show, Eq)
 
+
 data SimpleAddress = SimpleAddress
-  { _simpleAddressMailingName  :: Maybe Text -- ^ Name of the individual or business formatted for inclusion in an address used for physical mail.
+  { _simpleAddressMailingName  :: Maybe Text
   , _simpleAddressAddressLine1 :: Text
   , _simpleAddressAddressLine2 :: Maybe Text
   , _simpleAddressAddressLine3 :: Maybe Text
-  , _simpleAddressPostcode     :: Maybe Text -- ^ Mandatory for Australian address.
+  , _simpleAddressPostcode     :: Maybe Text
   , _simpleAddressCity         :: Text
-  , _simpleAddressState        :: AddressState -- ^ Free text if the country is not Australia. If country is Australia then must be one of the values defined by the <https://www.iso.org/obp/ui/#iso:code:3166:AU ISO 3166:AU> standard.
-  , _simpleAddressCountry      :: Maybe Country -- ^ A valid ISO 3166 Alpha-3 country code.
+  , _simpleAddressState        :: AddressState
+    -- ^ Free text if the country is not Australia. If country is Australia then must be one of the values defined by the <https://www.iso.org/obp/ui/#iso:code:3166:AU ISO 3166:AU> standard.
+  , _simpleAddressCountry      :: Maybe Country
   } deriving (Eq, Show, Generic)
-
 
 simpleAddressEncoder :: Applicative f => Encoder f SimpleAddress
 simpleAddressEncoder = E.mapLikeObj $ \p ->
@@ -130,7 +151,7 @@ simpleAddressDecoder = SimpleAddress
     <*> D.atKey "state" addressStateDecoder
     <*> atKeyOptional' "country" countryAlphaThreeDecoder
 
--- | @AddressState@ If country is Australia then must be one of the values defined by the <https://www.iso.org/obp/ui/#iso:code:3166:AU ISO 3166:AU> standard.
+-- | TODO @AddressState@ If country is Australia then must be one of the values defined by the <https://www.iso.org/obp/ui/#iso:code:3166:AU ISO 3166:AU> standard.
 data AddressState =
     AustralianState AustraliaState
   | OtherCountryState Text
@@ -157,7 +178,7 @@ data AustraliaState =
   | AustraliaStateTAS -- ^ "Tasmania"
   | AustraliaStateVIC -- ^ "Victoria"
   | AustraliaStateWA -- ^ "Western Australia"
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 australiaStateText ::
   Prism' Text AustraliaState
@@ -193,7 +214,74 @@ australiaStateDecoder = D.prismDOrFail
   australiaStateText
   D.text
 
--- | PAFAddress < https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemapafaddress CDR AU v0.1.0 PAFAddress >
+
+-- | PAFAddress Australian address formatted according to the file format defined by <https://auspost.com.au/content/dam/auspost_corp/media/documents/australia-post-data-guide.pdf the PAF file format>
 data PAFAddress = PAFAddress
-  { _pafAddressData :: () -- GenericObject -- ^ TODO  how to specify a generic object
+  { _pafAddressDpid                       :: Maybe Text
+  , _pafAddressThoroughfareNumber1        :: Maybe Nat
+  , _pafAddressThoroughfareNumber1Suffix  :: Maybe Text
+  , _pafAddressThoroughfareNumber2        :: Maybe Nat
+  , _pafAddressThoroughfareNumber2Suffix  :: Maybe Text
+  , _pafAddressFlatUnitNumber             :: Maybe Text
+  , _pafAddressFloorLevelNumber           :: Maybe Text
+  , _pafAddressLotNumber                  :: Maybe Nat
+  , _pafAddressBuildingName1              :: Maybe Text
+  , _pafAddressBuildingName2              :: Maybe Text
+  , _pafAddressStreetName                 :: Maybe Text
+  , _pafAddressStreetType                 :: Maybe PAF.StreetType
+  , _pafAddressStreetSuffix               :: Maybe PAF.StreetSuffix
+  , _pafAddressPostalDeliveryType         :: Maybe PAF.PostalDeliveryType
+  , _pafAddressPostalDeliveryNumber       :: Maybe Nat
+  , _pafAddressPostalDeliveryNumberPrefix :: Maybe Text
+  , _pafAddressPostalDeliveryNumberSuffix :: Maybe Text
+  , _pafAddressLocalityName               :: Text
+  , _pafAddressPostcode                   :: Text
+  , _pafAddressState                      :: PAF.StateType
   } deriving (Generic, Show, Eq)
+
+pafAddressEncoder :: Applicative f => Encoder f PAFAddress
+pafAddressEncoder = E.mapLikeObj $ \p ->
+  maybeOrAbsentE "dpid" E.text (_pafAddressDpid p) .
+  maybeOrAbsentE "thoroughfareNumber1" natEncoder (_pafAddressThoroughfareNumber1 p) .
+  maybeOrAbsentE "thoroughfareNumber1Suffix" E.text (_pafAddressThoroughfareNumber1Suffix p) .
+  maybeOrAbsentE "thoroughfareNumber2" natEncoder (_pafAddressThoroughfareNumber2 p) .
+  maybeOrAbsentE "thoroughfareNumber2Suffix" E.text (_pafAddressThoroughfareNumber2Suffix p) .
+  maybeOrAbsentE "flatUnitNumber" E.text (_pafAddressFlatUnitNumber p) .
+  maybeOrAbsentE "floorLevelNumber" E.text (_pafAddressFloorLevelNumber p) .
+  maybeOrAbsentE "lotNumber" natEncoder (_pafAddressLotNumber p) .
+  maybeOrAbsentE "buildingName1" E.text (_pafAddressBuildingName1 p) .
+  maybeOrAbsentE "buildingName2" E.text (_pafAddressBuildingName2 p) .
+  maybeOrAbsentE "streetName" E.text (_pafAddressStreetName p) .
+  maybeOrAbsentE "streetType" PAF.streetTypeEncoder (_pafAddressStreetType p) .
+  maybeOrAbsentE "streetSuffix" PAF.streetSuffixEncoder (_pafAddressStreetSuffix p) .
+  maybeOrAbsentE "postalDeliveryType" PAF.postalDeliveryTypeEncoder (_pafAddressPostalDeliveryType p) .
+  maybeOrAbsentE "postalDeliveryNumber" natEncoder (_pafAddressPostalDeliveryNumber p) .
+  maybeOrAbsentE "postalDeliveryNumberPrefix" E.text (_pafAddressPostalDeliveryNumberPrefix p) .
+  maybeOrAbsentE "postalDeliveryNumberSuffix" E.text (_pafAddressPostalDeliveryNumberSuffix p) .
+  E.atKey' "localityName" E.text (_pafAddressLocalityName p) .
+  E.atKey' "postcode" E.text (_pafAddressPostcode p) .
+  E.atKey' "state" PAF.stateTypeEncoder (_pafAddressState p)
+
+
+pafAddressDecoder :: Monad f => Decoder f PAFAddress
+pafAddressDecoder = PAFAddress
+    <$> atKeyOptional' "dpid" D.text
+    <*> atKeyOptional' "thoroughfareNumber1" natDecoder
+    <*> atKeyOptional' "thoroughfareNumber1Suffix" D.text
+    <*> atKeyOptional' "thoroughfareNumber2" natDecoder
+    <*> atKeyOptional' "thoroughfareNumber2Suffix" D.text
+    <*> atKeyOptional' "flatUnitNumber" D.text
+    <*> atKeyOptional' "floorLevelNumber" D.text
+    <*> atKeyOptional' "lotNumber" natDecoder
+    <*> atKeyOptional' "buildingName1" D.text
+    <*> atKeyOptional' "buildingName2" D.text
+    <*> atKeyOptional' "streetName" D.text
+    <*> atKeyOptional' "streetType" PAF.streetTypeDecoder
+    <*> atKeyOptional' "streetSuffix" PAF.streetSuffixDecoder
+    <*> atKeyOptional' "postalDeliveryType" PAF.postalDeliveryTypeDecoder
+    <*> atKeyOptional' "postalDeliveryNumber" natDecoder
+    <*> atKeyOptional' "postalDeliveryNumberPrefix" D.text
+    <*> atKeyOptional' "postalDeliveryNumberSuffix" D.text
+    <*> D.atKey "localityName" D.text
+    <*> D.atKey "postcode" D.text
+    <*> D.atKey "state" PAF.stateTypeDecoder

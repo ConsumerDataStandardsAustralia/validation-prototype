@@ -11,9 +11,15 @@ import qualified Hedgehog.Range      as Range
 
 import Data.Text.Gens
 import Web.ConsumerData.Au.Api.Types
+import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypesGens (dateStringGen)
 
 payeeGen :: Gen Payee
-payeeGen = Payee <$> payeeIdGen <*> textGen <*> Gen.maybe textGen <*> payeeTypeGen
+payeeGen = Payee
+  <$> payeeIdGen
+  <*> textGen
+  <*> Gen.maybe textGen
+  <*> payeeTypeGen
+  <*> Gen.maybe dateStringGen
 
 payeeIdGen :: Gen PayeeId
 payeeIdGen = PayeeId <$> Gen.text (Range.linear 5 20) Gen.unicode
@@ -53,7 +59,7 @@ domesticPayeeCardGen = DomesticPayeeCard <$> textGen
 
 domesticPayeePayIdGen :: Gen DomesticPayeePayId
 domesticPayeePayIdGen =
-  DomesticPayeePayId <$> textGen <*> textGen <*> domesticPayeePayIdTypeGen
+  DomesticPayeePayId <$> Gen.maybe textGen <*> textGen <*> domesticPayeePayIdTypeGen
 
 domesticPayeePayIdTypeGen :: Gen DomesticPayeePayIdType
 domesticPayeePayIdTypeGen = Gen.element [Email, Mobile, OrgNumber, OrgName]
@@ -68,7 +74,8 @@ beneficiaryDetailsGen = BeneficiaryDetails <$> Gen.maybe textGen <*> countryGen 
 bankDetailsGen :: Gen BankDetails
 bankDetailsGen =
   BankDetails <$> countryGen <*> textGen <*> Gen.maybe bankAddressGen <*>
-  Gen.maybe textGen <*> Gen.maybe textGen <*> Gen.maybe textGen <*> Gen.maybe textGen <*> Gen.maybe textGen
+  Gen.maybe textGen <*> Gen.maybe textGen <*> Gen.maybe textGen <*> Gen.maybe textGen
+  <*> Gen.maybe textGen <*> Gen.maybe textGen
 
 bankAddressGen :: Gen BankAddress
 bankAddressGen = BankAddress <$> textGen <*> textGen

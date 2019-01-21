@@ -17,12 +17,13 @@ import qualified Waargonaut.Decode.Error    as D
 import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 
--- | EmailAddress <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaemailaddress CDR AU v0.1.0 EmailAddress >
+
 data EmailAddress = EmailAddress
- { _emailAddressIsPreferred :: Bool    -- ^ Required to be true for one and only one entry to indicate the preferred email address.
- , _emailAddressPurpose     :: EmailAddressPurpose -- ^ The purpose of the address as specified by the customer.
- , _emailAddressAddress     :: Text -- ^ The email address value formatted according to <https://tools.ietf.org/html/rfc5322 RFC 5322>.
-                                -- TODO Do we need to restict formatting on email address as per standard?
+ { _emailAddressIsPreferred :: Bool
+ , _emailAddressPurpose     :: EmailAddressPurpose
+ , _emailAddressAddress     :: Text
+  -- ^ The email address value formatted according to <https://tools.ietf.org/html/rfc5322 RFC 5322>.
+  -- TODO Do we need to restict formatting on email address as per standard?
  } deriving (Generic, Show, Eq)
 
 emailAddressEncoder :: Applicative f => Encoder f EmailAddress
@@ -37,19 +38,18 @@ emailAddressDecoder = EmailAddress
   <*> (D.atKey "purpose" emailAddressPurposeDecoder)
   <*> (D.atKey "address" D.text)
 
--- | The purpose of the email address.
 data EmailAddressPurpose =
     EmailAddressPurposeWork -- ^ "WORK"
   | EmailAddressPurposeHome -- ^ "HOME"
   | EmailAddressPurposeOther -- ^ "OTHER"
   | EmailAddressPurposeUnspecified -- ^ "UNSPECIFIED"
-  deriving (Show, Eq)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 emailAddressPurposeText :: Prism' Text EmailAddressPurpose
 emailAddressPurposeText =
   prism (\case
           EmailAddressPurposeWork -> "WORK"
-          EmailAddressPurposeHome ->    "HOME"
+          EmailAddressPurposeHome -> "HOME"
           EmailAddressPurposeOther -> "OTHER"
           EmailAddressPurposeUnspecified -> "UNSPECIFIED"
       )

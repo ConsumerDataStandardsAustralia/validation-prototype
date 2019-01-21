@@ -45,29 +45,43 @@ instance JsonEncode OB AccountFeatures where
   mkEncoder = tagOb accountFeaturesEncoder
 
 
--- | AccountFeature = AccountFeatureType <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproductfeature CDR AU v0.1.0 ProductFeature>
--- WARNING This type is refering to *Account* only property, not as it defined in the above link
--- | Description of the usage of the @featureType@ field as it applies to accounts. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#accountfeaturetypedoc CDR AU v0.1.0 Account Feature Types>
 data AccountFeatureType =
-    AFeatureCardAcess -- ^ "CARD_ACCESS" A card is available for the product to access funds.
-  | AFeatureAdditionalCards Int -- ^ "ADDITIONAL_CARDS" Additional cards can be requested. Use of @additionalValue@ field: The maximum number of additional cards. If no maximum then should be set to null.
-  | AFeatureUnlimitedTxns -- ^ "UNLIMITED_TXNS" Unlimited free transactions available.
-  | AFeatureFreeTxns Int -- ^ "FREE_TXNS" A set number of free transactions available per month. Use of @additionalValue@ field: The number of free transactions.
-  | AFeatureFreeTxnsAllowance AmountString -- ^ "FREE_TXNS_ALLOWANCE" A set amount of transaction fee value that is discounted per month. Use of @additionalValue@ field: The amount of transaction fee discounted (in AUD).
-  | AFeatureLoyaltyProgram Text -- ^ "LOYALTY_PROGRAM" A points based loyalty program is available. Use of @additionalValue@ field: Name of the loyalty program.
+    AFeatureCardAcess
+    -- ^ "CARD_ACCESS" A card is available for the product to access funds.
+  | AFeatureAdditionalCards Int
+    -- ^ "ADDITIONAL_CARDS" Additional cards can be requested. Use of @additionalValue@ field: The maximum number of additional cards. If no maximum then should be set to null.
+  | AFeatureUnlimitedTxns
+    -- ^ "UNLIMITED_TXNS" Unlimited free transactions available.
+  | AFeatureFreeTxns Int
+    -- ^ "FREE_TXNS" A set number of free transactions available per month. Use of @additionalValue@ field: The number of free transactions.
+  | AFeatureFreeTxnsAllowance AmountString
+    -- ^ "FREE_TXNS_ALLOWANCE" A set amount of transaction fee value that is discounted per month. Use of @additionalValue@ field: The amount of transaction fee discounted (in AUD).
+  | AFeatureLoyaltyProgram Text
+    -- ^ "LOYALTY_PROGRAM" A points based loyalty program is available. Use of @additionalValue@ field: Name of the loyalty program.
   | AFeatureOffset-- ^ "OFFSET" An offset account can be connected to the product.
-  | AFeatureOverdraft -- ^ "OVERDRAFT" An overdraft can be applied for.
-  | AFeatureRedraw -- ^ "REDRAW" Redraw of repaid principal above minimum required is available.
-  | AFeatureInsurance Text -- ^ "INSURANCE" Insurance is provided as an additional feature of the product. Use of @additionalValue@ field: Text description of the type of insurance (e.g. Travel Insurance).
-  | AFeatureBalanceTransfers -- ^ "BALANCE_TRANSFERS" Balance transfers can be made from the account (eg. for credit cards).
-  | AFeatureInterestFree DurationString -- ^ "INTEREST_FREE" Interest free period for purchases. Use of @additionalValue@ field:      Interest free period. Formatted according to ISO 8601 Durations.
-  | AFeatureInterestFreeTransfers DurationString -- ^ "INTEREST_FREE_TRANSFERS" Interest free period for balance transfers. Use of @additionalValue@ field:      Interest free period. Formatted according to ISO 8601 Durations.
-  | AFeatureDigitalWallet Text -- ^ "DIGITAL_WALLET" A Digital wallet can be attached to the product. Use of @additionalValue@ field: The name or brand of the wallet.
-  | AFeatureDigitalBanking -- ^ "DIGITAL_BANKING" Access is available to online banking features for the product.
+  | AFeatureOverdraft
+    -- ^ "OVERDRAFT" An overdraft can be applied for.
+  | AFeatureRedraw
+    -- ^ "REDRAW" Redraw of repaid principal above minimum required is available.
+  | AFeatureInsurance Text
+    -- ^ "INSURANCE" Insurance is provided as an additional feature of the product. Use of @additionalValue@ field: Text description of the type of insurance (e.g. Travel Insurance).
+  | AFeatureBalanceTransfers
+    -- ^ "BALANCE_TRANSFERS" Balance transfers can be made from the account (eg. for credit cards).
+  | AFeatureInterestFree DurationString
+    -- ^ "INTEREST_FREE" Interest free period for purchases. Use of @additionalValue@ field:      Interest free period. Formatted according to ISO 8601 Durations.
+  | AFeatureInterestFreeTransfers DurationString
+    -- ^ "INTEREST_FREE_TRANSFERS" Interest free period for balance transfers. Use of @additionalValue@ field:      Interest free period. Formatted according to ISO 8601 Durations.
+  | AFeatureDigitalWallet Text
+    -- ^ "DIGITAL_WALLET" A Digital wallet can be attached to the product. Use of @additionalValue@ field: The name or brand of the wallet.
+  | AFeatureDigitalBanking
+    -- ^ "DIGITAL_BANKING" Access is available to online banking features for the product.
   | AFeatureNppPayid-- ^ "NPP_PAYID" An account of this product type can be used as the target of an NPP PayID.
-  | AFeatureNppEnabled -- ^ "NPP_ENABLED" An account of this product type can be used to receive funds as a result of a BSB/Number based NPP payment.
-  | AFeatureDonateInterest -- ^ "DONATE_INTEREST" Indicates that interest generated from the product can be automatically donated to a charity or community group.
-  | AFeatureBillPayment Text -- ^ "BILL_PAYMENT" The product can be attached to an automatic budgeting and bill payment service. Use of @additionalValue@ field: Optional name of the service.
+  | AFeatureNppEnabled
+    -- ^ "NPP_ENABLED" An account of this product type can be used to receive funds as a result of a BSB/Number based NPP payment.
+  | AFeatureDonateInterest
+    -- ^ "DONATE_INTEREST" Indicates that interest generated from the product can be automatically donated to a charity or community group.
+  | AFeatureBillPayment Text
+    -- ^ "BILL_PAYMENT" The product can be attached to an automatic budgeting and bill payment service. Use of @additionalValue@ field: Optional name of the service.
   deriving (Show, Eq)
 
 accountFeatureTypeDecoder :: Monad f => Decoder f AccountFeatureType

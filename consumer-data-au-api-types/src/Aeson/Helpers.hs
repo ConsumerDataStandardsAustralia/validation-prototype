@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Aeson.Helpers where
 
 import Control.Lens     (Prism', prism', (^?))
@@ -31,22 +32,22 @@ parseWithPrism ::
   -> Parser a
 parseWithPrism p name t = maybe (fail $ show t <> " is not a " <> name) pure (t ^? p)
 
-newtype SpaceSeperatedSet = SpaceSeperatedSet
+newtype SpaceSeparatedSet = SpaceSeparatedSet
   {
-    fromSpaceSeperatedSet :: Set T.Text
+    fromSpaceSeparatedSet :: Set T.Text
   } deriving (Show)
 
-instance ToJSON SpaceSeperatedSet where
-  toJSON (SpaceSeperatedSet s) = toJSON . T.intercalate " " . Set.toList $ s
+instance ToJSON SpaceSeparatedSet where
+  toJSON (SpaceSeparatedSet s) = toJSON . T.intercalate " " . Set.toList $ s
 
-instance FromJSON SpaceSeperatedSet where
-  parseJSON v = SpaceSeperatedSet . Set.fromList .  T.split (== ' ') <$> parseJSON v
+instance FromJSON SpaceSeparatedSet where
+  parseJSON v = SpaceSeparatedSet . Set.fromList .  T.split (== ' ') <$> parseJSON v
 
-parseSpaceSeperatedSet :: Ord a => Prism' Text a -> String -> Value -> Parser (Set a)
-parseSpaceSeperatedSet p n = fmap Set.fromList . (>>= traverse (parseWithPrism p n)) . fmap (Set.toList . fromSpaceSeperatedSet) .  parseJSON
+parseSpaceSeparatedSet :: Ord a => Prism' Text a -> String -> Value -> Parser (Set a)
+parseSpaceSeparatedSet p n = fmap Set.fromList . (>>= traverse (parseWithPrism p n)) . fmap (Set.toList . fromSpaceSeparatedSet) .  parseJSON
 
-toJsonSpaceSeperatedSet :: (a->T.Text) -> Set a -> Value
-toJsonSpaceSeperatedSet f = toJSON . SpaceSeperatedSet . Set.map f
+toJsonSpaceSeparatedSet :: (a->T.Text) -> Set a -> Value
+toJsonSpaceSeparatedSet f = toJSON . SpaceSeparatedSet . Set.map f
 
 parseUri :: Value -> Parser URI
 parseUri = (>>= toParser) . fmap mkURI . parseJSON

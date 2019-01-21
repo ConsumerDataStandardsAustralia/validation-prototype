@@ -25,7 +25,6 @@ import qualified Waargonaut.Decode.Error    as D
 import           Waargonaut.Encode          (Encoder)
 import qualified Waargonaut.Encode          as E
 
--- | All types are from <https://consumerdatastandardsaustralia.github.io/standards/?swagger#common-field-types CDR AU v0.1.0 Common Field Types>
 
 -- | A string representing an amount of currency.
 -- - A positive, zero or negative number
@@ -70,7 +69,8 @@ instance FromHttpApiData AsciiString where
   parseUrlPiece = fmap AsciiString . parseUrlPiece
 
 
--- | Standard 3 character currency codes as per ISO-4217        “AUD”
+-- | Standard 3 character currency codes as per ISO-4217
+-- “AUD”
 -- “USD”
 -- “GBP”
 data CurrencyString =

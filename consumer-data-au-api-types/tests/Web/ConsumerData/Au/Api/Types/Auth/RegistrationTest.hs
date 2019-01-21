@@ -40,7 +40,6 @@ import           Web.ConsumerData.Au.Api.Types.Auth.Common
     _HttpsUrl)
 import           Web.ConsumerData.Au.Api.Types.Auth.Gens
 import           Web.ConsumerData.Au.Api.Types.Auth.Registration
-import Control.Monad.Time (MonadTime)
 import qualified Crypto.JOSE.Error                         as JE
 import           AesonGolden                              (aesonGolden)
 import           Control.Exception                        (throw)
@@ -65,6 +64,7 @@ import           Data.Maybe                               (isNothing)
 import           Data.Set                                 (Set)
 import qualified Data.Set                                 as Set
 import Debug.Trace
+import           Control.Monad.Time                        (MonadTime)
 
 test_request :: [TestTree]
 test_request
@@ -231,13 +231,13 @@ saveSsa = do
 
 genSsaEncoded
   :: ( MonadIO m
-     , MonadTime m
      , MonadThrow m
      , AsError e
      , AsJWTError e
      , MonadError e m
      , MonadRandom m
      , JE.AsError e
+     , MonadTime m
      )
   => m Text
 genSsaEncoded = do

@@ -40,7 +40,7 @@ import qualified Hedgehog.Range             as Range
 import           Test.Tasty                 (TestTree)
 import           Test.Tasty.Hedgehog        (testProperty)
 
-import AesonGolden (aesonGolden)
+import AesonGolden                             (aesonGolden)
 import Text.URI.Gens                           (genUri)
 import Web.ConsumerData.Au.Api.Types.Auth.Gens (genClaims, genJWK)
 
@@ -48,8 +48,8 @@ import Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
     (AuthorisationRequest (AuthorisationRequest), Claims (Claims),
     authRequestToJwt, jwtToAuthRequest)
 import Web.ConsumerData.Au.Api.Types.Auth.Common
-    (Acr (Acr), Claim (Claim), ClientId (ClientId), IdToken (IdToken),
-    IdTokenClaims, IdTokenKey (IdTokenSub), Nonce (Nonce),
+    (Acr (Acr), Claim (Claim), ClientId (ClientId), ConsentId (..),
+    IdToken (IdToken), IdTokenClaims, IdTokenKey (IdTokenSub), Nonce (Nonce),
     Prompt (SelectAccount), RedirectUri (RedirectUri),
     ResponseType (CodeIdToken), Scope (..), State (..), TokenSubject (..),
     mkScopes,authTestPath)
@@ -158,8 +158,9 @@ goldenIdToken ::
 goldenIdToken =
   let
     acrClaim = Claim [Acr "urn:cds.au:cdr:3"] True
+    consentClaim = Claim [ConsentId "fake consent id"] True
     claimsMap = DM.fromList
       [ IdTokenSub :=> Claim [TokenSubject "u12345"] False
       ]
   in
-    IdToken Nothing Nothing acrClaim claimsMap
+    IdToken Nothing Nothing acrClaim consentClaim claimsMap

@@ -22,6 +22,8 @@ import           Waargonaut.Types           (Json, MapLikeObj, WS)
 
 import Waargonaut.Helpers                (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Tag
+import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
+    (DateString, dateStringDecoder, dateStringEncoder)
 
 
 newtype PayeeId = PayeeId { unPayeeId :: Text }
@@ -60,10 +62,11 @@ payeesEncoder = E.mapLikeObj $ \(Payees ps) ->
 
 
 data Payee = Payee
-  { _payeeId          :: PayeeId
-  , _payeeNickname    :: Text
-  , _payeeDescription :: Maybe Text
-  , _payeeType        :: PayeeType
+  { _payeeId           :: PayeeId
+  , _payeeNickname     :: Text
+  , _payeeDescription  :: Maybe Text
+  , _payeeType         :: PayeeType
+  , _payeeCreationDate :: Maybe DateString
   }
   deriving (Eq, Show)
 
@@ -74,16 +77,18 @@ payeeDecoder =
     <*> D.atKey "nickname" D.text
     <*> atKeyOptional' "description" D.text
     <*> D.atKey "type" payeeTypeDecoder
+    <*> atKeyOptional' "creationDate" dateStringDecoder
 
 payeeEncoder :: Applicative f => Encoder f Payee
 payeeEncoder = E.mapLikeObj payeeMLO
 
 payeeMLO :: Payee -> MapLikeObj WS Json -> MapLikeObj WS Json
-payeeMLO (Payee pid nick desc ptype) =
+payeeMLO (Payee pid nick desc ptype cdate) =
   E.atKey' "payeeId" payeeIdEncoder pid .
   E.atKey' "nickname" E.text nick .
   maybeOrAbsentE "description" E.text desc .
-  E.atKey' "type" payeeTypeEncoder ptype
+  E.atKey' "type" payeeTypeEncoder ptype .
+  maybeOrAbsentE "creationDate" dateStringEncoder cdate
 
 
 data PayeeType =

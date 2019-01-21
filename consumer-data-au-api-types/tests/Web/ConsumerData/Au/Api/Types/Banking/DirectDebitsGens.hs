@@ -23,9 +23,13 @@ authorisedEntityGen = AuthorisedEntity
   <*> textGen
   <*> Gen.maybe abnGen
   <*> Gen.maybe acnGen
+  <*> Gen.maybe arbnGen
 
 abnGen :: Gen Abn
 abnGen = Abn <$> textGen
 
 acnGen :: Gen Acn
 acnGen = Acn <$> textGen
+
+arbnGen :: Gen Arbn
+arbnGen = Arbn <$> textGen

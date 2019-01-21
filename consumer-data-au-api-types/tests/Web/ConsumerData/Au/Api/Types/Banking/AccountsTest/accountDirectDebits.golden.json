@@ -3,6 +3,13 @@
     "directDebitAuthorisations": [
       {
         "accountId": "string",
+        "authorisedEntity": {
+          "name": "string",
+          "financialInstitution": "string",
+          "abn": "string",
+          "acn": "string",
+          "arbn": "string"
+        },
         "lastDebitDateTime": "2018-11-01T05:33:52Z",
         "lastDebitAmount": "300.56"
       }

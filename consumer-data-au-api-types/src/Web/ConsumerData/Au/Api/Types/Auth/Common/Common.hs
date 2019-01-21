@@ -22,6 +22,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , Acr (..)
   , AuthUri
   , Claim (..)
+  , ConsentId (..)
   , FapiPermittedAlg
   , getFapiPermittedAlg
   , _FapiPermittedAlg
@@ -55,7 +56,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   ) where
 
 import           Aeson.Helpers
-    (SpaceSeperatedSet (..), parseJSONWithPrism, parseSpaceSeperatedSet)
+    (SpaceSeparatedSet (..), parseJSONWithPrism, parseSpaceSeparatedSet)
 import           Control.Lens
     (Prism', makeWrapped, prism, ( # ), (<&>), (^.))
 import           Control.Monad              ((<=<))
@@ -111,6 +112,12 @@ newtype State =
 newtype Nonce =
   Nonce {getNonce :: Text}
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
+
+-- TODO ajmcmiddlin: this should probably be a UUID. Waiting on consent spec.
+-- | Identifies a consent object.
+newtype ConsentId =
+  ConsentId Text
+  deriving (Eq, Show, FromJSON, ToJSON)
 
 --TODO create error types
 newtype ErrorCode = ErrorCode Text
@@ -291,7 +298,7 @@ newtype Scopes =
 
 instance ToJSON Scopes where
   toJSON (Scopes s) =
-    toJSON . SpaceSeperatedSet . Set.map (scopeText #) $ s
+    toJSON . SpaceSeparatedSet . Set.map (scopeText #) $ s
 
 instance FromJSON Scopes where
   parseJSON =
@@ -301,7 +308,7 @@ instance FromJSON Scopes where
       validate s =
          bool missingOpenId (pure (Scopes s)) $ Set.member OpenIdScope s
     in
-      (>>= validate) . parseSpaceSeperatedSet scopeText "Scope"
+      (>>= validate) . parseSpaceSeparatedSet scopeText "Scope"
 
 mkScopes ::
   Set Scope

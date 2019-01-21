@@ -57,7 +57,7 @@ type ProductsGetRoute r = r :-
   ( QueryParam "effective" ProductEffective
   :> QueryParam "updated-since" DateTimeString
   :> QueryParam "brand" Text
-  :> QueryParam "product-category" ProductCategory
+  :> QueryParam "product-category" EnumProductCategory
   :> PaginatedRoute (Get '[WaargJSON OB] ProductsGetResponse)
   )
 type ProductsByIdGetRoute r = r :- Capture "productId" ProductId :> Get '[WaargJSON OB] ProductByIdResponse

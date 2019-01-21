@@ -17,7 +17,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
   , JwsRegisteredClaims(..)
   , JwsHeaders(..)
   , ClientMetaData(..)
-  , RegoReqSoftwareStatement(EncodedSs)
+  , RegoReqSoftwareStatement(..)
   , SoftwareStatement(..)
   , JTI(..)
   , RegReqAccessToken(..)
@@ -109,12 +109,13 @@ module Web.ConsumerData.Au.Api.Types.Auth.Registration
   , _DecodedSs
   , ssSigningData
   , ssMetaData
+  , clientUri
   )
 where
 
 import           Aeson.Helpers
-    (parseJSONWithPrism, parseSpaceSeperatedSet, parseWithPrism,
-    toJsonSpaceSeperatedSet, _URI)
+    (parseJSONWithPrism, parseSpaceSeparatedSet, parseWithPrism,
+    toJsonSpaceSeparatedSet, _URI)
 import           Control.Applicative                       (liftA2, (<|>))
 import           Control.Lens
     (Prism', at, makeLenses, makePrisms, makeWrapped, prism, prism', to, ( # ),
@@ -214,10 +215,10 @@ newtype GrantTypes = GrantTypes (Set GrantType)
   deriving (Generic, Show, Eq)
 
 instance ToJSON GrantTypes where
-  toJSON (GrantTypes s) = toJsonSpaceSeperatedSet (_GrantType #) s
+  toJSON (GrantTypes s) = toJsonSpaceSeparatedSet (_GrantType #) s
 
 instance FromJSON GrantTypes where
-  parseJSON = fmap GrantTypes . parseSpaceSeperatedSet _GrantType "GrantType"
+  parseJSON = fmap GrantTypes . parseSpaceSeparatedSet _GrantType "GrantType"
 
 newtype FapiGrantTypes = FapiGrantTypes GrantTypes
   deriving (Generic, Show, Eq)
@@ -289,10 +290,10 @@ newtype RegistrationContacts = RegistrationContacts (Set EmailAddress)
   deriving (Generic, Show, Eq)
 
 instance ToJSON RegistrationContacts where
-  toJSON (RegistrationContacts s) = toJsonSpaceSeperatedSet fromEmailAddress s
+  toJSON (RegistrationContacts s) = toJsonSpaceSeparatedSet fromEmailAddress s
 
 instance FromJSON RegistrationContacts where
-  parseJSON = fmap RegistrationContacts . parseSpaceSeperatedSet _Unwrapped "EmailAddress"
+  parseJSON = fmap RegistrationContacts . parseSpaceSeparatedSet _Unwrapped "EmailAddress"
 
 -- | Text with support for BCP47 [RFC5646] language tags in keys. e.g.
 -- client_name#ja-Jpan-JP :: クライアント名", as required by
@@ -536,11 +537,11 @@ newtype RequestUris = RequestUris {
 
 instance ToJSON RequestUris where
   toJSON (RequestUris set) =
-    toJsonSpaceSeperatedSet (render . getRequestUri) set
+    toJsonSpaceSeparatedSet (render . getRequestUri) set
 
 instance FromJSON RequestUris where
   parseJSON =
-    fmap RequestUris . parseSpaceSeperatedSet (_URI . _Unwrapped) "RequestUris"
+    fmap RequestUris . parseSpaceSeparatedSet (_URI . _Unwrapped) "RequestUris"
 
 newtype RequestUri =
   RequestUri {getRequestUri :: URI}
@@ -556,11 +557,11 @@ newtype RedirectUrls = RedirectUrls {
 
 instance ToJSON RedirectUrls where
   toJSON (RedirectUrls set) =
-    toJsonSpaceSeperatedSet (render . getRedirectUri) set
+    toJsonSpaceSeparatedSet (render . getRedirectUri) set
 
 instance FromJSON RedirectUrls where
   parseJSON v = parseWithPrism _RedirectUrls "RedirectUrls"
-    =<< parseSpaceSeperatedSet (_URI . _Unwrapped) "RedirectUri" v
+    =<< parseSpaceSeparatedSet (_URI . _Unwrapped) "RedirectUri" v
 
 -- | Constructor for @redirect_url@ array; all URLs must be HTTPS, none may be
 -- localhost, as mandated by CDR.
@@ -760,12 +761,16 @@ data ClientMetaData = ClientMetaData {
   , _idTokenSignedResponseAlg   :: FapiPermittedAlg
 
   -- | A set of scopes the client will restrict itself to, containing at least
-  -- @openid@.
+  -- @openid@ (see
+  -- <https://openid.net/specs/openid-connect-registration-1_0.html OIDC-R 2. Client Metadata>
+  -- and <https://tools.ietf.org/html/rfc7591 §RFC7591 2. -- Client Metadata>)
   , _scope                      :: Maybe FapiScopes
 
   -- | Unique identifier string for the client, which should remain the same
   -- across all instances of the client software, and all versions of the client
-  -- software. This must match the software ID in the SSA if supplied.
+  -- software. This must match the software ID in the SSA if supplied. (see
+  -- <https://openid.net/specs/openid-connect-registration-1_0.html OIDC-R 2. Client Metadata>
+  -- and <https://tools.ietf.org/html/rfc7591 §RFC7591 2. -- Client Metadata>)
   , _softwareId                 :: Maybe SoftwareId
 
   -- | The version number of the software should a TPP choose to register and / or

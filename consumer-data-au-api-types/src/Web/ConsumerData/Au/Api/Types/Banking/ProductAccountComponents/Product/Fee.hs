@@ -56,20 +56,16 @@ instance JsonEncode OB ProductFees where
 
 
 
--- | ProductFee <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproductfee CDR AU v0.1.0 ProductFee>
--- WARNING This type is refering to *Product* only property, not as it defined in the above link
 data ProductFee = ProductFee
-  { _productFeeName              :: Text -- ^ Name of the fee
-  , _productFeeFeeType           :: ProductFeeType -- ^ The type of fee. See the note below for valid values and their meaning
--- WARNING
-  , _productFeeAmount            :: Maybe AmountString -- ^ The amount charged for the fee. Assumed to be in AUD. One of amount, balanceRate and transactionRate is mandatory.
-  , _productFeeBalanceRate       :: Maybe RateString -- ^ A fee rate calculated based on a proportion of the balance. Assumed to be in AUD. One of amount, balanceRate and transactionRate is mandatory.
-  , _productFeeTransactionRate   :: Maybe RateString -- ^ A fee rate calculated based on a proportion of a transaction. Assumed to be in AUD. One of amount, balanceRate and transactionRate is mandatory.
-  , _productFeeCurrency          :: Maybe CurrencyString -- ^ The currency the fee will be charged in. Assumes AUD if absent
-  , _productFeeAdditionalInfo    :: Maybe Text -- ^ Display text providing more information on the fee
-  , _productFeeAdditionalInfoUri :: Maybe URI -- ^ Optional Link to a web page with more information on this fee
-  , _productFeeDiscounts         :: Maybe ProductDiscounts -- ^ An optional list of discounts to this fee that may be available
--- WARNING
+  { _productFeeName              :: Text
+  , _productFeeFeeType           :: ProductFeeType
+  , _productFeeAmount            :: Maybe AmountString
+  , _productFeeBalanceRate       :: Maybe RateString
+  , _productFeeTransactionRate   :: Maybe RateString
+  , _productFeeCurrency          :: Maybe CurrencyString
+  , _productFeeAdditionalInfo    :: Maybe Text
+  , _productFeeAdditionalInfoUri :: Maybe URI
+  , _productFeeDiscounts         :: Maybe ProductDiscounts
   } deriving (Show, Eq)
 
 productFeeDecoder :: Monad f => Decoder f ProductFee
@@ -104,21 +100,33 @@ instance JsonEncode OB ProductFee where
   mkEncoder = tagOb productFeeEncoder
 
 
--- | Description of the usage of the @feeType@ field as it applies to products. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#productfeetypedoc CDR AU v0.1.0 Product Fee Types>
 data ProductFeeType =
-    PFeePeriodicPeriodic DurationString -- ^ "PERIODIC" A periodic fee such as a monthly account servicing fee. Use of @additionalValue@ field: The period of charge. Formatted according to ISO 8601 Durations.
-  | PFeePeriodicTransaction Text -- ^ "TRANSACTION" A fee for each transaction (above any free transactions in a period). Use of @additionalValue@ field: A description of the type of transaction (eg. Assisted Transaction, Teller Transaction, Cheque).
-  | PFeePeriodicEstablishment -- ^ "ESTABLISHMENT" An establishment fee for the product.
-  | PFeePeriodicExit -- ^ "EXIT" A fee for closing the product.
-  | PFeePeriodicOverdraw -- ^ "OVERDRAW" A fee for overdrawing the account.
-  | PFeePeriodicMinBalance DurationString -- ^ "MIN_BALANCE" A periodic fee for being below the minimum balance. Use of @additionalValue@ field: The period of charge. Formatted according to ISO 8601 Durations.
-  | PFeePeriodicRedraw -- ^ "REDRAW" A fee for performing a redraw transaction.
-  | PFeePeriodicChequeCash -- ^ "CHEQUE_CASH" A fee for cashing a cheque.
-  | PFeePeriodicChequeStop -- ^ "CHEQUE_STOP" A fee for stopping a cheque.
-  | PFeePeriodicChequeBook -- ^ "CHEQUE_BOOK" A fee for ordering a new cheque book.
-  | PFeePeriodicCardReplace -- ^ "CARD_REPLACE" A fee for ordering a replacement card.
-  | PFeePeriodicPaperStatement -- ^ "PAPER_STATEMENT" A fee for obtaining a paper statement.
-  | PFeePeriodicOtherEvent Text -- ^ "OTHER_EVENT" A fee for another type of event not already specified in the list of valid values. Use of @additionalValue@ field: Text description of the event.
+    PFeePeriodicPeriodic DurationString
+    -- ^ "PERIODIC" A periodic fee such as a monthly account servicing fee. Use of @additionalValue@ field: The period of charge. Formatted according to ISO 8601 Durations.
+  | PFeePeriodicTransaction Text
+    -- ^ "TRANSACTION" A fee for each transaction (above any free transactions in a period). Use of @additionalValue@ field: A description of the type of transaction (eg. Assisted Transaction, Teller Transaction, Cheque).
+  | PFeePeriodicEstablishment
+    -- ^ "ESTABLISHMENT" An establishment fee for the product.
+  | PFeePeriodicExit
+    -- ^ "EXIT" A fee for closing the product.
+  | PFeePeriodicOverdraw
+    -- ^ "OVERDRAW" A fee for overdrawing the account.
+  | PFeePeriodicMinBalance DurationString
+    -- ^ "MIN_BALANCE" A periodic fee for being below the minimum balance. Use of @additionalValue@ field: The period of charge. Formatted according to ISO 8601 Durations.
+  | PFeePeriodicRedraw
+    -- ^ "REDRAW" A fee for performing a redraw transaction.
+  | PFeePeriodicChequeCash
+    -- ^ "CHEQUE_CASH" A fee for cashing a cheque.
+  | PFeePeriodicChequeStop
+    -- ^ "CHEQUE_STOP" A fee for stopping a cheque.
+  | PFeePeriodicChequeBook
+    -- ^ "CHEQUE_BOOK" A fee for ordering a new cheque book.
+  | PFeePeriodicCardReplace
+    -- ^ "CARD_REPLACE" A fee for ordering a replacement card.
+  | PFeePeriodicPaperStatement
+    -- ^ "PAPER_STATEMENT" A fee for obtaining a paper statement.
+  | PFeePeriodicOtherEvent Text
+    -- ^ "OTHER_EVENT" A fee for another type of event not already specified in the list of valid values. Use of @additionalValue@ field: Text description of the event.
   deriving (Show, Eq)
 
 productFeeTypeDecoder :: Monad f => Decoder f ProductFeeType

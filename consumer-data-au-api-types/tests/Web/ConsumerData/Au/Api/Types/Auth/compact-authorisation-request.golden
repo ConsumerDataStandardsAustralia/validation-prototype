@@ -18,10 +18,15 @@
                         "urn:cds.au:cdr:3"
                     ],
                     "essential": true
+                },
+                "cdr_consent_id": {
+                    "values": [
+                        "fake consent id"
+                    ],
+                    "essential": true
                 }
             }
         },
-        "iss": "functionalfinance.io",
         "response_type": "code id_token",
         "scope": "openid",
         "aud": "https://lambdabank.io",

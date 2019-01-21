@@ -9,75 +9,125 @@ module Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionDetail
   ( module Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionDetail
   ) where
 
+import           Control.Lens               (Prism', prism, ( # ))
 import           Data.Functor.Contravariant ((>$<))
 import           Data.Text                  (Text)
 import           GHC.Generics               (Generic)
 import           Waargonaut.Decode          (Decoder)
 import qualified Waargonaut.Decode          as D
+import qualified Waargonaut.Decode.Error    as D
 import           Waargonaut.Encode          (Encoder)
+import           Waargonaut.Encode          (Encoder')
 import qualified Waargonaut.Encode          as E
+import           Waargonaut.Generic         (JsonDecode (..), JsonEncode (..))
+import           Waargonaut.Types.JObject   (MapLikeObj)
+import           Waargonaut.Types.Json      (Json)
 
 import Waargonaut.Helpers
     (atKeyOptional', maybeOrAbsentE)
 import Web.ConsumerData.Au.Api.Types.Banking.Common.Transaction
-    (TransactionId, TransactionStatus, transactionIdDecoder,
-    transactionIdEncoder, transactionStatusDecoder, transactionStatusEncoder)
-import Web.ConsumerData.Au.Api.Types.Banking.Common.TransactionExtendedData
-    (TransactionExtendedData, transactionExtendedDataDecoder,
-    transactionExtendedDataEncoder)
-import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
-    (AmountString, CurrencyString, DateTimeString, amountStringDecoder,
-    amountStringEncoder, currencyStringDecoder, currencyStringEncoder,
-    dateTimeStringDecoder, dateTimeStringEncoder)
+    (Transaction, transactionDecoder, transactionMLO)
+import Web.ConsumerData.Au.Api.Types.SumTypeHelpers
+import Web.ConsumerData.Au.Api.Types.Tag
 
 
-newtype TransactionDetails = TransactionDetails
-  { unTransactionDetails :: [TransactionDetail] }
+newtype TransactionDetailResponse = TransactionDetailResponse
+  { unTransactionDetail :: TransactionDetail }
   deriving (Eq, Show)
 
-transactionDetailsDecoder :: Monad f => Decoder f TransactionDetails
-transactionDetailsDecoder =
-  TransactionDetails <$> D.list transactionDetailDecoder
+transactionDetailResponseDecoder :: Monad f => Decoder f TransactionDetailResponse
+transactionDetailResponseDecoder = D.atKey "transaction" (TransactionDetailResponse <$> transactionDetailDecoder)
 
-transactionDetailsEncoder :: Applicative f => Encoder f TransactionDetails
-transactionDetailsEncoder =
-  unTransactionDetails >$< E.list transactionDetailEncoder
+transactionDetailResponseEncoder :: Applicative f => Encoder f TransactionDetailResponse
+transactionDetailResponseEncoder = E.mapLikeObj $ E.atKey' "transaction" transactionDetailEncoder . unTransactionDetail
+
+instance JsonDecode OB TransactionDetailResponse where
+  mkDecoder = tagOb transactionDetailResponseDecoder
+
+instance JsonEncode OB TransactionDetailResponse where
+  mkEncoder = tagOb transactionDetailResponseEncoder
 
 
--- | TransactionDetail <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schematransactiondetail CDR AU v0.1.0 TransactionDetail>
 data TransactionDetail = TransactionDetail
-  { _transactionDetailTransactionId     :: Maybe TransactionId -- ^  A unique ID of the transaction adhering to the standards for ID permanence. This field is mandatory in this payload as it is a reflection of the requested transaction in the path parameter.
-  , _transactionDetailStatus            :: TransactionStatus -- ^ Status of the transaction.
-  , _transactionDetailDescription       :: Text -- ^ The transaction description as applied by the financial institution.
-  , _transactionDetailPostDateTime      :: Maybe DateTimeString -- ^ The time the transaction was posted. This field is MANDATORY if the transaction has status POSTED. This is the time that appears on a standard statement.
-  , _transactionDetailExecutionDateTime :: Maybe DateTimeString -- ^ The time the transaction was executed by the originating customer, if available.
-  , _transactionDetailAmount            :: Maybe AmountString -- ^ The value of the transaction. Negative values mean money was outgoing.
-  , _transactionDetailCurrency          :: Maybe CurrencyString -- ^ The currency for the transaction amount. AUD assumed if not present.
-  , _transactionDetailReference         :: Text -- ^ The reference for the transaction provided by the originating institution.
-  , _transactionDetailExtendedData      :: Maybe TransactionExtendedData -- ^ Contains more detailed information specific to transactions originated via NPP.
+  { _transactionDetailTransaction  :: Transaction
+  , _transactionDetailExtendedData :: TransactionExtendedData
   } deriving (Generic, Show, Eq)
 
 transactionDetailDecoder :: Monad f => Decoder f TransactionDetail
 transactionDetailDecoder =
   TransactionDetail
-    <$> atKeyOptional' "transactionId" transactionIdDecoder
-    <*> D.atKey "status" transactionStatusDecoder
-    <*> D.atKey "description" D.text
-    <*> atKeyOptional' "postDateTime" dateTimeStringDecoder
-    <*> atKeyOptional' "executionDateTime" dateTimeStringDecoder
-    <*> atKeyOptional' "amount" amountStringDecoder
-    <*> atKeyOptional' "currency" currencyStringDecoder
-    <*> D.atKey "reference" D.text
-    <*> atKeyOptional' "extendedData" transactionExtendedDataDecoder
+    <$> transactionDecoder
+    <*> D.atKey "extendedData" transactionExtendedDataDecoder
 
 transactionDetailEncoder ::  Applicative f => Encoder f TransactionDetail
-transactionDetailEncoder = E.mapLikeObj $ \(TransactionDetail tid ts desc pdt edt amt cur ref ed) ->
-  maybeOrAbsentE "transactionId" transactionIdEncoder tid .
-  E.atKey' "status" transactionStatusEncoder ts .
-  E.atKey' "description" E.text desc .
-  maybeOrAbsentE "postDateTime" dateTimeStringEncoder pdt .
-  maybeOrAbsentE "executionDateTime" dateTimeStringEncoder edt .
-  maybeOrAbsentE "amount" amountStringEncoder amt .
-  maybeOrAbsentE "currency" currencyStringEncoder cur .
-  E.atKey' "reference" E.text ref .
-  maybeOrAbsentE "extendedData" transactionExtendedDataEncoder ed
+transactionDetailEncoder = E.mapLikeObj $ \td ->
+  transactionMLO (_transactionDetailTransaction td) .
+  E.atKey' "extendedData" transactionExtendedDataEncoder (_transactionDetailExtendedData td)
+
+
+data TransactionExtendedData = TransactionExtendedData
+  { _transactionExtendedDataPayer         :: Maybe Text
+  , _transactionExtendedDataPayee         :: Maybe Text
+  , _transactionExtendedDataExtensionType :: Maybe TransactionExtendedDataExtensionType
+  , _transactionExtendedDataService       :: TransactionExtendedDataService
+  } deriving (Generic, Show, Eq)
+
+transactionExtendedDataDecoder :: Monad f => Decoder f TransactionExtendedData
+transactionExtendedDataDecoder =
+  TransactionExtendedData
+    <$> atKeyOptional' "payer" D.text
+    <*> atKeyOptional' "payee" D.text
+    <*> D.maybeOrNull extensionTypeDecoder
+    <*> D.atKey "serviceId" transactionExtendedDataServiceDecoder
+
+transactionExtendedDataEncoder :: Encoder' TransactionExtendedData
+transactionExtendedDataEncoder = E.mapLikeObj $ \(TransactionExtendedData payer payee et serv) ->
+  maybeOrAbsentE "payer" E.text payer .
+  maybeOrAbsentE "payee" E.text payee .
+  maybe id extensionTypeFields et .
+  E.atKey' "serviceId" transactionExtendedDataServiceEncoder serv
+
+
+data TransactionExtendedDataExtensionType =
+    TEDExtendedDescription Text
+  deriving (Eq, Show)
+
+extensionTypeDecoder :: Monad f => Decoder f TransactionExtendedDataExtensionType
+extensionTypeDecoder = typeTaggedDecoder "extensionUType" $ \case
+  "extendedDescription" -> Just $ (TypedTagField TEDExtendedDescription D.text)
+  _                     -> Nothing
+
+extensionTypeFields ::
+  (Monoid ws, Semigroup ws)
+  => TransactionExtendedDataExtensionType -> MapLikeObj ws Json -> MapLikeObj ws Json
+extensionTypeFields = \case
+  TEDExtendedDescription t -> fields "extendedDescription" E.text t
+  where
+    fields = typeTaggedField "extensionUType"
+
+
+data TransactionExtendedDataService =
+  X2P101
+  deriving (Bounded, Enum, Eq, Ord, Show)
+
+transactionExtendedDataServiceText ::
+  Prism' Text TransactionExtendedDataService
+transactionExtendedDataServiceText =
+  prism (\case
+          X2P101 -> "X2P1.01"
+      )
+      (\case
+          "X2P1.01" -> Right X2P101
+          t -> Left t
+      )
+
+transactionExtendedDataServiceDecoder ::
+  Monad f => Decoder f TransactionExtendedDataService
+transactionExtendedDataServiceDecoder =
+  D.prismDOrFail (D.ConversionFailure "TransactionExtendedDataService")
+    transactionExtendedDataServiceText D.text
+
+transactionExtendedDataServiceEncoder ::
+  Encoder' TransactionExtendedDataService
+transactionExtendedDataServiceEncoder =
+  (transactionExtendedDataServiceText #) >$< E.text'

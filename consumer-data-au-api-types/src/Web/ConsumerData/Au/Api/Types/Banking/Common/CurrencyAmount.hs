@@ -21,7 +21,6 @@ import Web.ConsumerData.Au.Api.Types.Data.CommonFieldTypes
     currencyStringDecoder, currencyStringEncoder)
 
 
--- | CurrencyAmount <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemacurrencyamount CDR AU v0.1.0 CurrencyAmount>
 data CurrencyAmount = CurrencyAmount
   { _currencyAmountAmount   :: AmountString
   , _currencyAmountCurrency :: Maybe CurrencyString

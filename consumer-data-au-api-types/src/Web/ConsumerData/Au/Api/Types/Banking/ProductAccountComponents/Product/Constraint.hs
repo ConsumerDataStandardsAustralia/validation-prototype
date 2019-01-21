@@ -45,12 +45,15 @@ instance JsonEncode OB ProductConstraints where
 
 
 
--- | Description of the usage of the @constraintType@ field as it applies to products. <https://consumerdatastandardsaustralia.github.io/standards/?swagger#productconstrainttypedoc CDR AU v0.1.0 Product Constraint Types>
 data ProductConstraint =
-    PConstraintMinBalance { unAdditionalValue :: AmountString }-- ^ "MIN_BALANCE" A minimum balance is required for the product. Use of @additionalValue@ field: The minimum balance in AmountString format.
-  | PConstraintOpeningBalance { unAdditionalValue :: AmountString } -- ^ "OPENING_BALANCE" An opening balance is required for the product. Use of @additionalValue@ field: The minimum opening balance in AmountString format.
-  | PConstraintMaxLimit { unAdditionalValue :: AmountString } -- ^ "MAX_LIMIT" A maximum credit limit exists. Use of @additionalValue@ field: The maximum limit in AmountString format.
-  | PConstraintMinLimit { unAdditionalValue :: AmountString } -- ^ "MIN_LIMIT" A minimum credit limit exists. Use of @additionalValue@ field: The minimum limit in AmountString format.
+    PConstraintMinBalance { unAdditionalValue :: AmountString }
+    -- ^ "MIN_BALANCE" A minimum balance is required for the product. Use of @additionalValue@ field: The minimum balance in AmountString format.
+  | PConstraintOpeningBalance { unAdditionalValue :: AmountString }
+    -- ^ "OPENING_BALANCE" An opening balance is required for the product. Use of @additionalValue@ field: The minimum opening balance in AmountString format.
+  | PConstraintMaxLimit { unAdditionalValue :: AmountString }
+    -- ^ "MAX_LIMIT" A maximum credit limit exists. Use of @additionalValue@ field: The maximum limit in AmountString format.
+  | PConstraintMinLimit { unAdditionalValue :: AmountString }
+    -- ^ "MIN_LIMIT" A minimum credit limit exists. Use of @additionalValue@ field: The minimum limit in AmountString format.
   deriving (Eq, Show)
 
 productConstraintDecoder :: Monad f => Decoder f ProductConstraint

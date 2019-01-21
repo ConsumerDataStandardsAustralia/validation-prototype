@@ -1,0 +1,6 @@
+{
+  "minPaymentAmount": "10.00",
+  "paymentDueAmount": "100.00",
+  "paymentCurrency": "AUD",
+  "paymentDueDate": "2019-02-01"
+}

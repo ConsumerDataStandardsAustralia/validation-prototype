@@ -15,6 +15,7 @@
     "fedWireNumber": "string",
     "sortCode": "string",
     "chipNumber": "string",
-    "routingNumber": "string"
+    "routingNumber": "string",
+    "legalEntityIdentifier": "string"
   }
 }

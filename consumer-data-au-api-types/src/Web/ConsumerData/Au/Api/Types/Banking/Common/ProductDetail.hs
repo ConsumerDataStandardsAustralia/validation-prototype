@@ -41,17 +41,16 @@ import Web.ConsumerData.Au.Api.Types.Banking.ProductAccountComponents.Product.Le
     productLendingRatesEncoder)
 
 
--- | ProductDetail <https://consumerdatastandardsaustralia.github.io/standards/?swagger#tocBankingCommonSchemas CDR AU v0.1.0 ProductDetail>
 data ProductDetail = ProductDetail
   { _productDetailProduct       :: Maybe Product
-  , _productDetailBundles       :: Maybe ProductBundles -- ^ An array of bundles that this product participates in. Each bundle is described by free form information but also by a list of product IDs of the other products that are included in the bundle. It is assumed that the current product is included in the bundle also
-  , _productDetailFeatures      :: Maybe ProductFeatures -- ^ Array of features available for the product
-  , _productDetailConstraints   :: Maybe ProductConstraints -- ^ Constraints on the application for or operation of the product such as minimum balances or limit thresholds
-  , _productDetailEligibility   :: Maybe ProductEligibilities -- ^ Eligibility criteria for the product
-  , _productDetailFees          :: Maybe ProductFees -- ^ Fees and charges applicable for the product
-  , _productDetailDepositRates  :: Maybe ProductDepositRates -- ^ Interest rates available for deposits
-  , _productDetailLendingRates  :: Maybe ProductLendingRates -- ^ Interest rates charged against lending balances
-  , _productDetailRepaymentType :: Maybe ProductRepaymentType -- ^ For lending style products what are the options for repayments that are available. If absent (and relevant) defaults to PRINCIPAL_AND_INTEREST
+  , _productDetailBundles       :: Maybe ProductBundles
+  , _productDetailFeatures      :: Maybe ProductFeatures
+  , _productDetailConstraints   :: Maybe ProductConstraints
+  , _productDetailEligibility   :: Maybe ProductEligibilities
+  , _productDetailFees          :: Maybe ProductFees
+  , _productDetailDepositRates  :: Maybe ProductDepositRates
+  , _productDetailLendingRates  :: Maybe ProductLendingRates
+  , _productDetailRepaymentType :: Maybe ProductRepaymentType
   } deriving (Eq, Show)
 
 productDetailDecoder :: Monad f => Decoder f ProductDetail
@@ -104,10 +103,10 @@ instance JsonEncode OB ProductBundles where
 
 
 data ProductBundle = ProductBundle
-  { _productBundleName              :: Text -- ^ Name of the bundle.
-  , _productBundleDescription       :: Text -- ^ Description of the bundle.
-  , _productBundleAdditionalInfoUri :: Maybe URI -- ^ Link to a web page with more information on the bundle criteria and benefits
-  , _productBundleProductIds        :: [Text] -- ^ Array of product IDs for products included in the bundle.
+  { _productBundleName              :: Text
+  , _productBundleDescription       :: Text
+  , _productBundleAdditionalInfoUri :: Maybe URI
+  , _productBundleProductIds        :: [Text]
   } deriving (Eq, Show)
 
 productBundleDecoder :: Monad f => Decoder f ProductBundle
@@ -132,7 +131,6 @@ instance JsonEncode OB ProductBundle where
   mkEncoder = tagOb productBundleEncoder
 
 
--- | ProductRepaymentType <https://consumerdatastandardsaustralia.github.io/standards/?swagger#schemaproductcategory CDR AU v0.1.0 ProductCategory>
 data ProductRepaymentType =
     PRepaymentTypeInterestOnly -- ^ "INTEREST_ONLY"
   | PRepaymentTypePrincipalAndInterest -- ^ "PRINCIPAL_AND_INTEREST"
