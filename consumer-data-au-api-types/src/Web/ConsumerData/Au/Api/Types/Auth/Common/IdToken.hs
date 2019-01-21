@@ -37,7 +37,7 @@ import Data.GADT.Tag.TH   (deriveEqTag, deriveShowTag)
 import Web.ConsumerData.Au.Api.Types.Auth.Common.Common
     (Acr, AuthUri, Claim, FapiPermittedAlg, Hash, Nonce, SHash,
     TokenAddressText, TokenAuthTime, TokenCHash, TokenHeaders, TokenKeyId,
-    TokenPhoneText, TokenSubject)
+    TokenPhoneText, TokenSubject, ConsentId)
 
 -- AuthZ server can respond with either JWS or JWE ID tokens
 data IdTokenJwt =
@@ -56,6 +56,7 @@ data IdTokenHeaders = IdTokenHeaders {
   , additionalHeaders :: TokenHeaders -- can specify: `typ` but must be JWT (?)
 }
 
+-- TODO ajmcmiddlin: why are there Maybe values here? It's a map, so they're all optional to begin with.
 -- | ID Token for Hybrid flow. Most of this structure comes from
 -- <https://openid.net/specs/openid-connect-core-1_0.html#IDToken OIDC §2>.
 --
@@ -83,6 +84,7 @@ data IdToken (g :: IdTokenUse) =
   { idTokenNonce :: IdTokenUseF g Nonce
   , idTokenCHash :: IdTokenUseF g TokenCHash
   , idTokenAcr   :: IdTokenUseF g [Acr]
+  , idTokenConsentId :: IdTokenUseF g ConsentId
   , idTokenMap   :: DMap IdTokenKey (IdTokenMapFunctor g)
   }
 
@@ -99,10 +101,12 @@ type family IdTokenUseF (use :: IdTokenUse) a where
   IdTokenUseF 'ClaimUse Nonce = Maybe (Claim Nonce)
   IdTokenUseF 'ClaimUse TokenCHash = Maybe (Claim TokenCHash)
   IdTokenUseF 'ClaimUse [Acr] = Claim Acr
+  IdTokenUseF 'ClaimUse ConsentId = Claim ConsentId
 
   IdTokenUseF 'TokenUse Nonce = Nonce
   IdTokenUseF 'TokenUse TokenCHash = TokenCHash
-  IdTokenUseF 'TokenUse [Acr] = Maybe [Acr]
+  IdTokenUseF 'TokenUse [Acr] = [Acr]
+  IdTokenUseF 'TokenUse ConsentId = ConsentId
 
 type family IdTokenMapFunctor (use :: IdTokenUse) where
   IdTokenMapFunctor 'ClaimUse = Claim
@@ -130,13 +134,20 @@ instance FromJSON (IdToken 'ClaimUse) where
       <$> parseClaim "nonce"
       <*> parseClaim "c_hash"
       <*> (parseJSON1 =<< o .: "acr")
+      <*> (parseJSON1 =<< o .: "cdr_consent_id")
       <*> parseJSON v) v
 
 instance FromJSON IdToken' where
   parseJSON = undefined
 
 idTokenToJSON ::
-  Dict (ToJSON1 (IdTokenMapFunctor g), ToJSON (IdTokenUseF g Nonce), ToJSON (IdTokenUseF g TokenCHash), ToJSON (IdTokenUseF g [Acr]))
+  Dict (
+    ToJSON1 (IdTokenMapFunctor g)
+  , ToJSON (IdTokenUseF g ConsentId)
+  , ToJSON (IdTokenUseF g Nonce)
+  , ToJSON (IdTokenUseF g TokenCHash)
+  , ToJSON (IdTokenUseF g [Acr])
+  )
   -> IdToken g
   -> Value
 idTokenToJSON Dict IdToken{..} =
@@ -145,6 +156,7 @@ idTokenToJSON Dict IdToken{..} =
       [ ("nonce", toJSON idTokenNonce)
       , ("c_hash", toJSON idTokenCHash)
       , ("acr", toJSON idTokenAcr)
+      , ("cdr_consent_id", toJSON idTokenConsentId)
       ]
   in
     Object $ required <> toObjectDMap idTokenMap

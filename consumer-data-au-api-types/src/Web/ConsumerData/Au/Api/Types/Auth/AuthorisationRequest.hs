@@ -25,22 +25,22 @@ module Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
   where
 
 import Web.ConsumerData.Au.Api.Types.Auth.Common
-    (ClientId (getClientId), Nonce, RedirectUri, ResponseType, Scopes, State, Prompt)
+    (ClientId, Nonce, Prompt, RedirectUri, ResponseType, Scopes, State)
 import Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken (IdTokenClaims)
 import Web.ConsumerData.Au.Api.Types.Auth.Error
     (AsError, _MissingClaim, _ParseError)
 
 import           Control.Lens
-    (at, makeClassy, to, ( # ), (&), (.~), (?~), (^.), (^?))
+    (at, makeClassy, to, ( # ), (&), (.~), (?~), (^.))
 import           Control.Monad.Error.Class (MonadError, throwError)
 import           Control.Monad.Time        (MonadTime)
 import qualified Crypto.JOSE.Error         as JE
 import           Crypto.JOSE.JWK           (JWK)
 import           Crypto.JOSE.JWS           (Alg, newJWSHeader)
 import           Crypto.JWT
-    (AsJWTError, Audience, SignedJWT, StringOrURI, claimAud, claimIss,
+    (AsJWTError, Audience, SignedJWT, StringOrURI, claimAud,
     defaultJWTValidationSettings, emptyClaimsSet, issuerPredicate, signClaims,
-    unregisteredClaims, verifyClaims, stringOrUri)
+    unregisteredClaims, verifyClaims)
 import           Crypto.Random.Types       (MonadRandom)
 import           Data.Aeson
     (FromJSON (..), Result (..), ToJSON (..), Value, fromJSON, object,
@@ -170,14 +170,10 @@ authRequestToJwt ::
 authRequestToJwt jwk alg ar@AuthorisationRequest{..} = do
   let
     arMap = authRequestToAesonMap ar
-    mIss = getClientId _authReqClientId ^? stringOrUri
-    badIss = "'" <> getClientId _authReqClientId <> "' is not a valid client_id/iss"
     cs = emptyClaimsSet
       & claimAud ?~ _authReqAudience
       & unregisteredClaims .~ arMap
-  iss <- maybe (throwError $ _ParseError # show badIss) pure mIss
-  let cs' = cs & claimIss ?~ iss
-  signClaims jwk (newJWSHeader ((), alg)) cs'
+  signClaims jwk (newJWSHeader ((), alg)) cs
 
 jwtToAuthRequest ::
   ( MonadError e m

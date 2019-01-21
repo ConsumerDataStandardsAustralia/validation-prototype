@@ -21,6 +21,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , Acr (..)
   , AuthUri
   , Claim (..)
+  , ConsentId (..)
   , FapiPermittedAlg
   , getFapiPermittedAlg
   , _FapiPermittedAlg
@@ -110,6 +111,12 @@ newtype State =
 newtype Nonce =
   Nonce {getNonce :: Text}
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
+
+-- TODO ajmcmiddlin: this should probably be a UUID. Waiting on consent spec.
+-- | Identifies a consent object.
+newtype ConsentId =
+  ConsentId Text
+  deriving (Eq, Show, FromJSON, ToJSON)
 
 --TODO create error types
 newtype ErrorCode = ErrorCode Text
