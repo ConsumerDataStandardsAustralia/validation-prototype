@@ -39,20 +39,21 @@ genIdTokenClaims ::
   => n IdTokenClaims
 genIdTokenClaims =
   let
-    genSub ::
-      n (Claim TokenSubject)
     genSub =
       (\a -> Claim [a] False) . TokenSubject <$> Gen.text (Range.linear 1 5) Gen.alphaNum
-    gens :: n [DSum IdTokenKey Claim]
     gens =
       sequence
       [
         (IdTokenSub :=>) <$> genSub
-      -- , IdTokenSub
       ]
+    mostOfAnIdtoken =
+      IdToken
+        Nothing
+        Nothing
+        (Claim [Acr "foo"] True)
+        (Claim [ConsentId "fake consent id"] True)
   in
-    IdToken Nothing Nothing (Claim [Acr "foo"] True) (Claim [ConsentId "fake consent id"] True) <$> (DM.fromList <$> gens)
-      -- DM.traverseWithKey (const (fmap pure)) (DM.fromList <$> gens)
+    mostOfAnIdtoken <$> (DM.fromList <$> gens)
 
 genClaims ::
   MonadGen n
