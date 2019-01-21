@@ -6,6 +6,12 @@ You will need to install [nix](https://nixos.org/nix/) for this project, which m
 
 We use the [gitflow](https://danielkummer.github.io/git-flow-cheatsheet/) workflow. There are various supporting toolsets available for performing the high-level gitflow operations, if you would prefer to avoid using underlying git commands (`gitAndTools.gitflow` in nix, https://github.com/nvie/gitflow).
 
+## Building, Developing, Testing
+
+* To build the project (including tests and docs), `cd` into one of the packages (client, types, lambdabank) and execute `nix-build` from a terminal.
+* To obtain a development environment loaded with all project dependencies, run `nix-shell` inside one of the package directories.
+* To run tests, execute `./scripts/test-loop` from within one of the package directories.
+
 ## Making Changes
 
 1. Create a feature branch from `develop`, with the prefix of `feature/`, do some cool, helpful stuff.
