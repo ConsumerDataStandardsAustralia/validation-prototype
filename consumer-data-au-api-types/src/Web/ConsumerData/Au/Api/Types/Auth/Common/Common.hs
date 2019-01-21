@@ -6,6 +6,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoMonomorphismRestriction  #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
@@ -57,7 +58,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
 import           Aeson.Helpers
     (SpaceSeparatedSet (..), parseJSONWithPrism, parseSpaceSeparatedSet)
 import           Control.Lens
-    (Prism', makeWrapped, prism, ( # ), (<&>), (^.))
+    (Lens', Prism', lens, makeWrapped, prism, ( # ), (<&>), (^.))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
@@ -65,8 +66,8 @@ import           Crypto.Hash                (HashAlgorithm, hashWith)
 import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
 import           Crypto.JWT                 (StringOrURI)
 import           Data.Aeson.Types
-    (FromJSON (..), FromJSON1 (..), Parser, ToJSON (..), ToJSON1 (..), object,
-    toJSON1, withObject, (.:), (.=))
+    (FromJSON (..), FromJSON1 (..), Pair, Parser, ToJSON (..), ToJSON1 (..),
+    object, toJSON1, withObject, (.:), (.=))
 import           Data.Bool                  (bool)
 import qualified Data.ByteArray             as BA
 import           Data.ByteString            (ByteString)
@@ -555,32 +556,66 @@ mkHash a (Ascii t) =
   in
     Hash . encode $ h
 
+data ClaimValue a =
+  ClaimValue a
+  | ClaimValues [a]
+  deriving (Eq, Show, Functor)
+
+-- instance Functor ClaimValue where
+--   fmap f (ClaimValue a) = ClaimValue $ f a
+--   fmap f (ClaimValues as) = ClaimValues $ f <$> as
+
+instance Applicative ClaimValue where
+  pure a = ClaimValue a
+  ClaimValue f <*> ClaimValue a = ClaimValue $ f a
+  ClaimValue f <*> ClaimValues as = ClaimValues $ f <$> as
+  ClaimValues fs <*> ClaimValue a = ClaimValues $ ($ a) <$> fs
+  ClaimValues fs <*> ClaimValues as = ClaimValues $ fs <*> as
+
 -- TODO: handle `value` key and optionality of keys
 data Claim a =
-  Claim
-  { claimValues    :: [a]
-  , claimEssential :: Bool
-  }
+  EssentialClaim (ClaimValue a)
+  | NonEssentialClaim (ClaimValue a)
   deriving (Eq, Show, Generic1, Functor)
 
-instance Applicative Claim where
-  pure a = Claim [a] False
-  (Claim fs e1) <*> (Claim as e2) = Claim (fs <*> as) (e1 || e2)
+claimValueFromClaim ::
+  Claim a
+  -> ClaimValue a
+claimValueFromClaim = \case
+  EssentialClaim cv -> cv
+  NonEssentialClaim cv -> cv
+
+class HasClaimValue (s :: * -> *) a where
+  claimValue :: Lens' (s a) (ClaimValue a)
+
+instance HasClaimValue Claim a where
+  claimValue =
+    lens claimValueFromClaim 
+
+-- instance Applicative Claim where
+--   pure a = NonEssentialClaim (pure a)
+--   (Claim fs e1) <*> (Claim as e2) = Claim (fs <*> as) (e1 || e2)
 
 instance ToJSON1 Claim where
-  liftToJSON _ f Claim{..} =
-    object
-    [ "values" .= f claimValues
-    , "essential" .= claimEssential
-    ]
+  liftToJSON _ f _ =
+    let
+      v = case claimValue of
+        ClaimValue a  -> "value" .= (ClaimValue $ f a) -- (f <$> claimValue :: ClaimValue a)
+        ClaimValues _ -> "values" .= (f <$> claimValue)
+    in
+      object
+      [ v
+      , "essential" .= claimEssential
+      ]
 
-instance Eq1 Claim where
-  liftEq f (Claim xs b1) (Claim ys b2) =
-    and $ (b1 == b2) : zipWith f xs ys
+-- instance Eq1 Claim where
+--   liftEq f (Claim xs b1) (Claim ys b2) =
+--     xs == ys && b1 == b2
+    --and $ (b1 == b2) : zipWith f xs ys
 
-instance Show1 Claim where
-  liftShowsPrec _ f _ (Claim as b) s =
-    "Claim { claimValues = " <> f as "" <> ", claimEssntial = " <> show b <> "}" <> s
+-- instance Show1 Claim where
+--   liftShowsPrec _ f _ (Claim as b) s =
+--     "Claim { claimValues = " <> f as "" <> ", claimEssntial = " <> show b <> "}" <> s
 
 instance FromJSON1 Claim where
   liftParseJSON _ f =
