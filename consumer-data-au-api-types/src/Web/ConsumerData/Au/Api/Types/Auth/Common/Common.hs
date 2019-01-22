@@ -21,7 +21,6 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , grantErrorResponseTypeText
   , Acr (..)
   , AuthUri
-  , Claim (..)
   , ConsentId (..)
   , FapiPermittedAlg
   , getFapiPermittedAlg
@@ -58,30 +57,27 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
 import           Aeson.Helpers
     (SpaceSeparatedSet (..), parseJSONWithPrism, parseSpaceSeparatedSet)
 import           Control.Lens
-    (Lens', Prism', lens, makeWrapped, prism, ( # ), (<&>), (^.))
+    (Prism', makeWrapped, prism, ( # ), (<&>), (^.))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
 import           Crypto.Hash                (HashAlgorithm, hashWith)
 import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
 import           Crypto.JWT                 (StringOrURI)
-import           Data.Aeson.Types
-    (FromJSON (..), FromJSON1 (..), Pair, Parser, ToJSON (..), ToJSON1 (..),
-    object, toJSON1, withObject, (.:), (.=))
+import           Data.Aeson.Types           (FromJSON (..), Parser, ToJSON (..))
 import           Data.Bool                  (bool)
 import qualified Data.ByteArray             as BA
 import           Data.ByteString            (ByteString)
 import qualified Data.ByteString            as BS
 import           Data.ByteString.Base64.URL (encode)
 import           Data.Char                  (isAscii)
-import           Data.Functor.Classes       (Eq1 (liftEq), Show1 (..))
 import           Data.Functor.Contravariant ((>$<))
 import           Data.Set                   (Set)
 import qualified Data.Set                   as Set
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import           Data.Text.Encoding         (decodeUtf8, encodeUtf8)
-import           GHC.Generics               (Generic, Generic1)
+import           GHC.Generics               (Generic)
 import           Text.URI                   (URI, mkURI)
 import           Text.URI.Lens              (unRText, uriScheme)
 import           Waargonaut.Encode          (Encoder')
@@ -555,74 +551,3 @@ mkHash a (Ascii t) =
     h = BS.take (BA.length d `div` 2) . BA.convert $ d
   in
     Hash . encode $ h
-
-data ClaimValue a =
-  ClaimValue a
-  | ClaimValues [a]
-  deriving (Eq, Show, Functor)
-
--- instance Functor ClaimValue where
---   fmap f (ClaimValue a) = ClaimValue $ f a
---   fmap f (ClaimValues as) = ClaimValues $ f <$> as
-
-instance Applicative ClaimValue where
-  pure a = ClaimValue a
-  ClaimValue f <*> ClaimValue a = ClaimValue $ f a
-  ClaimValue f <*> ClaimValues as = ClaimValues $ f <$> as
-  ClaimValues fs <*> ClaimValue a = ClaimValues $ ($ a) <$> fs
-  ClaimValues fs <*> ClaimValues as = ClaimValues $ fs <*> as
-
--- TODO: handle `value` key and optionality of keys
-data Claim a =
-  EssentialClaim (ClaimValue a)
-  | NonEssentialClaim (ClaimValue a)
-  deriving (Eq, Show, Generic1, Functor)
-
-claimValueFromClaim ::
-  Claim a
-  -> ClaimValue a
-claimValueFromClaim = \case
-  EssentialClaim cv -> cv
-  NonEssentialClaim cv -> cv
-
-class HasClaimValue (s :: * -> *) a where
-  claimValue :: Lens' (s a) (ClaimValue a)
-
-instance HasClaimValue Claim a where
-  claimValue =
-    lens claimValueFromClaim 
-
--- instance Applicative Claim where
---   pure a = NonEssentialClaim (pure a)
---   (Claim fs e1) <*> (Claim as e2) = Claim (fs <*> as) (e1 || e2)
-
-instance ToJSON1 Claim where
-  liftToJSON _ f _ =
-    let
-      v = case claimValue of
-        ClaimValue a  -> "value" .= (ClaimValue $ f a) -- (f <$> claimValue :: ClaimValue a)
-        ClaimValues _ -> "values" .= (f <$> claimValue)
-    in
-      object
-      [ v
-      , "essential" .= claimEssential
-      ]
-
--- instance Eq1 Claim where
---   liftEq f (Claim xs b1) (Claim ys b2) =
---     xs == ys && b1 == b2
-    --and $ (b1 == b2) : zipWith f xs ys
-
--- instance Show1 Claim where
---   liftShowsPrec _ f _ (Claim as b) s =
---     "Claim { claimValues = " <> f as "" <> ", claimEssntial = " <> show b <> "}" <> s
-
-instance FromJSON1 Claim where
-  liftParseJSON _ f =
-    withObject "Claim" $ \o ->
-      Claim
-      <$> (f =<< (o .: "values"))
-      <*> o .: "essential"
-
-instance ToJSON a => ToJSON (Claim a) where
-  toJSON = toJSON1

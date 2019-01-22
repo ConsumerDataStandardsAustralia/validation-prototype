@@ -34,8 +34,9 @@ import Data.GADT.Aeson    (JSONKey (..), mkParseJSON, toJSONDMap, toObjectDMap)
 import Data.GADT.Aeson.TH (deriveFromJSONViaKey, deriveToJSONViaKey)
 import Data.GADT.Tag.TH   (deriveEqTag, deriveShowTag)
 
+import Web.ConsumerData.Au.Api.Types.Auth.Common.Claims (Claim)
 import Web.ConsumerData.Au.Api.Types.Auth.Common.Common
-    (Acr, AuthUri, Claim, FapiPermittedAlg, Hash, Nonce, SHash,
+    (Acr, AuthUri, FapiPermittedAlg, Hash, Nonce, SHash,
     TokenAddressText, TokenAuthTime, TokenCHash, TokenHeaders, TokenKeyId,
     TokenPhoneText, TokenSubject, ConsentId)
 
@@ -189,7 +190,7 @@ instance JSONKey IdTokenKey where
 instance ToJSON1 f => ToJSON (DMap IdTokenKey f) where
   toJSON = toJSONDMap
 
-instance (Applicative f, FromJSON1 f) => FromJSON (DMap IdTokenKey f) where
+instance FromJSON1 f => FromJSON (DMap IdTokenKey f) where
   parseJSON = mkParseJSON "IdTokenMap"
 
 newtype IdTokenIssuer =

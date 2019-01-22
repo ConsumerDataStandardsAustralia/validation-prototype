@@ -40,6 +40,7 @@ library
                      , Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
                      , Web.ConsumerData.Au.Api.Types.Auth.Common
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.AccessToken
+                     , Web.ConsumerData.Au.Api.Types.Auth.Common.Claims
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.Common
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
                      , Web.ConsumerData.Au.Api.Types.Auth.Common.RefreshToken
