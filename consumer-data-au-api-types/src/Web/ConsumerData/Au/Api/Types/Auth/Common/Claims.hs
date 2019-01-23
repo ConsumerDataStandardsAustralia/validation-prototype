@@ -9,8 +9,7 @@
 module Web.ConsumerData.Au.Api.Types.Auth.Common.Claims where
 
 import           Control.Applicative  ((<|>))
-import           Control.Lens
-    (Lens', lens, (^.))
+import           Control.Lens         (Lens', lens, (^.))
 import           Data.Aeson.Types
     (FromJSON1 (..), Object, ToJSON (..), ToJSON1 (..), Value (Bool, Object),
     toJSON1, withObject, (.:), (.=))
@@ -40,6 +39,14 @@ claimValueToObject ::
   -> Object
 claimValueToObject f g =
   HM.fromList . pure . claimValue (("value" .=) . f) (("values" .=) . g)
+
+instance Eq1 ClaimValue where
+  liftEq f cv1 cv2 =
+    case (cv1, cv2) of
+      (ClaimValue a, ClaimValue b)     -> f a b
+      (ClaimValues as, ClaimValues bs) -> and $ zipWith f as bs
+      (ClaimValue _, ClaimValues _)    -> False
+      (ClaimValues _, ClaimValue _)    -> False
 
 instance Show1 ClaimValue where
   liftShowsPrec f g n cv s =
@@ -105,13 +112,12 @@ instance ToJSON1 Claim where
       Object $ HM.insert "essential" essential o
 
 instance Eq1 Claim where
-  liftEq f c1 c2 = case (c1, c2) of
-    (EssentialClaim _, NonEssentialClaim _) -> False
-    (NonEssentialClaim _, EssentialClaim _) -> False
-    (cv1, cv2) -> case (cv1 ^. claimValueLens, cv2 ^. claimValueLens) of
-      (ClaimValue a, ClaimValue b)     -> f a b
-      (ClaimValues as, ClaimValues bs) -> and $ zipWith f as bs
-      (_, _)                           -> False
+  liftEq f c1 c2 =
+    case (c1, c2) of
+      (EssentialClaim _, NonEssentialClaim _)        -> False
+      (NonEssentialClaim _, EssentialClaim _)        -> False
+      (EssentialClaim cv1, EssentialClaim cv2)       -> liftEq f cv1 cv2
+      (NonEssentialClaim cv1, NonEssentialClaim cv2) -> liftEq f cv1 cv2
 
 instance Show1 Claim where
   liftShowsPrec f g n c s =
