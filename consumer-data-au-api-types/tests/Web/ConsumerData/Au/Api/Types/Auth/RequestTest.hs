@@ -52,9 +52,10 @@ import Web.ConsumerData.Au.Api.Types.Auth.Common
     IdToken (IdToken), IdTokenClaims, IdTokenKey (IdTokenSub), Nonce (Nonce),
     Prompt (SelectAccount), RedirectUri (RedirectUri),
     ResponseType (CodeIdToken), Scope (..), State (..), TokenSubject (..),
-    mkScopes,authTestPath)
+    mkScopes)
 import Web.ConsumerData.Au.Api.Types.Auth.Error
-    (AsError (..), Error, GoldenError,JwtFailure(..))
+    (AsError (..), Error, JwtFailure(..))
+import Web.ConsumerData.Au.Api.Types.Auth.CommonTest
 
 test_request ::
   [TestTree]

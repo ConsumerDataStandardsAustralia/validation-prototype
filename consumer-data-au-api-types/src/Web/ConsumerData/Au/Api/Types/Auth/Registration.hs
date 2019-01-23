@@ -579,7 +579,6 @@ _RedirectUrls = prism'
   isHttps uri = and $ liftA2 (==) (URI.mkScheme "https") (uri ^. uriScheme)
   allValid = all (liftA2 (&&) isValidHost isHttps . getRedirectUri)
 
--- TODO: prism to enforce only 'code id_token' for future proofing.
 -- | The only CDR acceptable value is @code id_token@
 newtype FapiResponseTypes = FapiResponseTypes ResponseType
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
@@ -1094,7 +1093,7 @@ aesonClaimsToMetaData m = do
   pure ClientMetaData {..}
  where
   chkks ks u = if isJust ks && isJust u
-    then throwError (_InvalidClaim # "jwks xor jwks_uri required.")
+    then throwing _InvalidClaim "jwks xor jwks_uri required."
     else pure $ JwksVal <$> ks <|> JwksRef <$> u
 
 
@@ -1126,7 +1125,7 @@ fromVal
 fromVal n = rToM . fromJSON
  where
   rToM = \case
-    Error   s -> throwError (_ParseError # (T.unpack n<>": "<>s))
+    Error   s -> throwing _ParseError (T.unpack n<>": "<>s)
     Success a -> pure a
 
 maybeErrors :: (AsError e, MonadError e m) => e -> Maybe a -> m a
