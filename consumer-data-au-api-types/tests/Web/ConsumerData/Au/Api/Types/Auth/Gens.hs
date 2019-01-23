@@ -40,7 +40,8 @@ genIdTokenClaims ::
 genIdTokenClaims =
   let
     genSub =
-      NonEssentialClaim . ClaimValue . TokenSubject <$> Gen.text (Range.linear 1 5) Gen.alphaNum
+      NonEssentialClaim . ClaimValue . TokenSubject
+        <$> Gen.text (Range.linear 1 5) Gen.alphaNum
     gens =
       sequence
       [
