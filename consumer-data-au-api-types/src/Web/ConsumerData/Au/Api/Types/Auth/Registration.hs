@@ -579,7 +579,10 @@ _RedirectUrls = prism'
   isHttps uri = and $ liftA2 (==) (URI.mkScheme "https") (uri ^. uriScheme)
   allValid = all (liftA2 (&&) isValidHost isHttps . getRedirectUri)
 
--- | The only CDR acceptable value is @code id_token@
+-- | The only CDR acceptable value is an array containing @code id_token@.
+-- Note that the `response_types` field for registration is a "JSON array
+-- containing a list of the OAuth 2.0 response_type values" that the RP will
+-- use.
 newtype FapiResponseTypes = FapiResponseTypes (Set ResponseType)
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
