@@ -207,7 +207,7 @@ goldenRegoRequest = do
       _requestObjectEncryption   = Just $ RequestObjectEncryption alg (Just enc)
       _userinfoSignedResponseAlg = Just alg
       _idTokenEncryption         = Just $ IdTokenEncryption alg (Just enc)
-      _responseTypes             = Just $ FapiResponseTypes CodeIdToken
+      _responseTypes             = Just $ FapiResponseTypes (Set.fromList [CodeIdToken])
       _defaultMaxAge             = Just $ DefaultMaxAge 10000
       _requireAuthTime           = Just True
       _defaultAcrValues          = Just $ FapiAcrValues "@urn:cds.au:cdr:3@"
@@ -395,7 +395,7 @@ genEnc =
     >>= (?? BadEncType)
 
 genResponseTypes :: (MonadGen n) => n FapiResponseTypes
-genResponseTypes = pure $ FapiResponseTypes CodeIdToken
+genResponseTypes = FapiResponseTypes . Set.fromList <$> genSubs [CodeIdToken]
 
 genSubs :: (MonadGen n) => [a] -> n [a]
 genSubs as = Gen.shuffle as >>= Gen.subsequence

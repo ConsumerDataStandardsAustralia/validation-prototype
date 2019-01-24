@@ -580,7 +580,7 @@ _RedirectUrls = prism'
   allValid = all (liftA2 (&&) isValidHost isHttps . getRedirectUri)
 
 -- | The only CDR acceptable value is @code id_token@
-newtype FapiResponseTypes = FapiResponseTypes ResponseType
+newtype FapiResponseTypes = FapiResponseTypes (Set ResponseType)
   deriving (Generic, ToJSON, FromJSON, Show, Eq)
 
 newtype FapiScopes = FapiScopes Scopes
