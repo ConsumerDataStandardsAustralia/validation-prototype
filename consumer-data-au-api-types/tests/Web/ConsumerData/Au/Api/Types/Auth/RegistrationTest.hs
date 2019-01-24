@@ -357,8 +357,7 @@ genApplicationType =
 genAuthMeth :: (MonadGen n, MonadThrow n) => n FapiTokenEndpointAuthMethod
 genAuthMeth =
   (?? BadAuthMeth)
-    =<< (^? _FapiTokenEndpointAuthMethod)
-    <$> (Gen.element [PrivateKeyJwt] <*> genAlg)
+    =<< (^? _FapiTokenEndpointAuthMethod) . PrivateKeyJwt <$> genAlg
 
 genScript :: (MonadGen n) => n Script
 genScript = Script DefaultLang <$> genText

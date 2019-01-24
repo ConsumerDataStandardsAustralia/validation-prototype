@@ -1099,7 +1099,6 @@ aesonClaimsToMetaData m = do
     then throwing _InvalidClaim "jwks xor jwks_uri required."
     else pure $ JwksVal <$> ks <|> JwksRef <$> u
 
-
 -- convert a signed jwt to base64 then make it a json Value (for a claim)
 jwtToJson :: SignedJWT -> Value
 jwtToJson = toJSON . TE.decodeUtf8 . BSL.toStrict . encodeCompact

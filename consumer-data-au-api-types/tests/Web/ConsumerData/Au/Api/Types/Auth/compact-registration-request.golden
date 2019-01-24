@@ -4,7 +4,7 @@
         "request_object_encryption_enc": "A128CBC_HS256",
         "jti": "jti",
         "client_notification_endpoint": "https://notification-uri.com/",
-        "response_types": "code id_token",
+        "response_types": ["code id_token"],
         "user_info_encrypted_response_enc": "A128CBC_HS256",
         "request_object_signing_alg": "PS256",
         "logo_uri": "https://logo-uri.com/",
