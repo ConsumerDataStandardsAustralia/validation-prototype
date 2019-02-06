@@ -1,6 +1,7 @@
 { nixpkgs ? import ../nix/nixpkgs.nix
 , compiler ? "default"
 , doBench ? false
+, doDocker ? false
 }:
 let
   inherit (nixpkgs) pkgs;
@@ -13,6 +14,25 @@ let
     then pkgs.haskell.lib.doBenchmark d
     else d;
 
-  drv = withBench (consumer-data-au-lambdabank);
+  withDocker = d: if doDocker
+    then [d cdrDockerImage]
+  else d;
+
+  cdrDockerImage = pkgs.dockerTools.buildImage {
+    name = "cdr-mock-server";
+    tag = "latest";
+
+    contents = [
+      consumer-data-au-lambdabank
+    ];
+
+    config = {
+      Version = "0.1a";
+      EntryPoint = ["lambda-bank"];
+      ExposedPorts = { "8080/tcp" = {}; };
+    };
+  };
+
+  drv = withDocker (withBench (consumer-data-au-lambdabank) );
 in
   drv
