@@ -1,20 +1,27 @@
-with import <nixpkgs> {};
-
+{ nixpkgs ? import ../nix/nixpkgs.nix
+, compiler ? "default"
+}:
 let
-  cdr-mock-server = import ./default.nix;
-in {
-  sandboxImage = dockerTools.buildImage {
-    name = "cdr-sandbox";
+  inherit (nixpkgs) pkgs;
+  haskellPackages = import ./nix/haskellPackages.nix {inherit nixpkgs compiler;};
+
+  consumer-data-au-lambdabank = haskellPackages.callPackage ./consumer-data-au-lambdabank.nix {};
+
+  cdrDockerImage = pkgs.dockerTools.buildImage {
+    name = "cdr-mock-server";
     tag = "latest";
 
     contents = [
-      cdr-mock-server
+      consumer-data-au-lambdabank
     ];
 
     config = {
       Version = "0.1a";
-      EntryPoint = ["cdr-mock-server"];
-#      ExposedPorts = { "433/tcp" = {}; };
+      EntryPoint = ["lambda-bank"];
+      ExposedPorts = { "8000/tcp" = {}; };
     };
   };
-}
+
+  drv = cdrDockerImage;
+in
+  drv
