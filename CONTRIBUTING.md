@@ -1,5 +1,18 @@
 # How to Contribute
 
+## Code Architecture
+
+There are five main parts of this code that you should familiarise yourself with:
+- [Types](consumer-data-au-types/)
+  - [src](consumer-data-au-types/src): The Specification of all of the URLs, headers and datatypes.
+  - [tests](consumer-data-au-types/tests): Test cases to make sure that the routes and JSON match up to the [upstream spec](https://consumerdatastandardsaustralia.github.io/standards/#introduction). 
+- [Lambdabank](consumer-data-au-lambdabank/)
+  - [src](consumer-data-au-lambdabank/src): A server that implements the types from the spec and returns dummy data.
+  - [tests](consumer-data-au-lambdabank/tests): Test cases to make sure that the server returns the right thing. Uses the client.
+- [Client](consumer-data-au-client/): A client generated from the types project. Can be used to access a standards implementing server.
+
+Note at this point none of this client deals with auth: not even parsing the headers and JWT, but there is work in the types project that has this partially formed (but not wired up).
+
 ## Getting Started
 
 You will need to install [nix](https://nixos.org/nix/) for this project, which means using a nix-supported OS (not Windows, not FreeBSD). Using nix will get you all the right versions of GHC and Cabal for free.
