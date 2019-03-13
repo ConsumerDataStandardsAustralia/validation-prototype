@@ -50,5 +50,4 @@ The mock DH implements all of the defined resource endpoints in the Banking API,
 
 When the docker image is running, the mock DH server will be available on port 8000. The server accepts a limited range of requests, and will return well-formed dummy responses. A basic HTML client that makes requests to the mock DH can be found in [consumer-data-au-lambdabank/res/index.html](./consumer-data-au-lambdabank/res/index.html).
 
-A prebuilt docker image is also available from Docker Hub in the `qfpl/cds-validation-prototype` [repository] (https://docker.io/qfpl/cds-dh-prototype).
-
+A prebuilt docker image is also available from Docker Hub in the `qfpl/cds-validation-prototype` [repository] (https://cloud.docker.com/repository/docker/qfpl/cds-dh-prototype).
