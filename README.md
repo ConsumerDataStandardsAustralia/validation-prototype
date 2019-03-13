@@ -1,4 +1,4 @@
-# Consumer Data Standards - Conformance Suite
+# Consumer Data Standards - Validation Suite
 
 The Queensland Functional Programming Lab (QFPL) have been enlisted to assist
 with the development of software related to open banking. This document
@@ -18,7 +18,7 @@ providers to test their compliance with the spec. This will be in the form of
 an automated suite and minimal set of mock components for manual verification,
 and as a sandbox to develop against. These components will be:
 
-- A test suite for verifying a data provider
+- A test suite for verifying a data holder
 - A test suite for verifying a data consumer
 - A mock data consumer app for manually testing and developing a data provider
 - A mock data provider/bank api for manually testing and developing a data consumer
@@ -28,7 +28,7 @@ roughly this order:
 
 - A bare bones mock consumer and producer so that people can start using these for
   developing their implementations.
-- The basic conformance suite testing one major auth flow.
+- The basic validation suite testing one major auth flow.
 - And then iterating them both until their are fully featured.
 
 All software will be developed as open sourced (MIT) software components in this
@@ -42,9 +42,12 @@ large impact testing the FAPI/Open ID Connect/OAuth implementations, which
 should help ensure that Australia’s open banking implementations are of the
 highest possible security standards.
 
-This software will be distributed as docker containers with reference docker
-compose files to ensure an easy deployment and operation in test environments
-without any Haskell experience. Implementors are free to use these components
-as a guide (and the QFPL will offer support for this) but please also expect
-non-Haskell reference implementations created by other teams closer to the
-final draft release.
+Mock Data Holder
+============================================================================
+This repository contains a script 
+that builds a docker image containing a mock Data Holder (DH): `consumer-data-au-lambdabank/scripts/dockerisation.sh`. The docker image allows for easy deployment and operation in test
+environments without any Haskell experience.
+
+A prebuilt image is also available on Docker Hub in the `qfpl/cds-validation-prototype` repository.
+
+When the docker image is running, the mock DH server will be available on port 8000. The server accepts a limited range of requests, and will return well-formed CDS responses (as per the January 2019 draft release of the standards). A basic HTML client that makes requests to the mock DH can be found in `consumer-data-au-lambdabank/res/index.html`.
