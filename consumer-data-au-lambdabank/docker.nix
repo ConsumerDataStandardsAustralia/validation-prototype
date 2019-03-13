@@ -8,7 +8,7 @@ let
   consumer-data-au-lambdabank = haskellPackages.callPackage ./consumer-data-au-lambdabank.nix {};
 
   cdrDockerImage = pkgs.dockerTools.buildImage {
-    name = "cdr-mock-server";
+    name = "mock-dh";
     tag = "latest";
 
     contents = [

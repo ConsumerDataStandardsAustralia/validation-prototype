@@ -44,10 +44,11 @@ highest possible security standards.
 
 Mock Data Holder
 ============================================================================
-This repository contains a script 
-that builds a docker image containing a mock Data Holder (DH): `consumer-data-au-lambdabank/scripts/dockerisation.sh`. The docker image allows for easy deployment and operation in test
-environments without any Haskell experience.
+Along with the other artifacts, this repository also contains a script to build a docker image containing a mock Data Holder (DH). The script can be found `consumer-data-au-lambdabank/scripts/dockerisation.sh`. This image allows for easy deployment into test environments without any Haskell experience necessary.
 
-A prebuilt image is also available on Docker Hub in the `qfpl/cds-validation-prototype` repository.
+The mock DH implements all of the defined resource endpoints in the Banking API, responding with mock data that is conformant to the CDS draft standards (v0.2.0). The latest version of the standards can be found at Consumer Data Standards Australia.
 
-When the docker image is running, the mock DH server will be available on port 8000. The server accepts a limited range of requests, and will return well-formed CDS responses (as per the January 2019 draft release of the standards). A basic HTML client that makes requests to the mock DH can be found in `consumer-data-au-lambdabank/res/index.html`.
+When the docker image is running, the mock DH server will be available on port 8000. The server accepts a limited range of requests, and will return well-formed dummy responses. A basic HTML client that makes requests to the mock DH can be found in [consumer-data-au-lambdabank/res/index.html](./consumer-data-au-lambdabank/res/index.html).
+
+A prebuilt docker image is also available from Docker Hub in the `qfpl/cds-validation-prototype` [repository] (https://docker.io/qfpl/cds-dh-prototype).
+
