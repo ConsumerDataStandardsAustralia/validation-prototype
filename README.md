@@ -42,11 +42,11 @@ large impact testing the FAPI/Open ID Connect/OAuth implementations, which
 should help ensure that Australia’s open banking implementations are of the
 highest possible security standards.
 
-Mock Data Holder
+Mock Data Holder ("LambdaBank")
 ============================================================================
 Along with the other artifacts, this repository also contains a script to build a docker image containing a mock Data Holder (DH). The script can be found `consumer-data-au-lambdabank/scripts/dockerisation.sh`. This image allows for easy deployment into test environments without any Haskell experience necessary.
 
-The mock DH implements all of the defined resource endpoints in the Banking API, responding with mock data that is conformant to the CDS draft standards (v0.2.0). The latest version of the standards can be found at Consumer Data Standards Australia.
+The mock DH implements all of the defined resource endpoints in the Banking API, responding with mock data that is conformant to the CDS draft standards (v0.2.0 - 20/12/2018). The latest version of the standards can be found at Consumer Data Standards Australia.
 
 When the docker image is running, the mock DH server will be available on port 8000. The server accepts a limited range of requests, and will return well-formed dummy responses. A basic HTML client that makes requests to the mock DH can be found in [consumer-data-au-lambdabank/res/index.html](./consumer-data-au-lambdabank/res/index.html).
 
