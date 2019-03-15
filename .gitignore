@@ -3,3 +3,4 @@
 .ghc.env*
 cabal.project.local*
 TAGS
+result
