@@ -1,0 +1,158 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>localhost:8000 - Home</title>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,300italic,300,600,600italic,700,700italic,800,800italic" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="https://qfpl.io/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="https://qfpl.io/css/font-awesome.min.css" />
+        <link rel="stylesheet" href="https://qfpl.io/css/custom.css">
+        <link rel="stylesheet" href="https://qfpl.io/css/syntax.css">
+    </head>
+    <body>
+
+        <header>
+            <nav class="navbar navbar-expand-lg data61-green">
+              <a class="navbar-brand text-white" href="./">
+                <div class="card brand-logo">
+                  <div class="card-body">
+                    <div class="brand-anim-block">
+                      <img id="qfpl-brand-data61-logo" height="55" alt="Data61 logo" src="https://qfpl.io/images/DATA61-CSIRO_MONO.png" />
+                    </div>
+                  </div>
+                </div>
+              </a>
+        </header>
+
+        <main>
+          <div class="container-fluid">
+              <div class="container my-4">
+
+<!--   <div class="row">
+    <div class="col">
+      <div class="advance-qld-logo">
+        <img alt="Advance Queensland" src="images/advance-queensland.jpg" />
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="float-right data61-logo">
+        <img height="80" alt="Data61 logo" src="images/DATA61-CSIRO_MONO.png" />
+      </div>
+    </div>
+  </div>
+ -->
+
+</div>
+<div class="container my-4">
+  <div class="row">
+    <div class="col">
+
+      <h1 class="display-4 text-center">
+        LambdaBank: a CDS prototype Sandbox
+      </h1>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="row">
+  <div class="col my-4">
+      <div class="section-header">
+        <h3 class="data61-bottom-line">Sandbox (Mock Bank) - "LambdaBank"</h3>
+      </div>
+
+      <p>
+        <a ref="http://localhost:8000/">LambdaBank</a> is a self-contained sandbox produced by QFPL to assist third-parties test CDR apps. The sandbox implements all of the defined resource endpoints in the Banking API, responding with mock data that is conformant to the CDR draft standards (v0.2.0). The latest version of the standards can be found at <a href="https://consumerdatastandardsaustralia.github.io/standards/#introduction">Consumer Data Standards Australia</a>. The source code for this project can be found in the <a href=https://github.com/ConsumerDataStandardsAustralia/conformance>Conformance</a> github repository.
+      </p>
+      <p>
+        For further information, please contact <a href="mailto:cdr@qfpl.io"><i>cdr@qfpl.io</i></a>.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <div class="col my-4">
+      <div class="section-header text-right">
+        <h3 class="data61-bottom-line">Endpoint Tests</h3>
+      </div>
+
+      <p>
+        All LambdaBank endpoints are located at <a href="http://localhost:8000/"/>localhost:8000</a> and can be tested by clicking on links below:
+      </p>
+
+<div style="margin-left:2.5em">
+    <li><a target="_blank" href="http://localhost:8000/banking/accounts?page=1"/>/banking/accounts test</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/accounts?page=2"/>/banking/accounts test with page 2</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/accounts/12345"/>/banking/accounts/{accountId} test</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/accounts/balances?page=2"/>/banking/accounts/balances test with page</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/accounts/balances?page=1"/>/banking/accounts/balances test</a>
+    <li><a target="_blank" href="http://localhost:8000/common/customer"/>/common/customer</a>
+    <li><a target="_blank" href="http://localhost:8000/common/customer/detail"/>/common/customer/detail</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/accounts/transactions?page=2"/>/banking/accounts/transactions test with page 2</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/accounts/transactions?page=2"/>/banking/accounts/transactions test with page 2</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/accounts/12345/transactions?page=1"/>/banking/accounts/{accountId}/transactions test</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/accounts/12345/transactions?page=2"/>/banking/accounts/{accountId}/transactions test with page 2</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/accounts/12345/transactions/6789"/>/banking/accounts/{accountId}/transactions/{transactionId} test</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/payees?page=1"/>/banking/payees test with page</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/payees/5"/>/banking/payees/{payeesById} test</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/products?page=1"/>/banking/products test with page</a>
+    <li><a target="_blank" href="http://localhost:8000/banking/products/product-id-5"/>/banking/products/{productsById} test</a>
+</div>
+</div>
+</div>
+</div>
+
+<p>
+<div class="container my-2">
+  <div class="section-header">
+    <h3 class="data61-bottom-line">QFPL's FP Principles</h3>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="card-deck">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title data61-bottom-line">Composability</h5>
+            <p class="card-text">Lean on powerful abstractions that let you combine smaller components with absolute confidence.</p>
+          </div>
+
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title data61-bottom-line">Correctness</h5>
+            <p class="card-text">
+              Stand atop the giants of mathematics to take advantage of effective software verification tools. Without having to be a giant yourself.
+            </p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title data61-bottom-line">Efficiency</h5>
+            <p class="card-text">
+              Save yourself time and stress with precise and reusable abstractions.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+        </main>
+
+        <footer class="page-footer data61-green">
+            <div class="container">
+              <div class="row justify-content-centre">
+              </div>
+            </div>
+        </footer>
+    </body>
+</html>

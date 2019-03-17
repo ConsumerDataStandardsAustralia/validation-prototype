@@ -1,5 +1,7 @@
 /dist
 /dist-newstyle
+/result
+/result-2
 *.tags
 .nvimrc
 .ghci
@@ -7,4 +9,3 @@
 *.o
 *.dyn_hi
 *.dyn_o
-/result
