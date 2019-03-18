@@ -48,9 +48,9 @@ import Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
     (AuthorisationRequest (AuthorisationRequest), Claims (Claims),
     authRequestToJwt, jwtToAuthRequest)
 import Web.ConsumerData.Au.Api.Types.Auth.Common
-    (Acr (Acr), Claim (Claim), ClientId (ClientId), ConsentId (..),
-    IdToken (IdToken), IdTokenClaims, IdTokenKey (IdTokenSub), Nonce (Nonce),
-    Prompt (SelectAccount), RedirectUri (RedirectUri),
+    (Acr (Acr), Claim (..), ClaimValue (..), ClientId (ClientId),
+    ConsentId (..), IdToken (IdToken), IdTokenClaims, IdTokenKey (IdTokenSub),
+    Nonce (Nonce), Prompt (SelectAccount), RedirectUri (RedirectUri),
     ResponseType (CodeIdToken), Scope (..), State (..), TokenSubject (..),
     mkScopes)
 import Web.ConsumerData.Au.Api.Types.Auth.Error
@@ -158,10 +158,10 @@ goldenIdToken ::
   IdTokenClaims
 goldenIdToken =
   let
-    acrClaim = Claim [Acr "urn:cds.au:cdr:3"] True
-    consentClaim = Claim [ConsentId "fake consent id"] True
+    acrClaim = EssentialClaim . ClaimValues $ [Acr "urn:cds.au:cdr:3"]
+    consentClaim = EssentialClaim . ClaimValue $ ConsentId "fake consent id"
     claimsMap = DM.fromList
-      [ IdTokenSub :=> Claim [TokenSubject "u12345"] False
+      [ IdTokenSub :=> (NonEssentialClaim . ClaimValue $ TokenSubject "u12345")
       ]
   in
     IdToken Nothing Nothing acrClaim consentClaim claimsMap

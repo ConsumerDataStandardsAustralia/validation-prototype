@@ -1,8 +1,5 @@
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -21,7 +18,6 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , grantErrorResponseTypeText
   , Acr (..)
   , AuthUri
-  , Claim (..)
   , ConsentId (..)
   , FapiPermittedAlg
   , getFapiPermittedAlg
@@ -67,9 +63,7 @@ import           Control.Monad.Except       (MonadError)
 import           "cryptonite" Crypto.Hash   (HashAlgorithm, hashWith)
 import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
 import           Crypto.JWT                 (StringOrURI)
-import           Data.Aeson.Types
-    (FromJSON (..), FromJSON1 (..), Parser, ToJSON (..), ToJSON1 (..), object,
-    toJSON1, withObject, (.:), (.=))
+import           Data.Aeson.Types           (FromJSON (..), Parser, ToJSON (..))
 import           Data.Bifunctor             (first)
 import           Data.Bool                  (bool)
 import qualified Data.ByteArray             as BA
@@ -77,14 +71,13 @@ import           Data.ByteString            (ByteString)
 import qualified Data.ByteString            as BS
 import           Data.ByteString.Base64.URL (encode)
 import           Data.Char                  (isAscii)
-import           Data.Functor.Classes       (Eq1 (liftEq), Show1 (..))
 import           Data.Functor.Contravariant ((>$<))
 import           Data.Set                   (Set)
 import qualified Data.Set                   as Set
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import           Data.Text.Encoding         (decodeUtf8, encodeUtf8)
-import           GHC.Generics               (Generic, Generic1)
+import           GHC.Generics               (Generic)
 import           Text.URI                   (URI, mkURI)
 import           Text.URI.Lens              (unRText, uriScheme)
 import           Waargonaut.Encode          (Encoder')
@@ -567,40 +560,3 @@ mkHash a (Ascii t) =
     h = BS.take (BA.length d `div` 2) . BA.convert $ d
   in
     Hash . encode $ h
-
--- TODO: handle `value` key and optionality of keys
-data Claim a =
-  Claim
-  { claimValues    :: [a]
-  , claimEssential :: Bool
-  }
-  deriving (Eq, Show, Generic1, Functor)
-
-instance Applicative Claim where
-  pure a = Claim [a] False
-  (Claim fs e1) <*> (Claim as e2) = Claim (fs <*> as) (e1 || e2)
-
-instance ToJSON1 Claim where
-  liftToJSON _ f Claim{..} =
-    object
-    [ "values" .= f claimValues
-    , "essential" .= claimEssential
-    ]
-
-instance Eq1 Claim where
-  liftEq f (Claim xs b1) (Claim ys b2) =
-    and $ (b1 == b2) : zipWith f xs ys
-
-instance Show1 Claim where
-  liftShowsPrec _ f _ (Claim as b) s =
-    "Claim { claimValues = " <> f as "" <> ", claimEssntial = " <> show b <> "}" <> s
-
-instance FromJSON1 Claim where
-  liftParseJSON _ f =
-    withObject "Claim" $ \o ->
-      Claim
-      <$> (f =<< (o .: "values"))
-      <*> o .: "essential"
-
-instance ToJSON a => ToJSON (Claim a) where
-  toJSON = toJSON1

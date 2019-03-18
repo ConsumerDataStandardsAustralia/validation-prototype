@@ -27,8 +27,8 @@ import           Text.URI.Gens
     (genAuthority, genPathPieces)
 import           Web.ConsumerData.Au.Api.Types.Auth.AuthorisationRequest
     (Claims (Claims))
-import           Web.ConsumerData.Au.Api.Types.Auth.Common.Common
-    (Acr (Acr), Claim (Claim), HttpsUrl, TokenSubject (..), mkHttpsUrl, ConsentId (..))
+import           Web.ConsumerData.Au.Api.Types.Auth
+    (Acr (Acr), Claim (..), ClaimValue (..), HttpsUrl, TokenSubject (..), mkHttpsUrl, ConsentId (..))
 import           Web.ConsumerData.Au.Api.Types.Auth.Common.IdToken
     (IdToken (IdToken), IdTokenClaims, IdTokenKey (..))
 import           Web.ConsumerData.Au.Api.Types.Auth.Error
@@ -40,20 +40,24 @@ genIdTokenClaims ::
 genIdTokenClaims =
   let
     genSub =
-      (\a -> Claim [a] False) . TokenSubject <$> Gen.text (Range.linear 1 5) Gen.alphaNum
+      NonEssentialClaim . ClaimValue . TokenSubject
+        <$> Gen.text (Range.linear 1 5) Gen.alphaNum
     gens =
       sequence
       [
         (IdTokenSub :=>) <$> genSub
       ]
-    mostOfAnIdtoken =
+    mostOfAnIdToken ::
+      DM.DMap IdTokenKey Claim
+      -> IdTokenClaims
+    mostOfAnIdToken =
       IdToken
         Nothing
         Nothing
-        (Claim [Acr "foo"] True)
-        (Claim [ConsentId "fake consent id"] True)
+        (EssentialClaim . ClaimValues $ [Acr "foo"])
+        (EssentialClaim . ClaimValue $ ConsentId "fake consent id")
   in
-    mostOfAnIdtoken <$> (DM.fromList <$> gens)
+    mostOfAnIdToken <$> (DM.fromList <$> gens)
 
 genClaims ::
   MonadGen n

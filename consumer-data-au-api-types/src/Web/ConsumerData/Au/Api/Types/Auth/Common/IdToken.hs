@@ -20,10 +20,8 @@ import           Data.Aeson.Types    (FromJSON1, Parser, ToJSON1, Value (Null))
 import           Data.Constraint     (Dict (Dict))
 import           Data.Dependent.Map  (DMap)
 import qualified Data.HashMap.Strict as HM
--- import qualified Data.Dependent.Map    as DM
 import Data.GADT.Compare.TH (deriveGCompare, deriveGEq)
 import Data.GADT.Show.TH    (deriveGShow)
--- import           Data.Functor.Classes  (Show1)
 import Data.Functor.Identity (Identity)
 import Data.Some             (Some (This))
 import Data.Text             (Text)
@@ -34,8 +32,9 @@ import Data.GADT.Aeson    (JSONKey (..), mkParseJSON, toJSONDMap, toObjectDMap)
 import Data.GADT.Aeson.TH (deriveFromJSONViaKey, deriveToJSONViaKey)
 import Data.GADT.Tag.TH   (deriveEqTag, deriveShowTag)
 
+import Web.ConsumerData.Au.Api.Types.Auth.Common.Claims (Claim)
 import Web.ConsumerData.Au.Api.Types.Auth.Common.Common
-    (Acr, AuthUri, Claim, FapiPermittedAlg, Hash, Nonce, SHash,
+    (Acr, AuthUri, FapiPermittedAlg, Hash, Nonce, SHash,
     TokenAddressText, TokenAuthTime, TokenCHash, TokenHeaders, TokenKeyId,
     TokenPhoneText, TokenSubject, ConsentId)
 
@@ -43,11 +42,6 @@ import Web.ConsumerData.Au.Api.Types.Auth.Common.Common
 data IdTokenJwt =
   IdTokenJws IdTokenHeaders IdToken'
   | IdTokenJwe IdTokenHeaders IdToken'
-
--- data IdTokenData = IdTokenData {
---  -- TODO: Must be included in in either token or auth endpoint ID Token responses
---  , _s_hash :: Maybe StateHash
--- }
 
 -- headers for the ID token response
 data IdTokenHeaders = IdTokenHeaders {
@@ -113,9 +107,7 @@ type family IdTokenMapFunctor (use :: IdTokenUse) where
   IdTokenMapFunctor 'TokenUse = Identity
 
 type IdTokenClaims = IdToken 'ClaimUse
--- type IdTokenClaims' = IdTokenClaims Identity
 type IdToken' = IdToken 'TokenUse
--- type IdToken'' = IdToken' Identity
 
 instance ToJSON IdTokenClaims where
   toJSON = idTokenToJSON Dict
@@ -189,7 +181,7 @@ instance JSONKey IdTokenKey where
 instance ToJSON1 f => ToJSON (DMap IdTokenKey f) where
   toJSON = toJSONDMap
 
-instance (Applicative f, FromJSON1 f) => FromJSON (DMap IdTokenKey f) where
+instance FromJSON1 f => FromJSON (DMap IdTokenKey f) where
   parseJSON = mkParseJSON "IdTokenMap"
 
 newtype IdTokenIssuer =

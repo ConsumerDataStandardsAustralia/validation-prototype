@@ -8,9 +8,7 @@
             "userinfo": null,
             "id_token": {
                 "sub": {
-                    "values": [
-                        "u12345"
-                    ],
+                    "value": "u12345",
                     "essential": false
                 },
                 "acr": {
@@ -20,9 +18,7 @@
                     "essential": true
                 },
                 "cdr_consent_id": {
-                    "values": [
-                        "fake consent id"
-                    ],
+                    "value": "fake consent id",
                     "essential": true
                 }
             }
