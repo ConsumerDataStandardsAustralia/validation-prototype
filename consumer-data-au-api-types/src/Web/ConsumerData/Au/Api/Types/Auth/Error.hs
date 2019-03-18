@@ -41,4 +41,9 @@ instance AsJWTError Error where
           \case JoseJwtError e -> Right e
                 e -> Left e
 
+newtype JwtFailure = JwtFailure String
+  deriving (Eq, Show)
+
+instance Exception JwtFailure
+
 makeClassyPrisms ''Error

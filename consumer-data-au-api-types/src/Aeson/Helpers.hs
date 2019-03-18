@@ -63,4 +63,3 @@ instance FromJSON URI where
 
 _URI :: Prism' T.Text URI
 _URI = prism' URI.render mkURI
-

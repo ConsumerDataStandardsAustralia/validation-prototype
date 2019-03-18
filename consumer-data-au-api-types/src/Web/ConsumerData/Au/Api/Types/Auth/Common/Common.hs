@@ -7,6 +7,7 @@
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE PackageImports             #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE TemplateHaskell            #-}
@@ -46,6 +47,7 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
   , RedirectUri (..)
   , ResponseType (..)
   , ClientIss (..)
+  , _HttpsUrl
   -- Not exporting constructor for Scopes --- use the smart constructor
   , Scopes
   , mkScopes
@@ -56,17 +58,19 @@ module Web.ConsumerData.Au.Api.Types.Auth.Common.Common
 
 import           Aeson.Helpers
     (SpaceSeparatedSet (..), parseJSONWithPrism, parseSpaceSeparatedSet)
+import           Control.Applicative        (liftA2)
 import           Control.Lens
     (Prism', makeWrapped, prism, ( # ), (<&>), (^.))
 import           Control.Monad              ((<=<))
 import           Control.Monad.Error.Lens   (throwing_)
 import           Control.Monad.Except       (MonadError)
-import           Crypto.Hash                (HashAlgorithm, hashWith)
+import           "cryptonite" Crypto.Hash   (HashAlgorithm, hashWith)
 import           Crypto.JOSE.JWA.JWS        (Alg (ES256, PS256))
 import           Crypto.JWT                 (StringOrURI)
 import           Data.Aeson.Types
     (FromJSON (..), FromJSON1 (..), Parser, ToJSON (..), ToJSON1 (..), object,
     toJSON1, withObject, (.:), (.=))
+import           Data.Bifunctor             (first)
 import           Data.Bool                  (bool)
 import qualified Data.ByteArray             as BA
 import           Data.ByteString            (ByteString)
@@ -255,6 +259,9 @@ tokenErrorResponseTypeEncoder =
 -- Furthermore, <https://consumerdatastandardsaustralia.github.io/standards/#additional-constraints the standards>
 -- mandate that only the hybrid flow is supported, and only @code id_token@ as per the
 -- <https://consumerdatastandardsaustralia.github.io/infosec/#oidc-hybrid-flow §infosec> spec.
+-- Note that the ordering of the values in response type does not matter
+-- (as per all space separated sets):
+-- <https://openid.net/specs/oauth-v2-multiple-response-types-1_0.html#Terminology §Multiple-Valued Response Types>.
 data ResponseType =
   -- | @code id_token@ response type, implying a Hybrid flow
   CodeIdToken
@@ -268,6 +275,7 @@ responseTypeText =
         )
         (\case
             "code id_token" -> Right CodeIdToken
+            "id_token code" -> Right CodeIdToken
             t -> Left t
         )
 
@@ -439,6 +447,11 @@ mkHttpsUrlText ::
   -> m HttpsUrl
 mkHttpsUrlText =
   mkHttpsUrl <=< maybe (throwing_ _UriParseError) pure . mkURI
+
+_HttpsUrl :: Prism' URI HttpsUrl
+_HttpsUrl = prism
+ (\(HttpsUrl u) -> u)
+ (liftA2 first (const) (mkHttpsUrl::URI->Either HttpsUrlError HttpsUrl))
 
 mkHttpsUrl ::
   ( AsHttpsUrlError e

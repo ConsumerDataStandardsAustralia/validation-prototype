@@ -35,7 +35,7 @@ genAuthority ::
   )
   => n Authority
 genAuthority = Authority Nothing <$> genHost <*> genPort where
-    genPort = Gen.maybe (Gen.word Range.constantBounded)
+    genPort = Gen.maybe (fromIntegral <$> Gen.word16 (Range.linear 1 maxBound))
 
 -- | <https://tools.ietf.org/html/rfc3986#section-3.2.2 §3.2.2 of RFC3986> allows for much more than
 -- this. We're not supporting IPs, and 'mkHost' doesn't support anything other than 'Gen.alphaNum' in
