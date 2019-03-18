@@ -92,9 +92,20 @@ genKeyMaterial ::
   => n JWK.KeyMaterialGenParam
 genKeyMaterial =
   Gen.choice
-    [ pure (JWK.ECGenParam JWK.P_256)
-    , JWK.RSAGenParam <$> Gen.int (Range.linear (2048 `div` 8) (4096 `div` 8))
+    [ genKeyMaterialEC256
+    , genKeyMaterialRSA
     ]
+
+genKeyMaterialEC256 ::
+  MonadGen n
+  => n JWK.KeyMaterialGenParam
+genKeyMaterialEC256 = pure (JWK.ECGenParam JWK.P_256)
+
+genKeyMaterialRSA ::
+  MonadGen n
+  => n JWK.KeyMaterialGenParam
+genKeyMaterialRSA = JWK.RSAGenParam <$>
+  Gen.int (Range.linear (2048 `div` 8) (4096 `div` 8))
 
 genUrls ::
   ( MonadGen n

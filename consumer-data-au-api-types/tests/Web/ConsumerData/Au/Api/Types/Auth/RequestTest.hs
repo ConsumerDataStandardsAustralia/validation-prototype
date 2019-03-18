@@ -9,7 +9,7 @@
 module Web.ConsumerData.Au.Api.Types.Auth.RequestTest where
 
 import           Control.Exception      (throw)
-import           Control.Lens           (makeClassyPrisms, ( # ))
+import           Control.Lens           (( # ))
 import           Control.Monad          ((<=<))
 import           Control.Monad.Catch    (Exception, MonadThrow, throwM)
 import           Control.Monad.Except
@@ -17,12 +17,10 @@ import           Control.Monad.Except
 import           Control.Monad.IO.Class (MonadIO)
 import           Crypto.JOSE
     (Alg (ES256), decodeCompact, encodeCompact)
-import qualified Crypto.JOSE.Error      as JE
 import qualified Crypto.JOSE.JWK        as JWK
 import           Crypto.JWT             (Audience (Audience), uri)
 import           Crypto.JWT.Pretty
-    (AsPrettyJwtError (_PrettyJwtError), JwtPart (Signature), PrettyJwt,
-    PrettyJwtError, mkPrettyJwt, removePart)
+    (JwtPart (Signature), PrettyJwt, mkPrettyJwt, removePart)
 import           Data.Aeson             (eitherDecode')
 import           Data.Bifunctor         (first)
 import           Data.ByteString.Lazy   (ByteString)
@@ -56,23 +54,8 @@ import Web.ConsumerData.Au.Api.Types.Auth.Common
     ResponseType (CodeIdToken), Scope (..), State (..), TokenSubject (..),
     mkScopes)
 import Web.ConsumerData.Au.Api.Types.Auth.Error
-    (AsError (..), Error)
-
-data GoldenError =
-  AuthE Error
-  | PrettyJwtE PrettyJwtError
-  deriving (Eq, Show)
-
-makeClassyPrisms ''GoldenError
-
-instance AsPrettyJwtError GoldenError where
-  _PrettyJwtError = _PrettyJwtE . _PrettyJwtError
-
-instance AsError GoldenError where
-  _Error = _AuthE . _Error
-
-instance JE.AsError GoldenError where
-  _Error = _Error . _JoseError
+    (AsError (..), Error, JwtFailure(..))
+import Web.ConsumerData.Au.Api.Types.Auth.CommonTest
 
 test_request ::
   [TestTree]
@@ -110,17 +93,6 @@ golden =
       either (throw . JwtFailure . show) pure =<< runExceptT mJwt
   in
     aesonGolden name gf ioPrettyJwt
-
-authTestPath ::
-  FilePath
-authTestPath =
-  "tests/Web/ConsumerData/Au/Api/Types/Auth"
-
-newtype JwtFailure =
-  JwtFailure String
-  deriving (Eq, Show)
-
-instance Exception JwtFailure
 
 mkJwt ::
   ( MonadIO m
