@@ -24,12 +24,12 @@ and as a sandbox to develop against. These components will be:
 - A mock data provider/bank api for manually testing and developing a data consumer
 
 Our plan will be to deliver these components in an MVP fashion, delivering things
-roughly this order:
+in roughly this order:
 
 - A bare bones mock consumer and producer so that people can start using these for
   developing their implementations.
 - The basic validation suite testing one major auth flow.
-- And then iterating them both until their are fully featured.
+- And then iterating them both until they are fully featured.
 
 All software will be developed as open sourced (MIT) software components in this
 repository.
@@ -44,7 +44,7 @@ highest possible security standards.
 
 Mock Data Holder ("LambdaBank")
 ============================================================================
-Along with the other artifacts, this repository also contains a script to build a docker image containing a mock Data Holder (DH). The script can be found `consumer-data-au-lambdabank/scripts/dockerisation.sh`. This image allows for easy deployment into test environments without any Haskell experience necessary.
+Along with the other artifacts, this repository also contains a script to build a docker image containing a mock Data Holder (DH). The script can be found in `consumer-data-au-lambdabank/scripts/dockerisation.sh`. This image allows for easy deployment into test environments without any Haskell experience necessary.
 
 The mock DH implements all of the defined resource endpoints in the Banking API, responding with mock data that is conformant to the CDS draft standards (v0.2.0 - 20/12/2018). The latest version of the standards can be found at Consumer Data Standards Australia.
 
